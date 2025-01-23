@@ -1,13 +1,63 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+import traceback
+import io
 
+import auxiliar.create_docx as cd
+
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 LARGE_MAX_CHARS = 4000
 MEDIUM_MAX_CHARS = 255
 
+def invoke_chain_event_description():
+    
+    res = st.session_state.chain_objetivo.invoke({"input": "Di algo",
+                                "event_name": st.session_state.event_name,
+                                "start_date": st.session_state.start_date,
+                                "end_date": st.session_state.end_date,
+                                "venue": st.session_state.venue,
+                                "city": st.session_state.city,
+                                "organization_name": st.session_state.organization_name      
+                                })
+    st.session_state.res_generate_event_description = res
+    
+    st.session_state.short_description = st.session_state.res_generate_event_description
+    print(res)
+    return res
 # Initialize session state variables
 if "event_name" not in st.session_state:
+    #llm
+    llm = ChatGroq(model_name="llama3-70b-8192")
+
+    prompt_objetivo = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """Tu trabajo es escribir en un campo de un formulario un breve texto. Para ello debes sintetizar la información utilizando la información que te voy a pasar a continuación.
+                - Nombre del evento: {event_name}
+                - Fecha de inicio: {start_date}
+                - Fecha de fin: {end_date}
+                - Sede: {venue}
+                - Ciudad:{city}
+                - Organización: {organization_name}
+                
+                El nombre del evento debe comenzar siempre por "Sponsorship of Event/Activity" en inglés
+                Si alguno de los campos está vacío. No lo incluyas en tu descripción. 
+                No incluyas información adicional al texto. Debe ser escrito como si el usuario lo hubiera rellenado.
+                Responde en español
+                """,
+            ),
+            ("user", "{input}"),
+        ]
+    )
+
+    st.session_state.chain_objetivo = prompt_objetivo | llm | StrOutputParser()
+    
+    #fields
     st.session_state.event_name = "Sponsorship of Event/Activity "
     st.session_state.event_type = "Virtual"
     st.session_state.start_date = datetime.now()
@@ -33,6 +83,63 @@ if "event_name" not in st.session_state:
     st.session_state.signer_last_name = ""
     st.session_state.signer_position = ""
     st.session_state.signer_email = ""
+    
+    #extra
+    st.session_state.res_generate_event_description = ""
+    st.session_state.download_enabled = False
+    st.session_state.path_doc = None
+
+mandatory_fields = [
+    st.session_state.event_name,
+    st.session_state.event_type,
+    st.session_state.start_date,
+    st.session_state.end_date,
+    st.session_state.venue,
+    st.session_state.city,
+    st.session_state.num_attendees,
+    st.session_state.attendee_profile,
+    st.session_state.event_objective,
+    st.session_state.amount,
+    st.session_state.payment_type,
+    st.session_state.name_st,
+    st.session_state.email_st,
+    st.session_state.associated_product,
+    st.session_state.short_description,
+    st.session_state.benefits,
+    st.session_state.exclusive_sponsorship,
+    st.session_state.recurrent_sponsorship,
+    st.session_state.recurrent_text,
+    st.session_state.organization_name,
+    st.session_state.organization_cif,
+    st.session_state.signer_first_name,
+    st.session_state.signer_last_name,
+    st.session_state.signer_position,
+    st.session_state.signer_email,
+]
+
+def check_mandatory_fields():
+    """Check if all mandatory fields have valid values"""
+    # First check base fields except special cases
+    fields_to_check = list(mandatory_fields)
+
+    # If virtual event, venue and city are not mandatory
+    if st.session_state.event_type == "Virtual":
+        fields_to_check.remove(st.session_state.venue)
+        fields_to_check.remove(st.session_state.city)
+
+    if st.session_state.payment_type == "Pago directo":
+        fields_to_check.remove(st.session_state.name_st)
+        fields_to_check.remove(st.session_state.email_st)
+        
+    if st.session_state.recurrent_sponsorship == "No":
+        fields_to_check.remove(st.session_state.recurrent_text)
+
+    print(fields_to_check)
+    # Check if any required field is empty
+    if any(not str(field).strip() for field in fields_to_check):
+        return False
+
+    return True
 
 def save_form_data():
     """Saves form data into a DataFrame"""
@@ -81,63 +188,118 @@ with st.expander("Ver documentos necesarios"):
 # Sección Detalles del Evento
 @st.fragment()
 def crear_detalles_evento():
-    
+    crear_nombre_y_tipo()
+    crear_fechas()
+    crear_ubicacion()
+    crear_asistentes()
+
+def crear_nombre_y_tipo():
     col1, col2 = st.columns(2)
     with col1:
-        st.text_input("Nombre del evento", placeholder="Escribe el nombre del evento", help="Introduce el nombre del evento", key="event_name")
+        st.text_input(
+            "Nombre del evento",
+            placeholder="Escribe el nombre del evento",
+            help="Introduce el nombre del evento",
+            max_chars=MEDIUM_MAX_CHARS,
+            key="event_name"
+        )
     with col2:
-        event_type = st.selectbox("Tipo de evento", options=["Virtual", "En persona", "Híbrido"],help="""Selecciona el tipo de evento que deseas realizar. 
-            \n- **Virtual**: Evento realizado completamente en línea.
-            \n- **En persona**: Evento llevado a cabo físicamente en una ubicación específica.
-            \n- **Híbrido**: Combina elementos de eventos virtuales y presenciales.""", key="event_type")
+        st.selectbox(
+            "Tipo de evento",
+            options=["Virtual", "En persona", "Híbrido"],
+            help="""Selecciona el tipo de evento que deseas realizar. 
+                \n- **Virtual**: Evento realizado completamente en línea.
+                \n- **En persona**: Evento llevado a cabo físicamente en una ubicación específica.
+                \n- **Híbrido**: Combina elementos de eventos virtuales y presenciales.""",
+            key="event_type"
+        )
 
+def crear_fechas():
     col3, col4 = st.columns(2)
     with col3:
         st.date_input("Fecha de inicio del evento", value=st.session_state.start_date, key="start_date")
     with col4:
         st.date_input("Fecha de fin del evento", value=st.session_state.end_date, key="end_date")
 
-    st.text_input("Sede (si aplica)", disabled=st.session_state.event_type == "Virtual", value=st.session_state.venue, help="Indica la dirección de la sede", key="venue")
-    st.text_input("Ciudad (si aplica)", disabled=st.session_state.event_type == "Virtual", value=st.session_state.city, help="Indica la ciudad en la que se encuentra la sede", key="city")
+    if st.session_state.start_date > st.session_state.end_date:
+        st.error("La fecha de inicio debe ser menor que la fecha de fin.")
 
+def crear_ubicacion():
+    is_virtual = st.session_state.event_type == "Virtual"
+    venue_value = "" if is_virtual else st.session_state.venue
+    city_value = "" if is_virtual else st.session_state.city
+    
+    st.text_input(
+        "Sede (si aplica)",
+        disabled=is_virtual,
+        value=venue_value,
+        help="Indica la dirección de la sede",
+        max_chars=MEDIUM_MAX_CHARS,
+        key="venue"
+    )
+    st.text_input(
+        "Ciudad (si aplica)", 
+        disabled=is_virtual,
+        value=city_value,
+        help="Indica la ciudad en la que se encuentra la sede",
+        max_chars=MEDIUM_MAX_CHARS, 
+        key="city"
+    )
+
+def crear_asistentes():
     col5, col6 = st.columns(2, vertical_alignment="center")
     with col5:
-        st.number_input("Número de asistentes", min_value=0, step=1, value=st.session_state.num_attendees, key="num_attendees")
+        st.number_input(
+            "Número de asistentes",
+            min_value=0,
+            step=1, 
+            value=st.session_state.num_attendees,
+            key="num_attendees"
+        )
     with col6:
-        st.text_area("Perfil de los asistentes", max_chars=MEDIUM_MAX_CHARS, value=st.session_state.attendee_profile, key="attendee_profile")
+        st.text_area(
+            "Perfil de los asistentes",
+            max_chars=MEDIUM_MAX_CHARS,
+            value=st.session_state.attendee_profile,
+            key="attendee_profile"
+        )
 
-        
-        
+     
 @st.fragment()
-def crear_detalles_evento_objetivo():
-    # Inicializar variable para comparar el cambio del texto
+def validate_event_objective(objective_text):
+    """Validate the event objective text."""
+    if not objective_text:
+        return ""
+    
+    time.sleep(3)  # Simulates validation
+    has_event_name = "nombre del evento" in objective_text.lower()
+    color = "green" if has_event_name else "red"
+    message = "El texto es correcto." if has_event_name else "El objetivo debe incluir el nombre del evento."
+    return f'<p style="color:{color};">{message}</p>'
+
+@st.fragment()
+def display_objective_field():
+    """Display and handle the event objective text area."""
     if 'prev_event_objective' not in st.session_state:
         st.session_state.prev_event_objective = ""
     
-    st.text_area("Objetivo del evento", max_chars=LARGE_MAX_CHARS, 
-                value=st.session_state.get('event_objective', ''), key="event_objective")
+    st.text_area(
+        "Objetivo del evento", 
+        max_chars=LARGE_MAX_CHARS,
+        value=st.session_state.get('event_objective', ''), 
+        key="event_objective"
+    )
 
-    # Mensaje inicial
-    mensaje = ""
-
-    # Verificar solo si el texto ha cambiado
     if st.session_state.event_objective != st.session_state.prev_event_objective:
-        st.session_state.prev_event_objective = st.session_state.event_objective  # Actualizar valor anterior
-        if st.session_state.event_objective:
-            with st.spinner("Revisando objetivo..."):
-                time.sleep(3)  # Simula una operación de validación
-                if "nombre del evento" in st.session_state.event_objective.lower():
-                    mensaje = '<p style="color:green;">El texto es correcto.</p>'
-                else:
-                    mensaje = '<p style="color:red;">El objetivo debe incluir el nombre del evento.</p>'
-
-    # Mostrar el mensaje encima del campo de texto
-    st.markdown(mensaje, unsafe_allow_html=True)
+        with st.spinner("Revisando objetivo..."):
+            message = validate_event_objective(st.session_state.event_objective)
+            st.markdown(message, unsafe_allow_html=True)
+        st.session_state.prev_event_objective = st.session_state.event_objective
 
 st.header("Detalles del Evento", divider=True)
 with st.container(border=True):     
     crear_detalles_evento()
-    crear_detalles_evento_objetivo()
+    display_objective_field()
 
 # Sección Detalles del Patrocinio
 @st.fragment()
@@ -150,51 +312,110 @@ def crear_detalles_patrocinio():
         with col8:
             st.selectbox("Tipo de pago", options=["Pago directo", "Pago a través de la secretaría técnica (ST)"], key="payment_type")
 
-        if st.session_state.payment_type == "Pago a través de la secretaría técnica (ST)":
-            col9, col10 = st.columns(2)
-            with col9:
-                st.text_input("Nombre de la secretaría técnica (ST)", value=st.session_state.name_st, key="name_st")
-            with col10:
-                st.text_input("Email de la secretaría técnica (ST)", value=st.session_state.email_st, key="email_st")
+        #if st.session_state.payment_type == "Pago a través de la secretaría técnica (ST)":
+        col9, col10 = st.columns(2)
+        with col9:
+            st.text_input("Nombre de la secretaría técnica (ST)", value=st.session_state.name_st if st.session_state.payment_type != "Pago directo" else "", max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state.payment_type != "Pago a través de la secretaría técnica (ST)", key="name_st")
+        with col10:
+            st.text_input("Email de la secretaría técnica (ST)", value=st.session_state.email_st if st.session_state.payment_type != "Pago directo" else "", max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state.payment_type != "Pago a través de la secretaría técnica (ST)", key="email_st")
 
-        st.text_input("Producto asociado", value=st.session_state.associated_product, key="associated_product")
-        st.text_area("Descripción del evento", placeholder="Incluye nombre, fecha, sede y organizador", value=st.session_state.short_description, key="short_description")
+        st.text_input("Producto asociado", value=st.session_state.associated_product, max_chars=MEDIUM_MAX_CHARS, key="associated_product")
+        col20, col21 = st.columns([5,1], vertical_alignment="center")
+        with col20:
+            st.text_area("Descripción del evento", placeholder="Incluye nombre, fecha, sede y organizador", value=st.session_state.short_description, max_chars=LARGE_MAX_CHARS, key="short_description")
+        with col21:
+            st.markdown("**Pulsa para generar:**")  # Texto encima del botón
+            st.button("Generar", help="Genera una breve descripción con IA en base al resto de campos", icon="📄", use_container_width=True, type="primary", on_click=invoke_chain_event_description)
         st.text_area("Beneficio para la empresa", value=st.session_state.benefits, key="benefits")
 
         st.selectbox("Merck único patrocinador", options=["Sí", "No"], key="exclusive_sponsorship")
         if st.session_state.exclusive_sponsorship == "Sí":
             st.warning("Debes enviar el dossier comercial o presupuesto del organizador.")
 
-        col11, col12 = st.columns(2)
+        col11, col12 = st.columns(2, vertical_alignment="center")
         with col11:
             st.selectbox("Patrocinio recurrente", options=["Sí", "No"], key="recurrent_sponsorship")
         with col12:
-            if st.session_state.recurrent_sponsorship == "Sí":
-                st.text_area("Detalles del patrocinio recurrente", value=st.session_state.recurrent_text, key="recurrent_text")
+            #if st.session_state.recurrent_sponsorship == "Sí":
+            st.text_area("Detalles del patrocinio recurrente", value=st.session_state.recurrent_text if st.session_state.recurrent_sponsorship != "No" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state.recurrent_sponsorship != "Sí", key="recurrent_text")
 
 crear_detalles_patrocinio()
+
 # Sección Información del Firmante
-st.header("Detalles del Firmante", divider=True)
-with st.container(border=True):
-    col13, col14 = st.columns(2)
-    with col13:
-        st.text_input("Nombre de la organización", value=st.session_state.organization_name, key="organization_name")
-        st.text_input("Nombre del firmante", value=st.session_state.signer_first_name, key="signer_first_name")
-        st.text_input("Cargo del firmante", value=st.session_state.signer_position, key="signer_position")
-    with col14:
-        st.text_input("CIF", value=st.session_state.organization_cif, key="organization_cif")
-        st.text_input("Apellidos del firmante", value=st.session_state.signer_last_name, key="signer_last_name")
-        st.text_input("Email del firmante", value=st.session_state.signer_email, key="signer_email")
+@st.fragment()
+def crear_detalles_firmante():
+    st.header("Detalles del Firmante", divider=True)
+    with st.container(border=True):
+        col13, col14 = st.columns(2)
+        with col13:
+            st.text_input("Nombre de la organización", value=st.session_state.organization_name, key="organization_name")
+            st.text_input("Nombre del firmante", value=st.session_state.signer_first_name, key="signer_first_name")
+            st.text_input("Cargo del firmante", value=st.session_state.signer_position, key="signer_position")
+        with col14:
+            st.text_input("CIF", value=st.session_state.organization_cif, key="organization_cif")
+            st.text_input("Apellidos del firmante", value=st.session_state.signer_last_name, key="signer_last_name")
+            st.text_input("Email del firmante", value=st.session_state.signer_email, key="signer_email")
+
+crear_detalles_firmante()
+
+# Estado inicial para el botón de descargar
+st.session_state.download_enabled = False
 
 # Botón para enviar
-if st.button(label="Enviar", use_container_width=True, type="primary"):
-    df = save_form_data()
-    st.dataframe(df)
-    # Create a markdown string with bullet points for each column
-    markdown_text = "### Resumen de la solicitud:\n"
-    for column in df.columns:
-        value = df[column].iloc[0]
-        markdown_text += f"* **{column}**: {value}\n"
+def button_form():
+    if st.button(label="Enviar", use_container_width=True, type="primary"):
+        try:
+            if check_mandatory_fields():
+                df = save_form_data()
+                #st.dataframe(df)
+                doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
+                print(st.session_state.path_doc)
+                ## Create a markdown string with bullet points for each column
+                #markdown_text = "### Resumen de la solicitud:\n"
+                #for column in df.columns:
+                #    value = df[column].iloc[0]
+                #    markdown_text += f"* **{column}**: {value}\n"
+                #st.markdown(markdown_text)
+                
+                # Cambiar el estado del botón de descarga
+                st.session_state.download_enabled = True
+                
+                #st.success("Formulario generado correctamente correctamente.")
+                st.toast("Formulario generado correctamente", icon="✔️")
+            else:
+                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+            # Leer el archivo Word y prepararlo para descarga
+        except Exception as e:
+            traceback.print_exc()
+            st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+
+
+def download_document():
+    print(st.session_state.path_doc)
+    print(disabled)
+    if st.session_state.path_doc:
+        with open(st.session_state.path_doc, "rb") as file:
+            st.download_button(
+                label="Descargar documento Word",
+                data=file,
+                file_name="documento_sponsorship.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                icon="📥",
+                disabled=disabled
+            )
+    else:
+        st.download_button(
+            label="Descargar documento Word",
+            data=io.BytesIO(),
+            file_name="documento_sponsorship.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            use_container_width=True,
+            icon="📥",
+            disabled=True
+        )
         
-    st.markdown(markdown_text)
-    st.success("Formulario enviado correctamente.")
+button_form()
+# Botón de descarga
+disabled = not st.session_state.download_enabled
+download_document()

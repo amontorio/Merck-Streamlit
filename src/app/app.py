@@ -1,9 +1,8 @@
 import streamlit as st
 
-
 assistant = st.Page("./pages/assistant.py", title="Asistente", icon="🤖")
 
-form1 = st.Page("./pages/form1.py", title="Plantilla 1", icon="🤖")
+form1 = st.Page("./pages/form1.py", title="Sponsorship of Event", icon="🗓️")
 
 pg = st.navigation(
     {
@@ -15,7 +14,8 @@ pg = st.navigation(
 
 st.set_page_config(
     page_title="Merck",
-    page_icon="🤖",
+    page_icon="💊",
+    layout="wide"
 )
 
 pg.run()

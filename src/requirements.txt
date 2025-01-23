@@ -20,3 +20,4 @@ python-docx
 streamlit
 langchain_chroma
 langchain_google_vertexai
+streamlit-custom-notification-box
