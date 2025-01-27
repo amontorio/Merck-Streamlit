@@ -1,14 +1,17 @@
 import streamlit as st
+from datetime import date, datetime
+
 
 assistant = st.Page("./pages/assistant.py", title="Asistente", icon="🤖")
 
-form1 = st.Page("./pages/form1.py", title="Sponsorship of Event", icon="🗓️")
+event_page = st.Page("./pages/event_page.py", title="Sponsorship of Event", icon="🗓️")
+advisory_board = st.Page("./pages/advisory_board_page.py", title="Advisory Board", icon="👩‍💼")
 
 pg = st.navigation(
     {
    #    "Información": [welcome, doc],
        "Chatbot": [assistant],
-       "Plantillas": [form1] 
+       "Plantillas": [event_page, advisory_board] 
     }
     )
 

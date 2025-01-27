@@ -1,67 +1,43 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import date, datetime
 import time
 import traceback
 import io
 
 import auxiliar.create_docx as cd
+import model.llm_sponsorship_event as llm_se
 
 from langchain_groq import ChatGroq
+from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+
+from dotenv import load_dotenv
+load_dotenv()
 LARGE_MAX_CHARS = 4000
 MEDIUM_MAX_CHARS = 255
 
-def invoke_chain_event_description():
+
+def handle_invoke_chain_event_description():
+    res = llm_se.invoke_chain_event_description(st.session_state.event_name,
+                                          st.session_state.start_date,
+                                          st.session_state.end_date,
+                                          st.session_state.venue,
+                                          st.session_state.city,
+                                          st.session_state.organization_name)
     
-    res = st.session_state.chain_objetivo.invoke({"input": "Di algo",
-                                "event_name": st.session_state.event_name,
-                                "start_date": st.session_state.start_date,
-                                "end_date": st.session_state.end_date,
-                                "venue": st.session_state.venue,
-                                "city": st.session_state.city,
-                                "organization_name": st.session_state.organization_name      
-                                })
-    st.session_state.res_generate_event_description = res
-    
+    st.session_state.res_generate_event_description = res  
+  
     st.session_state.short_description = st.session_state.res_generate_event_description
-    print(res)
-    return res
+
 # Initialize session state variables
 if "event_name" not in st.session_state:
-    #llm
-    llm = ChatGroq(model_name="llama3-70b-8192")
-
-    prompt_objetivo = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """Tu trabajo es escribir en un campo de un formulario un breve texto. Para ello debes sintetizar la información utilizando la información que te voy a pasar a continuación.
-                - Nombre del evento: {event_name}
-                - Fecha de inicio: {start_date}
-                - Fecha de fin: {end_date}
-                - Sede: {venue}
-                - Ciudad:{city}
-                - Organización: {organization_name}
-                
-                El nombre del evento debe comenzar siempre por "Sponsorship of Event/Activity" en inglés
-                Si alguno de los campos está vacío. No lo incluyas en tu descripción. 
-                No incluyas información adicional al texto. Debe ser escrito como si el usuario lo hubiera rellenado.
-                Responde en español
-                """,
-            ),
-            ("user", "{input}"),
-        ]
-    )
-
-    st.session_state.chain_objetivo = prompt_objetivo | llm | StrOutputParser()
-    
     #fields
     st.session_state.event_name = "Sponsorship of Event/Activity "
     st.session_state.event_type = "Virtual"
-    st.session_state.start_date = datetime.now()
-    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = date.today()
+    st.session_state.end_date = date.today()
     st.session_state.venue = ""
     st.session_state.city = ""
     st.session_state.num_attendees = 0
@@ -88,6 +64,7 @@ if "event_name" not in st.session_state:
     st.session_state.res_generate_event_description = ""
     st.session_state.download_enabled = False
     st.session_state.path_doc = None
+
 
 mandatory_fields = [
     st.session_state.event_name,
@@ -133,8 +110,6 @@ def check_mandatory_fields():
         
     if st.session_state.recurrent_sponsorship == "No":
         fields_to_check.remove(st.session_state.recurrent_text)
-
-    print(fields_to_check)
     # Check if any required field is empty
     if any(not str(field).strip() for field in fields_to_check):
         return False
@@ -199,6 +174,7 @@ def crear_nombre_y_tipo():
         st.text_input(
             "Nombre del evento",
             placeholder="Escribe el nombre del evento",
+            value=st.session_state.event_name,
             help="Introduce el nombre del evento",
             max_chars=MEDIUM_MAX_CHARS,
             key="event_name"
@@ -325,7 +301,7 @@ def crear_detalles_patrocinio():
             st.text_area("Descripción del evento", placeholder="Incluye nombre, fecha, sede y organizador", value=st.session_state.short_description, max_chars=LARGE_MAX_CHARS, key="short_description")
         with col21:
             st.markdown("**Pulsa para generar:**")  # Texto encima del botón
-            st.button("Generar", help="Genera una breve descripción con IA en base al resto de campos", icon="📄", use_container_width=True, type="primary", on_click=invoke_chain_event_description)
+            st.button("Generar", help="Genera una breve descripción con IA en base al resto de campos", icon="📄", use_container_width=True, type="primary", on_click=handle_invoke_chain_event_description)
         st.text_area("Beneficio para la empresa", value=st.session_state.benefits, key="benefits")
 
         st.selectbox("Merck único patrocinador", options=["Sí", "No"], key="exclusive_sponsorship")
@@ -369,7 +345,6 @@ def button_form():
                 df = save_form_data()
                 #st.dataframe(df)
                 doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
-                print(st.session_state.path_doc)
                 ## Create a markdown string with bullet points for each column
                 #markdown_text = "### Resumen de la solicitud:\n"
                 #for column in df.columns:
@@ -391,8 +366,6 @@ def button_form():
 
 
 def download_document():
-    print(st.session_state.path_doc)
-    print(disabled)
     if st.session_state.path_doc:
         with open(st.session_state.path_doc, "rb") as file:
             st.download_button(
