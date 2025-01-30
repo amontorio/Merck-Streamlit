@@ -45,39 +45,37 @@ def crear_documento_sponsorship_of_event(dataframe):
     # Detalles del evento
     agregar_encabezado("Detalles del Evento:")
     agregar_bullet_point("Nombre del evento", datos.get("event_name", ""))
-    agregar_bullet_point("Tipo de evento", datos.get("event_type", ""))
     agregar_bullet_point("Fecha de inicio", datos.get("start_date", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", datos.get("end_date", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Tipo de evento", datos.get("event_type", ""))
     agregar_bullet_point("Sede", datos.get("venue", "N/A"))
     agregar_bullet_point("Ciudad", datos.get("city", "N/A"))
     agregar_bullet_point("Número de asistentes", datos.get("num_attendees", 0))
     agregar_bullet_point("Perfil de asistentes", datos.get("attendee_profile", ""))
-
-    # Objetivo del evento
-    agregar_encabezado("Objetivo del Evento:")
-    agregar_bullet_point("Objetivo", datos.get("event_objective", ""))
+    agregar_bullet_point("Descripción y objetivo del evento", datos.get("event_objetive", ""))
 
     # Detalles del patrocinio
     agregar_encabezado("Detalles del Patrocinio:")
-    agregar_bullet_point("Importe (en euros)", datos.get("amount", 0.0))
+    agregar_bullet_point("Nombre del evento", datos.get("event_name", ""))
+    agregar_bullet_point("Importe (€)", datos.get("amount", 0.0))
     agregar_bullet_point("Tipo de pago", datos.get("payment_type", ""))
     if datos.get("payment_type") == "Pago a través de la secretaría técnica (ST)":
         agregar_bullet_point("Nombre ST", datos.get("name_st", ""))
-        agregar_bullet_point("Email ST", datos.get("email_st", ""))
     agregar_bullet_point("Producto asociado", datos.get("associated_product", ""))
     agregar_bullet_point("Descripción del evento", datos.get("short_description", ""))
-    agregar_bullet_point("Beneficios", datos.get("benefits", ""))
-    agregar_bullet_point("Patrocinador exclusivo", datos.get("exclusive_sponsorship", "No"))
+    agregar_bullet_point("Contraprestaciones", datos.get("benefits", ""))
+    agregar_bullet_point("Patrocinador único o mayoritario", datos.get("exclusive_sponsorship", "No"))
+    agregar_bullet_point("Patrocinio recurrente", datos.get("recurrent_sponsorship", ""))
     if datos.get("recurrent_sponsorship", "No") == "Sí":
         agregar_bullet_point("Detalles del patrocinio recurrente", datos.get("recurrent_text", ""))
 
     # Detalles del firmante
-    agregar_encabezado("Detalles del Firmante:")
+    agregar_encabezado("Detalles del Organizador:")
     agregar_bullet_point("Nombre de la organización", datos.get("organization_name", ""))
     agregar_bullet_point("CIF", datos.get("organization_cif", ""))
-    agregar_bullet_point("Nombre del firmante", f"{datos.get('signer_first_name', '')} {datos.get('signer_last_name', '')}")
-    agregar_bullet_point("Cargo del firmante", datos.get("signer_position", ""))
-    agregar_bullet_point("Email del firmante", datos.get("signer_email", ""))
+    agregar_bullet_point("Nombre", f"{datos.get('signer_first_name', '')} {datos.get('signer_last_name', '')}")
+    agregar_bullet_point("Cargo", datos.get("signer_position", ""))
+    agregar_bullet_point("Email", datos.get("signer_email", ""))
 
     # Guardar el documento
     nombre_archivo = 'Formulario_Sponsorship_of_event.docx'
