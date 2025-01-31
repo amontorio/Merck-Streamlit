@@ -4,13 +4,25 @@ from streamlit_searchbox import st_searchbox
 from datetime import date
 import unicodedata
 import uuid
+from datetime import time
+import auxiliar.create_docx as cd
+import traceback
 
+# Diccionario de tarifas según el tier
+tarifas = {
+    "0": 50,  # Ejemplo de valores, cambia según tu lógica
+    "1": 75,
+    "2": 100,
+    "3": 150,
+    "4": 200
+}
 
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes":
         st.session_state[key] = value
         st.session_state["form_data_advisory_board"][key] = value
     else:
+        st.session_state[field_participante] = value
         st.session_state["form_data_advisory_board"][key][key_participante][field_participante] = value
 
 def add_participant():
@@ -25,6 +37,7 @@ def add_participant():
         f"centro_trabajo_{id_user}": "",
         f"email_contrato_{id_user}": "",
         f"cobra_sociedad_{id_user}": "",
+        f"nombre_sociedad_{id_user}": "",
         f"honorarios_{id_user}": 0.0,
         f"tiempo_preparacion_{id_user}": 0,
         f"tiempo_reunion_{id_user}": 0,
@@ -236,13 +249,32 @@ with col2:
     )
 st.text_area("Justificación de número de participantes", max_chars=4000, key="justificacion_participantes", on_change=lambda: save_to_session_state("justificacion_participantes", st.session_state["justificacion_participantes"]))
 
-def handle_tier_from_name(name):
-    pass
-#@st.fragment
+def handle_tier_from_name(id_user, name):
+    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    # Eliminar filas donde 'Nombre de la cuenta' sea NaN
+    df = df.dropna(subset=['Nombre de la cuenta'])
+
+    # Reemplazar NaN en 'Especialidad' con 'Ninguna'
+    df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
+
+    # Reemplazar NaN en 'Tier' con 0
+    df['Tier'] = df['Tier'].fillna(0)
+
+    # Asegurarse de que la columna 'Tier' sea numérica
+    df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
+    
+    tier = df.loc[df["Nombre de la cuenta"] == name["result"], "Tier"]
+    print("NAME", name["result"])
+    print("TIER", tier.values)
+    print("DB", df)
+        
+    if not tier.empty:
+        return str(int(tier.values[0]))  # Devuelve el Tier encontrado
+    return "0"  # Devuelve 0 si el nombre no está en los datos
+    
+
 def participantes_section():
     st.header("Detalles de los Participantes del Advisory")
-
-
 
     if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()
@@ -261,9 +293,12 @@ def participantes_section():
                         placeholder="Busca un médico...",
                         key=f"nombre_{id_user}",
                         edit_after_submit="option",
-                        submit_function=lambda x: print("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL")
+                        submit_function= lambda x: save_to_session_state("participantes", handle_tier_from_name(id_user, st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
                     )
+                
                 st.session_state["form_data_advisory_board"]["participantes"][id_user][f"nombre_{id_user}"] = nombre
+                    #st.session_state["form_data_advisory_board"]["participantes"][id_user][f"tier_{id_user}"] = handle_tier_from_name(id_user, nombre)
+                
                 col1, col2 = st.columns(2)
                 with col1:
                     
@@ -281,20 +316,18 @@ def participantes_section():
                     )
                     st.session_state["form_data_advisory_board"]["participantes"][id_user][f"centro_trabajo_{id_user}"] = centro
 
-                    tiempo_prep = st.number_input(
-                        "Tiempo de preparación (min: 0, 15, 30, 45)", 
-                        value=int(info_user.get(f"tiempo_preparacion_{id_user}", 0)), 
-                        min_value=0, 
-                        step=15, 
-                        key=f"preparacion_{id_user}"
-                    )
+                    tiempo_prep = st.time_input("Tiempo de preparación", 
+                                  value=time(0, 0), 
+                                  step=900,
+                                  key=f"preparacion_{id_user}"
+                                  )
+                    
                     st.session_state["form_data_advisory_board"]["participantes"][id_user][f"tiempo_preparacion_{id_user}"] = tiempo_prep
 
                     cobra = st.selectbox(
-                        "Cobra a través de sociedad?", 
-                        ["", "Sí", "No"], 
-                        key=f"cobra_sociedad_{id_user}",
-                        index=["", "Sí", "No"].index(info_user.get(f"cobra_sociedad_{id_user}", ""))
+                        "¿Cobra a través de sociedad?", 
+                        ["Sí", "No"], 
+                        key=f"cobra_sociedad_{id_user}"
                     )
                     st.session_state["form_data_advisory_board"]["participantes"][id_user][f"cobra_sociedad_{id_user}"] = cobra
 
@@ -302,8 +335,7 @@ def participantes_section():
                     tier = st.selectbox(
                         f"Tier del participante {index + 1}", 
                         ["0", "1", "2", "3", "4"], 
-                        key=f"tier_{id_user}",
-                        index=["0", "1", "2", "3", "4"].index(info_user.get(f"tier_{id_user}", "0"))
+                        key=f"tier_{id_user}"
                     )
                     st.session_state["form_data_advisory_board"]["participantes"][id_user][f"tier_{id_user}"] = tier
 
@@ -314,24 +346,39 @@ def participantes_section():
                     )
                     st.session_state["form_data_advisory_board"]["participantes"][id_user][f"email_{id_user}"] = email
 
-                    tiempo_reunion = st.number_input(
-                        "Tiempo de duración de ponencia (min: 0, 15, 30, 45)", 
-                        value=int(info_user.get(f"tiempo_reunion_{id_user}", 0)), 
-                        min_value=0, 
-                        step=15, 
-                        key=f"reunion_{id_user}"
-                    )
+                    tiempo_reunion = st.time_input(
+                        "Tiempo de duración de ponencia", 
+                                  value=time(0, 0), 
+                                  step=900,
+                                  key=f"reunion_{id_user}"
+                                  )
                     st.session_state["form_data_advisory_board"]["participantes"][id_user][f"tiempo_reunion_{id_user}"] = tiempo_reunion
                     
-                    honorarios = st.number_input(
-                        "Honorarios", 
-                        value=float(info_user.get(f"honorarios_{id_user}", 0.0)), 
-                        min_value=0.0, 
-                        step=0.01, 
-                        key=f"honorarios_{id_user}"
+                    nombre_sociedad = st.text_input(
+                        "Nombre de la sociedad",
+                        value = st.session_state["form_data_advisory_board"]["participantes"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
+                        key=f"nombre_sociedad_{id_user}",
+                        disabled= cobra == "No"
                     )
-                    st.session_state["form_data_advisory_board"]["participantes"][id_user][f"honorarios_{id_user}"] = honorarios
+                    st.session_state["form_data_advisory_board"]["participantes"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
+                # Obtener valores de tiempo en horas decimales
+                tiempo_reunion_horas = tiempo_reunion.hour + tiempo_reunion.minute / 60
+                tiempo_prep_horas = tiempo_prep.hour + tiempo_prep.minute / 60
 
+                # Obtener tarifa en función del tier
+                tarifa = tarifas.get(tier, 0)  # Si no encuentra el tier, usa 0
+
+                # Calcular honorarios
+                honorarios = (tiempo_reunion_horas + tiempo_prep_horas) * tarifa
+                
+                honorarios = st.number_input(
+                    "Honorarios", 
+                    value= float(honorarios), 
+                    min_value=0.0, 
+                    step=0.01, 
+                    key=f"honorarios_{id_user}"
+                )
+                st.session_state["form_data_advisory_board"]["participantes"][id_user][f"honorarios_{id_user}"] = honorarios
         index +=1
         with col_remove_participant_individual:
             if st.button("🗑️", key=f"remove_participant_{id_user}", use_container_width=True, type="primary"):
@@ -342,6 +389,21 @@ def participantes_section():
                 st.rerun()
 participantes_section()
 
+# Botón para enviar
+def button_form():
+    if st.button(label="Enviar", use_container_width=True, type="primary"):
+        try:
+            #if check_mandatory_fields():
+            if True:
+                doc, st.session_state.path_doc = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
+                st.toast("Formulario generado correctamente", icon="✔️")
+            else:
+                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+            # Leer el archivo Word y prepararlo para descarga
+        except Exception as e:
+            traceback.print_exc()
+            st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
+button_form()
 st.header("Datos guardados")
 st.write(st.session_state["form_data_advisory_board"])
