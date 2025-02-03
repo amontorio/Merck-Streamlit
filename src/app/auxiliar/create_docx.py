@@ -47,7 +47,7 @@ def crear_documento_sponsorship_of_event(dataframe):
 
     # Detalles del evento
     agregar_encabezado("Detalles del Evento:")
-    agregar_bullet_point("Nombre del evento", datos.get("event_name", ""))
+    agregar_bullet_point("Nombre del evento", f"Sponsorship of Event/Activity {datos.get('event_name', '')}")
     agregar_bullet_point("Fecha de inicio", datos.get("start_date", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", datos.get("end_date", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Tipo de evento", datos.get("event_type", ""))
@@ -76,7 +76,7 @@ def crear_documento_sponsorship_of_event(dataframe):
     agregar_encabezado("Detalles del Organizador:")
     agregar_bullet_point("Nombre de la organización", datos.get("organization_name", ""))
     agregar_bullet_point("CIF", datos.get("organization_cif", ""))
-    agregar_bullet_point("Nombre", f"{datos.get('signer_first_name', '')} {datos.get('signer_last_name', '')}")
+    agregar_bullet_point("Nombre", f"{datos.get('signer_first_name', '')}")
     agregar_bullet_point("Cargo", datos.get("signer_position", ""))
     agregar_bullet_point("Email", datos.get("signer_email", ""))
 
