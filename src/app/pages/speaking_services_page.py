@@ -74,7 +74,7 @@ def search_function(search_text):
 
 def handle_tier_from_name(id_user, name):
     #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx", header=9)
+    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 
@@ -171,11 +171,14 @@ if "participant_index_ss" not in st.session_state:
 
 
 st.title("Formulario de Speaking Services")
+
+st.header("Reunión Merck", divider=True)
+st.selectbox("Tipo de reunión",["Reunión Merck Program", "Paragüas iniciado"])
+
+
 st.header("1. Documentos", divider=True)
 st.file_uploader("Agenda del evento *", type=["pdf"], key="doc1_ss", on_change=lambda: save_to_session_state("doc1_ss", st.session_state["doc1_ss"])) ##### cambiar
 st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", type=["pdf"], key="doc2_ss", on_change=lambda: save_to_session_state("doc2_ss", st.session_state["doc2_ss"])) ##### cambiar
-
-
 
 
 st.header("2. Detalles de la actividad", divider=True)
@@ -191,13 +194,13 @@ col1, col2 = st.columns(2)
 with col1:
     st.text_input("Necesidad de la reunión y resultados esperados *", max_chars=4000, key="producto_asociado", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("producto_asociado", st.session_state["producto_asociado"]))
 with col2:
-    st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]))
+    st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
+                  help = "Ponencia [nombre del evento]")
     ####### meter campo consideraciones!!!!
 
 
 st.header("3. Detalles del evento", divider=True)
 col1, col2 = st.columns(2)
-####### meter campo consideraciones!!!!
 st.text_input("Nombre del evento *", max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
 st.text_area("Descripción y objetivo *", max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
 
@@ -338,18 +341,16 @@ def ponentes_section():
         print(id_user)
         col_participant, col_remove_participant_individual = st.columns([10,1])
         with col_participant:
-            with st.expander(f"Participante {index + 1}", expanded=False, icon="👩‍⚕️"):
+            with st.expander(f"Ponente {index + 1}", expanded=False, icon="👩‍⚕️"):
                 nombre = st_searchbox(
                         #label="Buscador de HCO / HCP *",
                         search_function=search_function,
                         placeholder="Busca un HCO / HCP *",
                         key=f"nombre_ss_{id_user}",
                         edit_after_submit="option",
-                        submit_function= lambda x: save_to_session_state("participantes_ss", handle_tier_from_name(id_user, st.session_state[f"nombre_ss_{id_user}"]), id_user, f"tier_ss_{id_user}")
-                    )
-                #MAL !!!!!!!!!!!!!
-                # st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_ss_{id_user}"] = nombre
-                # st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_ss_{id_user}"] = handle_tier_from_name(id_user, nombre)
+                        submit_function= lambda x: (save_to_session_state("participantes_ss", handle_tier_from_name(id_user, st.session_state[f"nombre_ss_{id_user}"]), id_user, f"tier_ss_{id_user}"))                    )
+
+                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_ss_{id_user}"] = nombre
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -458,7 +459,7 @@ def ponentes_section():
                     key=f"honorarios_ss_{id_user}",
                     disabled=True
                 )
-                #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"honorarios_ss_{id_user}"] = honorarios
+                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"honorarios_ss_{id_user}"] = honorarios
         index +=1
         with col_remove_participant_individual:
             if st.button("🗑️", key=f"remove_participant_ss_{id_user}", use_container_width=True, type="secondary"):
@@ -488,3 +489,4 @@ def button_form():
 
 button_form()
 
+st.write(st.session_state["form_data_speaking_services"])
