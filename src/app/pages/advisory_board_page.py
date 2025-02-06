@@ -104,6 +104,7 @@ def add_participant():
         st.session_state["form_data_advisory_board"]["participantes"] = {}
         
     st.session_state["form_data_advisory_board"]["participantes"][id_user] = new_participant
+    
 def remove_last_participant():
     # Eliminar el último participante
     if st.session_state["participantes"]:
@@ -115,6 +116,7 @@ def remove_last_participant():
         st.session_state["participant_index"] -= 1
 def get_form_data_advisory_boardby_key(key):
     return st.session_state["form_data_advisory_board"][key]
+
 
 # Inicializar estado del formulario en session_state
 if "form_data_advisory_board" not in st.session_state:
@@ -209,7 +211,8 @@ def normalize_text(text):
 
 def search_function(search_text):
 
-    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 
@@ -239,9 +242,9 @@ st.text_area("Descripción y objetivo *", max_chars=4000, key="descripcion_objet
 
 col1, col2 = st.columns(2)
 with col1:
-    st.date_input("Fecha de inicio del evento *", value=st.session_state["form_data_advisory_board"]["start_date"], key="start_date", on_change=lambda: save_to_session_state("start_date", st.session_state["start_date"]))
+    start_date_ab = st.date_input("Fecha de inicio del evento *", value=st.session_state["form_data_advisory_board"]["start_date"], key="start_date", on_change=lambda: save_to_session_state("start_date", st.session_state["start_date"]))
 with col2:
-    st.date_input("Fecha de fin del evento *", value=st.session_state["form_data_advisory_board"]["end_date"], key="end_date", on_change=lambda: save_to_session_state("end_date", st.session_state["end_date"]))
+    st.date_input("Fecha de fin del evento *", value=st.session_state["form_data_advisory_board"]["end_date"], key="end_date", min_value = start_date_ab, on_change=lambda: save_to_session_state("end_date", st.session_state["end_date"]))
 
 
 col1, col2 = st.columns(2)
@@ -302,7 +305,8 @@ with col2:
 st.text_area("Justificación de número de participantes *", max_chars=4000, key="justificacion_participantes", on_change=lambda: save_to_session_state("justificacion_participantes", st.session_state["justificacion_participantes"]))
 
 def handle_tier_from_name(id_user, name):
-    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 

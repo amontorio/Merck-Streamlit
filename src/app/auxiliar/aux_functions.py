@@ -104,7 +104,8 @@ def normalize_text(text):
 
 def search_function(search_text):
 
-    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 

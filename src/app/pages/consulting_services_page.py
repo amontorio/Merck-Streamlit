@@ -17,6 +17,34 @@ tarifas = {
     "3": 150,
     "4": 200
 }
+
+
+def validar_campos(input_data, parametros_obligatorios, parametros_dependientes):
+    """
+    Valida que los parámetros obligatorios y los parámetros dependientes (según su condición)
+    tengan un valor en el input_data (por ejemplo, el diccionario obtenido de un JSON).
+
+    Args:
+        input_data (dict): Diccionario con los datos a validar.
+        parametros_obligatorios (list): Lista de nombres de parámetros obligatorios.
+        parametros_dependientes (dict): Diccionario con la estructura:
+            {
+                "parametro_principal": {
+                    "condicion": función que recibe el valor del parametro_principal y retorna True/False,
+                    "dependientes": [listado de parámetros dependientes]
+                },
+                ...
+            }
+
+    Returns:
+        list: Lista de mensajes de error. Si está vacía, no se encontraron errores.
+    """
+    errores = []
+
+    
+    return errores
+
+
 # Lista de parámetros obligatorios
 mandatory_fields = [
 ]
@@ -25,7 +53,7 @@ mandatory_fields = [
 dependendent_fields = {
     "alojamiento": {
         "condicion": lambda x: x == "Sí",
-        "dependientes": ["num_noches", "hotel"]
+        "dependientes": ["num_noches", "hotel"] #si es si, serán estos campos
     },
     "tipo_evento": {
         "condicion": lambda x: x != "Virtual",
