@@ -94,6 +94,8 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
         participanes_name = "participantes_ab"
     elif "participantes_cs" in input_data:
         participanes_name = "participantes_cs"
+    elif "participantes_ss" in input_data:
+        participanes_name = "participantes_ss"
 
     if participanes_name in input_data:
         errores_participantes = validar_participantes(input_data[participanes_name])
