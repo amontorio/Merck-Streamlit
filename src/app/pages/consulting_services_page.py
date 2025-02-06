@@ -18,47 +18,25 @@ tarifas = {
     "4": 200
 }
 
-
-def validar_campos(input_data, parametros_obligatorios, parametros_dependientes):
-    """
-    Valida que los parámetros obligatorios y los parámetros dependientes (según su condición)
-    tengan un valor en el input_data (por ejemplo, el diccionario obtenido de un JSON).
-
-    Args:
-        input_data (dict): Diccionario con los datos a validar.
-        parametros_obligatorios (list): Lista de nombres de parámetros obligatorios.
-        parametros_dependientes (dict): Diccionario con la estructura:
-            {
-                "parametro_principal": {
-                    "condicion": función que recibe el valor del parametro_principal y retorna True/False,
-                    "dependientes": [listado de parámetros dependientes]
-                },
-                ...
-            }
-
-    Returns:
-        list: Lista de mensajes de error. Si está vacía, no se encontraron errores.
-    """
-    errores = []
-
-    
-    return errores
-
-
 # Lista de parámetros obligatorios
 mandatory_fields = [
+        "nombre_necesidades_cs",
+        "start_date_cs",
+        "end_date_cs",
+        "presupuesto_estimado_cs",
+        "producto_asociado_cs",
+        "estado_aprobacion_cs",
+        "necesidad_reunion_cs",
+        "descripcion_servicio_cs",
+        "numero_consultores_cs",
+        "criterios_seleccion_cs",
 ]
 
-# Parámetros dependientes: por ejemplo, si 'alojamiento' es "Sí", se requiere que 'num_noches' y 'hotel' tengan valor.
 dependendent_fields = {
-    "alojamiento": {
-        "condicion": lambda x: x == "Sí",
-        "dependientes": ["num_noches", "hotel"] #si es si, serán estos campos
+    "numero_consultores_cs": {
+        "condicion": lambda x: x > 1,
+        "dependientes": ["justificacion_numero_participantes_cs"]
     },
-    "tipo_evento": {
-        "condicion": lambda x: x != "Virtual",
-        "dependientes": ["sede", "ciudad"]
-    }
 }
 
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
@@ -211,7 +189,7 @@ with col4:
         default=st.session_state["form_data_consulting_services"]["criterios_seleccion_cs"] if "criterios_seleccion_cs" in st.session_state["form_data_consulting_services"] else [],
         on_change=lambda: save_to_session_state("criterios_seleccion_cs", st.session_state["criterios_seleccion_cs"]))
 
-st.text_area("Justificación de número de participantes_cs *", 
+st.text_area("Justificación de número de participantes", 
              max_chars=4000, 
              key="justificacion_numero_participantes_cs", 
              value="" if st.session_state["form_data_consulting_services"]["numero_consultores_cs"] <=1 else st.session_state["form_data_consulting_services"].get("justificacion_numero_participantes_cs", ""), 
@@ -220,9 +198,9 @@ st.text_area("Justificación de número de participantes_cs *",
 
 
 def participantes_section():
-    st.header("6. Detalles de los participantes_cs del Advisory", divider=True)
+    st.header("6. Detalles de los consultores", divider=True)
 
-    if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
+    if st.button("Agregar consultor", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()
 
     index = 0
@@ -378,11 +356,13 @@ participantes_section()
 def button_form():
     if st.button(label="Enviar", use_container_width=True, type="primary"):
         try:
-            #if check_mandatory_fields():
-            if True:
+            validacion = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
+            if len(validacion) == 0:
                 doc, st.session_state.path_doc = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
+                for msg in validacion:
+                    st.error(msg)
                 st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
             # Leer el archivo Word y prepararlo para descarga
         except Exception as e:
