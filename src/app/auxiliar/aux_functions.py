@@ -1,6 +1,39 @@
 import unicodedata
 import pandas as pd
 
+FIELD_MAPPINGS = {
+    
+    # Consulting Services
+    "nombre_necesidades_cs": "Nombre Necesidades",
+    "start_date_cs": "Start Date",
+    "end_date_cs": "End Date",
+    "presupuesto_estimado_cs": "Presupuesto Estimado",
+    "producto_asociado_cs": "Producto Asociado",
+    "estado_aprobacion_cs": "Estado Aprobación",
+    "necesidad_reunion_cs": "Necesidad Reunión",
+    "descripcion_servicio_cs": "Descripción Servicio",
+    "numero_consultores_cs": "Número Consultores",
+    "justificacion_numero_participantes_cs": "Justificación Número Participantes",
+    "criterios_seleccion_cs": "Criterios Selección",
+    
+    # Detalle Consultores
+    "nombre_": "Nombre",
+    "dni_": "DNI",
+    "tier_": "Tier",
+    "centro_trabajo_": "Centro de Trabajo",
+    "email_": "Email",
+    "cobra_sociedad_": "Cobra Sociedad",
+    "nombre_sociedad_": "Nombre Sociedad",
+    "honorarios_": "Honorarios",
+    "preparacion_horas_": "Preparación Horas",
+    "preparacion_minutos_": "Preparación Minutos",
+    "ponencia_horas_": "Ponencia Horas",
+    "ponencia_minutos_": "Ponencia Minutos",
+}
+
+def remove_after_last_underscore(s: str) -> str:
+    return "_".join(s.rsplit("_", 1)[:-1]) if "_" in s else s
+
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
@@ -25,13 +58,15 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
     Returns:
         list: Lista de mensajes de error. Si está vacía, no se encontraron errores.
     """
-    errores = []
+    errores_general = []
+    errores_participantes= {}
 
     # Validar los parámetros obligatorios
     for param in parametros_obligatorios:
         # Se considera "sin valor" si no está presente, es None o es cadena vacía.
         if param not in input_data or input_data[param] is None or input_data[param] == "" or (isinstance(input_data[param], list) and len(input_data[param]) == 0):
-            errores.append(f"El parámetro '{param}' es obligatorio y no tiene valor.")
+            # Get friendly name from MAPPINGS or use original param name if not found
+            errores_general.append(f"El parámetro *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
 
     # Validar los parámetros dependientes
     for parametro_principal, reglas in parametros_dependientes.items():
@@ -46,15 +81,14 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
             if condicion(valor_principal):
                 for dep in dependientes:
                     if dep not in input_data or input_data[dep] is None or input_data[dep] == "":
-                        errores.append(
+                        errores_general.append(
                             f"El parámetro dependiente '{dep}' es obligatorio cuando '{parametro_principal}' cumple la condición."
                         )
         else:
             # Opcional: Se puede reportar si el parámetro principal no está presente.
-            errores.append(f"El parámetro principal '{parametro_principal}' no se encontró en los datos.")
+            errores_general.append(f"El parámetro principal '{parametro_principal}' no se encontró en los datos.")
 
     # Validar los participantes de forma modular
-    print(input_data)
     participanes_name = ""
     if "participantes_ab" in input_data:
         participanes_name = "participantes_ab"
@@ -62,11 +96,11 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
         participanes_name = "participantes_cs"
 
     if participanes_name in input_data:
-        errores.extend(validar_participantes(input_data[participanes_name]))
+        errores_participantes = validar_participantes(input_data[participanes_name])
     else:
-        errores.append("No se encontró la clave 'participantes' en los datos.")
+        errores_general.append("No se encontró la clave 'participantes' en los datos.")
 
-    return errores
+    return errores_general, errores_participantes
 
 def validar_participantes(participantes):
     """
@@ -79,26 +113,36 @@ def validar_participantes(participantes):
     Returns:
         list: Lista de mensajes de error para los participantes que tengan campos sin valor.
     """
-    errores = []
+    errores_participantes = {}
+    cnt = 1
     # Iterar sobre cada participante en el diccionario
     for id_participante, datos_participante in participantes.items():
         # Si el participante no es un diccionario, se notifica el error.
+        errores_participantes[id_participante] = []
         if not isinstance(datos_participante, dict):
-            errores.append(f"El participante con id '{id_participante}' no tiene una estructura válida.\n")
+            errores_participantes[id_participante].append(f"El participante con id '{id_participante}' no tiene una estructura válida.\n")
             continue
         
+
         # Revisar cada campo del participante
         for campo, valor in datos_participante.items():
+            
             # Si el campo es cobra_sociedad_id y es "Sí", verificar campo_nombre_sociedad
             if campo == f"cobra_sociedad_{id_participante}" and valor == "Sí":
                 if f"nombre_sociedad_{id_participante}" not in datos_participante or \
                    datos_participante[f"nombre_sociedad_{id_participante}"] is None or \
                    datos_participante[f"nombre_sociedad_{id_participante}"].strip() == "":
-                    errores.append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
+                    errores_participantes[id_participante].append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
             # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí"), verificar que no estén vacíos
-            elif not campo.startswith(f"nombre_sociedad_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
-                errores.append(f"El campo '{campo}' del participante con id '{id_participante}' está vacío.\n")
-    return errores
+            elif not campo.startswith("nombre_sociedad_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
+                print(remove_after_last_underscore(campo))
+                errores_participantes[id_participante].append(
+                    f"El campo *{FIELD_MAPPINGS.get(remove_after_last_underscore(campo) + '_', campo)}* "
+                    f"del participante *{cnt}* está vacío.\n"
+                )
+
+        cnt+=1
+    return errores_participantes
 
 def normalize_text(text):
     # Convertir a string y minúsculas
