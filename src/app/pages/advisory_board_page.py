@@ -471,22 +471,37 @@ st.session_state.download_enabled_ab = False
 def button_form():
     if st.button(label="Enviar", use_container_width=True, type="primary"):
         try:
-            #if check_mandatory_fields():
-            validacion = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
-            if len(validacion) == 0:
+            errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
+            if not errores_general and all(not lista for lista in errores_participantes.values()):
                 doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
                 st.session_state.download_enabled_ab = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
+                msg_general = ""
+                for msg in errores_general:
+                    msg_general += f"\n* {msg}\n"
+                st.error(msg_general)
+
+                print(st.session_state['form_data_advisory_board']['participantes_ab'])
+                for id_user, list_errors in errores_participantes.items():
+                    if len(list_errors) > 0:
+                        # Obtener el diccionario de participantes
+                        participantes = st.session_state['form_data_advisory_board']['participantes_ab']
+
+                        # Obtener la posición del ID en las claves del diccionario
+                        keys_list = list(participantes.keys())  # Convertir las claves en una lista
+                        posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
+                        msg_participantes = f"\n**Errores del participante {posicion}**\n"
+                        for msg in list_errors:
+                            msg_participantes += f"\n* {msg}\n"
+                        st.error(msg_participantes)
+                        
                 st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
-                for msg in validacion:
-                    #st.info(msg)
-                    st.toast(msg, icon="❌")
             # Leer el archivo Word y prepararlo para descarga
         except Exception as e:
             traceback.print_exc()
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
-
+            
 def download_document():
     if st.session_state.path_doc_ab:
         with open(st.session_state.path_doc_ab, "rb") as file:
