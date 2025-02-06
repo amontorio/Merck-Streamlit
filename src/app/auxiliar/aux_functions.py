@@ -54,8 +54,15 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
             errores.append(f"El parámetro principal '{parametro_principal}' no se encontró en los datos.")
 
     # Validar los participantes de forma modular
-    if "participantes" in input_data:
-        errores.extend(validar_participantes(input_data["participantes"]))
+    print(input_data)
+    participanes_name = ""
+    if "participantes_ab" in input_data:
+        participanes_name = "participantes_ab"
+    elif "participantes_cs" in input_data:
+        participanes_name = "participantes_cs"
+
+    if participanes_name in input_data:
+        errores.extend(validar_participantes(input_data[participanes_name]))
     else:
         errores.append("No se encontró la clave 'participantes' en los datos.")
 
@@ -104,8 +111,7 @@ def normalize_text(text):
 
 def search_function(search_text):
 
-    #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 
