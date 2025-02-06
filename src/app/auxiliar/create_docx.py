@@ -122,31 +122,31 @@ def crear_documento_advisory(data):
 
     # Agregar secciones
     agregar_encabezado("Detalles de la Actividad")
-    agregar_bullet_point("Nombre", f"Advisory Board Participation {data.get('nombre', '')}")
-    agregar_bullet_point("Fecha de inicio", data.get("start_date", "").strftime("%d/%m/%Y"))
-    agregar_bullet_point("Fecha de fin", data.get("end_date", "").strftime("%d/%m/%Y"))
-    agregar_bullet_point("Producto asociado", data.get("producto_asociado", ""))
-    agregar_bullet_point("Estado de la aprobación", data.get("estado_aprobacion", ""))
-    agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion", ""))
-    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio", ""))
+    agregar_bullet_point("Nombre", f"Advisory Board Participation {data.get('nombre_ab', '')}")
+    agregar_bullet_point("Fecha de inicio", data.get("start_date_ab", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Fecha de fin", data.get("end_date_ab", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Producto asociado", data.get("producto_asociado_ab", ""))
+    agregar_bullet_point("Estado de la aprobación", data.get("estado_aprobacion_ab", ""))
+    agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ab", ""))
+    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_ab", ""))
 
     agregar_encabezado("Logística de la Actividad")
-    agregar_bullet_point("Desplazamiento de participantes", data.get("desplazamiento", ""))
-    agregar_bullet_point("Alojamiento de participantes", data.get("alojamiento", ""))
+    agregar_bullet_point("Desplazamiento de participantes", data.get("desplazamiento_ab", ""))
+    agregar_bullet_point("Alojamiento de participantes", data.get("alojamiento_ab", ""))
     if data.get("alojamiento") == "Sí":
-        agregar_bullet_point("Nº de noches", data.get("num_noches", ""))
-        agregar_bullet_point("Hotel", data.get("hotel", ""))
+        agregar_bullet_point("Nº de noches", data.get("num_noches_ab", ""))
+        agregar_bullet_point("Hotel", data.get("hotel_ab", ""))
 
     agregar_encabezado("Información del Evento")
-    agregar_bullet_point("Tipo de evento", data.get("tipo_evento", ""))
-    agregar_bullet_point("Sede", data.get("sede", ""))
-    agregar_bullet_point("Ciudad", data.get("ciudad", ""))
-    agregar_bullet_point("Número de participantes totales", data.get("num_participantes_totales", ""))
+    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ab", ""))
+    agregar_bullet_point("Sede", data.get("sede_ab", ""))
+    agregar_bullet_point("Ciudad", data.get("ciudad_ab", ""))
+    agregar_bullet_point("Número de participantes totales", data.get("num_participantes_totales_ab", ""))
     
     agregar_encabezado("Criterios de Selección")
-    agregar_bullet_point("Nº de participantes", data.get("num_participantes", ""))
-    agregar_bullet_point("Justificación de número de participantes", data.get("justificacion_participantes", ""))
-    criterios = ", ".join(data.get("criterios_seleccion", []))
+    agregar_bullet_point("Nº de participantes", data.get("num_participantes_ab", ""))
+    agregar_bullet_point("Justificación de número de participantes", data.get("justificacion_participantes_ab", ""))
+    criterios = ", ".join(data.get("criterios_seleccion_ab", []))
     agregar_bullet_point("Criterios de selección", criterios)
     
     agregar_encabezado("Detalles de los Participantes del Advisory")
@@ -175,7 +175,7 @@ def crear_documento_advisory(data):
             for cell in row_cells:
                 cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
     
-    agregar_tabla_participantes(data.get("participantes", {}))
+    agregar_tabla_participantes(data.get("participantes_ab", {}))
     # Guardar el documento
     nombre_archivo = 'Advisory_Board_Participation.docx'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')

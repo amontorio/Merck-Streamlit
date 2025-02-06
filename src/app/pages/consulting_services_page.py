@@ -374,4 +374,21 @@ def participantes_section():
                 st.rerun()
 participantes_section()
 
+# Botón para enviar
+def button_form():
+    if st.button(label="Enviar", use_container_width=True, type="primary"):
+        try:
+            #if check_mandatory_fields():
+            if True:
+                doc, st.session_state.path_doc = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
+                st.toast("Formulario generado correctamente", icon="✔️")
+            else:
+                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+            # Leer el archivo Word y prepararlo para descarga
+        except Exception as e:
+            traceback.print_exc()
+            st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+
+button_form()
+
 st.write(st.session_state["form_data_consulting_services"])
