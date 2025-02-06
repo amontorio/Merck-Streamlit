@@ -184,3 +184,91 @@ def crear_documento_advisory(data):
     print(f'Documento guardado como {nombre_archivo}')
     
     return documento, os.path.join(output_dir, nombre_archivo)
+
+def crear_documento_consulting_services(data):
+    documento = Document()
+    
+    # Agregar el título
+    titulo = documento.add_paragraph()
+    run_titulo = titulo.add_run('Consulting Services')
+    run_titulo.font.size = Pt(16)
+    run_titulo.font.bold = True
+    run_titulo.font.color.rgb = RGBColor(0, 0, 128)  # Azul oscuro
+    titulo.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+    def agregar_encabezado(texto):
+        parrafo = documento.add_paragraph()
+        run = parrafo.add_run(texto)
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0, 102, 204)  # Azul
+        parrafo.space_after = Pt(6)
+
+    def agregar_bullet_point(campo, valor):
+        parrafo = documento.add_paragraph(style='List Bullet')
+        run_campo = parrafo.add_run(f"{campo}: ")
+        run_campo.font.size = Pt(11)
+        run_campo.font.bold = True
+        run_valor = parrafo.add_run(f"{valor}")
+        run_valor.font.size = Pt(11)
+
+    # Agregar secciones
+    agregar_encabezado("Declaración de necesidades")
+    agregar_bullet_point("Nombre", data.get("nombre_necesidades_cs", ""))
+    agregar_bullet_point("Fecha de inicio", data.get("start_date_cs", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Fecha de fin", data.get("end_date_cs", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Presupuesto estimado", f"{data.get('presupuesto_estimado_cs', 0)} €")
+    agregar_bullet_point("Producto asociado", data.get("producto_asociado_cs", ""))
+    agregar_bullet_point("Estado de aprobación", data.get("estado_aprobacion_cs", "N/A"))
+    agregar_bullet_point("Necesidad de la reunión", data.get("necesidad_reunion_cs", ""))
+    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_cs", ""))
+
+    agregar_encabezado("Criterios del destinatario")
+    agregar_bullet_point("Número de consultores", data.get("numero_consultores_cs", ""))
+    agregar_bullet_point("Justificación", data.get("justificacion_numero_participantes_cs", ""))
+    criterios = ", ".join(data.get("criterios_seleccion_cs", []))
+    agregar_bullet_point("Criterios del destinatario", criterios)
+
+    agregar_encabezado("Detalles de los Consultores")
+    tabla = documento.add_table(rows=1, cols=9)
+    tabla.style = 'Table Grid'
+    encabezados = ["Nombre", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Nombre de la sociedad", "Honorarios", "Tiempos"]
+    hdr_cells = tabla.rows[0].cells
+    for i, encabezado in enumerate(encabezados):
+        hdr_cells[i].text = encabezado
+        hdr_cells[i].paragraphs[0].runs[0].bold = True
+    
+    for participante in data.get("participantes_cs", {}).values():
+        for participante in data.get("participantes_cs", {}).values():
+            id_participante = participante["id"]
+            row_cells = tabla.add_row().cells
+            
+            # Fill in basic fields
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "")
+            row_cells[1].text = participante.get(f"dni_{id_participante}", "")
+            row_cells[2].text = participante.get(f"tier_{id_participante}", "")
+            row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
+            row_cells[4].text = participante.get(f"email_{id_participante}", "")
+            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
+            
+            row_cells[6].text = participante.get(f"nombre_sociedad_{id_participante}", "")
+
+            # Add honorarios with € symbol
+            honorarios = participante.get(f"honorarios_{id_participante}", 0)
+            row_cells[7].text = f"{honorarios} €"
+
+            # Add preparation and presentation times
+            prep_horas = participante.get(f"preparacion_horas_{id_participante}", 0)
+            prep_mins = participante.get(f"preparacion_minutos_{id_participante}", 0)
+            pon_horas = participante.get(f"ponencia_horas_{id_participante}", 0)
+            pon_mins = participante.get(f"ponencia_minutos_{id_participante}", 0)
+            
+            row_cells[8].text = f"Preparación: {prep_horas}h {prep_mins}m, Ponencia: {pon_horas}h {pon_mins}m"
+    # Guardar el documento
+    nombre_archivo = 'Consulting_Services.docx'
+    output_dir = os.path.join(os.getcwd(), 'docs')
+    os.makedirs(output_dir, exist_ok=True)
+    documento.save(os.path.join(output_dir, nombre_archivo))
+    print(f'Documento guardado como {nombre_archivo}')
+    
+    return documento, os.path.join(output_dir, nombre_archivo)
