@@ -1,6 +1,8 @@
 import unicodedata
 import pandas as pd
-
+import streamlit as st
+import os
+import base64
 FIELD_MAPPINGS = {
     
     # Consulting Services
@@ -31,6 +33,30 @@ FIELD_MAPPINGS = {
     "ponencia_minutos_": "Ponencia Minutos",
 }
 
+def show_main_title(title, logo_size):
+    logo_merck = 'logo-merck-kgaa-2015-1.svg'
+    logo_path = os.path.join(os.getcwd(), 'src', 'app', 'images', logo_merck)
+    print(logo_path)
+
+    # Función para convertir la imagen a base64
+    def get_base64_image(image_path):
+        with open(image_path, "rb") as img_file:
+            data = img_file.read()
+        # Codificar a base64 y luego convertir los bytes resultantes a cadena UTF-8
+        return base64.b64encode(data).decode("utf-8")
+
+    base64_image = get_base64_image(logo_path)
+
+    # Mostrar el logo centrado con HTML y CSS en Streamlit
+    st.markdown(
+        f"""
+        <div style="text-align: center;">
+            <img src="data:image/svg+xml;base64,{base64_image}" alt="Logo Merck" width="{logo_size}">
+            <h1>{title}</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 def remove_after_last_underscore(s: str) -> str:
     return "_".join(s.rsplit("_", 1)[:-1]) if "_" in s else s
 
@@ -157,7 +183,8 @@ def normalize_text(text):
 
 def search_function(search_text):
 
-    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    df = pd.read_excel(path)
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 
@@ -185,7 +212,8 @@ def search_function(search_text):
 
 def handle_tier_from_name(name):
 
-    df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    df = pd.read_excel(path)
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
     df = df.dropna(subset=['Nombre de la cuenta'])
 

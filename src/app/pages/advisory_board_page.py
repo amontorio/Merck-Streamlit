@@ -120,8 +120,9 @@ if "form_data_advisory_board" not in st.session_state:
     add_participant()
         
 
-st.title("Formulario de Advisory Board")
-st.header("1. Documentos a adjuntar", divider=True)
+af.show_main_title(title="Advisory Board", logo_size=200)
+
+st.header("1. Documentos", divider=True)
 st.file_uploader("Programa del evento *", type=["pdf"], key="doc1", on_change=lambda: save_to_session_state("doc1", st.session_state["doc1"]))
 
 st.header("2. Detalles de la actividad", divider=True)

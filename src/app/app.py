@@ -1,5 +1,5 @@
 import streamlit as st
-
+import os
 
 assistant = st.Page("./pages/assistant.py", title="Asistente", icon="🤖")
 
@@ -17,10 +17,14 @@ pg = st.navigation(
     }
     )
 
+
 st.set_page_config(
     page_title="Merck",
     page_icon="💊",
     layout="wide"
 )
+
+#logo_merck = 'logo-merck-kgaa-2015-1.svg'
+#st.sidebar.image(os.path.join(os.getcwd(), fr'src/app/images/{logo_merck}'), width=200, use_container_width=True)
 
 pg.run()

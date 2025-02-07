@@ -7,7 +7,8 @@ import uuid
 import auxiliar.aux_functions as af
 import auxiliar.create_docx as cd
 import traceback
-import io
+import os
+from streamlit.components.v1 import html
 
 # Diccionario de tarifas según el tier
 tarifas = {
@@ -38,6 +39,12 @@ dependendent_fields = {
         "dependientes": ["justificacion_numero_participantes_cs"]
     },
 }
+
+def render_svg(svg_string):
+    """Renders the given svg string."""
+    c = st.container()
+    with c:
+        html(svg_string, height=100, width=50)
 
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_cs":
@@ -102,9 +109,9 @@ if "form_data_consulting_services" not in st.session_state:
         st.session_state.participantes_cs = [] 
         
     add_participant()
-    
-st.title("Formulario de Consulting Services")
-st.header("1. Documentos a adjuntar", divider=True)
+
+af.show_main_title(title="Consulting Services", logo_size=200)
+st.header("1. Documentos", divider=True)
 st.file_uploader("Agenda o Guión  del evento *", type=["pdf"], key="doc1", on_change=lambda: save_to_session_state("doc1", st.session_state["doc1"]))
 
 st.header("2. Declaración de necesidades", divider=True)
@@ -388,4 +395,4 @@ def button_form():
 
 button_form()
 
-st.write(st.session_state["form_data_consulting_services"])
+#st.write(st.session_state["form_data_consulting_services"])

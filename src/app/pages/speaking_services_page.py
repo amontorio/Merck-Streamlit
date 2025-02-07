@@ -9,7 +9,8 @@ import auxiliar.create_docx as cd
 import traceback
 import auxiliar.aux_functions as af
 import io
-
+import os
+import base64
 
 tarifas = {
     "0": 50,  # Ejemplo de valores, cambia según tu lógica
@@ -382,11 +383,9 @@ if "form_data_speaking_services" not in st.session_state:
 
 
 
+af.show_main_title(title="Speaking Services", logo_size=200)
 
-st.title("Formulario de Speaking Services")
-
-st.header("Reunión Merck", divider=True)
-meeting_type = st.selectbox("Tipo de reunión",["Reunión Merck Program", "Paragüas iniciado"])
+meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Reunión Merck Program", "Paragüas iniciado"])
 
 if meeting_type == "Reunión Merck Program":
 
@@ -425,26 +424,7 @@ if meeting_type == "Reunión Merck Program":
     st.file_uploader("Agenda del evento *", type=["pdf"], key="doc1_ss", on_change=lambda: save_to_session_state("doc1_ss", st.session_state["doc1_ss"])) 
     st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", type=["pdf"], key="doc2_ss", on_change=lambda: save_to_session_state("doc2_ss", st.session_state["doc2_ss"])) 
 
-
-    st.header("2. Detalles de la actividad", divider=True)
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.number_input("Presupuesto total estimado *", min_value=0, step=1, key="presupuesto_estimado", on_change=lambda: save_to_session_state("presupuesto_estimado", st.session_state["presupuesto_estimado"]))
-    with col2:
-        st.text_input("Producto asociado", max_chars=255, key="producto_asociado_ss", on_change=lambda: save_to_session_state("producto_asociado_ss", st.session_state["producto_asociado_ss"]))
-
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.text_input("Necesidad de la reunión y resultados esperados *", max_chars=4000, key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
-    with col2:
-        st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
-                    help = "Ponencia [nombre del evento]")
-        ####### meter campo consideraciones!!!!
-
-
-    st.header("3. Detalles del evento", divider=True)
+    st.header("2. Detalles del evento", divider=True)
     col1, col2 = st.columns(2)
     st.text_input("Nombre del evento *", max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
     st.text_area("Descripción y objetivo *", max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
@@ -505,10 +485,23 @@ if meeting_type == "Reunión Merck Program":
             key="publico_objetivo_ss",
             on_change=lambda: save_to_session_state("publico_objetivo_ss", st.session_state["publico_objetivo_ss"])
         )
+    
+    st.header("3. Detalles de la actividad", divider=True)
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.number_input("Presupuesto total estimado *", min_value=0, step=1, key="presupuesto_estimado", on_change=lambda: save_to_session_state("presupuesto_estimado", st.session_state["presupuesto_estimado"]))
+    with col2:
+        st.text_input("Producto asociado", max_chars=255, key="producto_asociado_ss", on_change=lambda: save_to_session_state("producto_asociado_ss", st.session_state["producto_asociado_ss"]))
 
 
-
-
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Necesidad de la reunión y resultados esperados *", max_chars=4000, key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
+    with col2:
+        st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
+                    help = "Ponencia [nombre del evento]")
+        ####### meter campo consideraciones!!!!
 
     st.header("4. Logística de la actividad", divider=True)
     col1, col2 = st.columns(2)
@@ -652,4 +645,4 @@ else:
     download_document(disabled)
 
 
-st.write(st.session_state["form_data_speaking_services"])
+#st.write(st.session_state["form_data_speaking_services"])

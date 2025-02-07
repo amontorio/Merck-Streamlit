@@ -7,6 +7,7 @@ import io
 
 import auxiliar.create_docx as cd
 import model.llm_sponsorship_event as llm_se
+import auxiliar.aux_functions as af
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -80,18 +81,27 @@ mandatory_fields = [
     "event_objetive",
     "amount",
     "payment_type",
-    "name_st",
     "short_description",
     "benefits",
     "exclusive_sponsorship",
     "recurrent_sponsorship",
-    "recurrent_text",
     "organization_name",
     "organization_cif",
     "signer_first_name",
     "signer_position",
     "signer_email",
 ]
+
+dependendent_fields = {
+    "payment_type": {
+        "condicion": lambda x: x != "Pago directo",
+        "dependientes": ["name_st"]
+    },
+    "recurrent_sponsorship": {
+        "condicion": lambda x: x == "Sí",
+        "dependientes": ["recurrent_text"]
+    }
+}
 
 def check_mandatory_fields():
     """Check if all mandatory fields have valid values and return missing fields"""
@@ -178,8 +188,8 @@ def save_form_data_event():
     return df
 
 # Sección de documentos a adjuntar
-st.title("Formulario de Patrocinio de Evento")
-st.header("1. Documentos a Adjuntar", divider=True)
+af.show_main_title(title="Sponsorship of Event", logo_size=200)
+st.header("1. Documentos", divider=True)
 
 with st.expander("Ver documentos necesarios"):
     st.file_uploader("Adjuntar agenda del evento *", type=["pdf", "docx", "xlsx"], key="doc1", accept_multiple_files=False, on_change=lambda: save_to_session_state("doc1", st.session_state["doc1"]))
@@ -387,7 +397,8 @@ st.session_state.download_enabled = False
 def button_form():
     if st.button(label="Enviar", use_container_width=True, type="primary"):
         try:
-            if check_mandatory_fields():
+            errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
+            if not errores_general and all(not lista for lista in errores_participantes.values()):
                 df = save_form_data_event()
                 #st.dataframe(df)
                 doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
@@ -404,6 +415,11 @@ def button_form():
                 #st.success("Formulario generado correctamente correctamente.")
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
+                msg_general = ""
+                for msg in errores_general:
+                    msg_general += f"\n* {msg}\n"
+                st.error(msg_general)
+                
                 st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
             # Leer el archivo Word y prepararlo para descarga
         except Exception as e:
