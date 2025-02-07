@@ -189,8 +189,7 @@ with col4:
         "Criterios de selección *",
         [
             "Tier 1", "Tier 2", "Tier 3", "Tier 4", "Kol Global", "Experiencia como ponente", "Experiencia como consultor",
-            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar",
-            "Criterios adicionales: campo abierto"
+            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
         ],
         key="criterios_seleccion_cs",
         default=st.session_state["form_data_consulting_services"]["criterios_seleccion_cs"] if "criterios_seleccion_cs" in st.session_state["form_data_consulting_services"] else [],

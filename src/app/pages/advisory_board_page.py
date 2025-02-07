@@ -298,8 +298,7 @@ with col2:
         "Criterios de selección *",
         [
             "Tier 1", "Tier 2", "Tier 3", "Tier 4", "Kol Global", "Experiencia como ponente", "Experiencia como Participante de Advisory",
-            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar",
-            "Criterios adicionales: campo abierto"
+            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
         ],
         key="criterios_seleccion_ab",
         default=st.session_state["form_data_advisory_board"]["criterios_seleccion_ab"] if "criterios_seleccion_ab" in st.session_state["form_data_advisory_board"] else [],

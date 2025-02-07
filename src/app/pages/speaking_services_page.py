@@ -454,7 +454,7 @@ if meeting_type == "Reunión Merck Program":
                  type=["pdf"], 
                  key="doc2_ss", 
                  on_change=lambda: save_to_session_state("doc2_ss", st.session_state["doc2_ss"] if st.session_state["doc2_ss"] else "")) 
-        st.info(st.session_state.doc1_ss)
+
         # st.file_uploader("Agenda del evento *", type=["pdf"], key="doc1_ss")
         # st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", type=["pdf"], key="doc2_ss")
 
@@ -598,8 +598,7 @@ if meeting_type == "Reunión Merck Program":
             "Criterios de selección *",
             [
                 "Tier 1", "Tier 2", "Tier 3", "Tier 4", "Kol Global", "Experiencia como ponente", "Experiencia como profesor",
-                "Experiencia clínica en tema a tratar", "Especialista en tema a tratar",
-                "Criterios adicionales: campo abierto"
+                "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
             ],
             key="criterios_seleccion_ss",
             default=st.session_state["form_data_speaking_services"]["criterios_seleccion_ss"] if "criterios_seleccion_ss" in st.session_state["form_data_speaking_services"] else [],
