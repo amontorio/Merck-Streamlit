@@ -5,6 +5,7 @@ from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 import os
 from datetime import datetime
+import zipfile
 
 def crear_documento_sponsorship_of_event(dataframe):
     # Crear un nuevo documento
@@ -163,7 +164,7 @@ def crear_documento_advisory(data):
         for participante in participantes.values():
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "")
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
@@ -244,7 +245,7 @@ def crear_documento_consulting_services(data):
             row_cells = tabla.add_row().cells
             
             # Fill in basic fields
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "")
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
@@ -272,3 +273,218 @@ def crear_documento_consulting_services(data):
     print(f'Documento guardado como {nombre_archivo}')
     
     return documento, os.path.join(output_dir, nombre_archivo)
+
+
+def crear_documento_speaking(data):
+    documento = Document()
+
+    # Agregar el título
+    titulo = documento.add_paragraph()
+    run_titulo = titulo.add_run('Speaking Engagement Participation')
+    run_titulo.font.size = Pt(16)
+    run_titulo.font.bold = True
+    run_titulo.font.color.rgb = RGBColor(0, 0, 128)  # Azul oscuro
+    titulo.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+    def agregar_encabezado(texto):
+        parrafo = documento.add_paragraph()
+        run = parrafo.add_run(texto)
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0, 102, 204)  # Azul
+        parrafo.space_after = Pt(6)
+
+    def agregar_bullet_point(campo, valor):
+        parrafo = documento.add_paragraph(style='List Bullet')
+        run_campo = parrafo.add_run(f"{campo}: ")
+        run_campo.font.size = Pt(11)
+        run_campo.font.bold = True
+        run_valor = parrafo.add_run(f"{valor}")
+        run_valor.font.size = Pt(11)
+
+    # Agregar secciones
+    agregar_encabezado("Detalles de la Actividad")
+    agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
+    agregar_bullet_point("Fecha de inicio", data.get("start_date_ss", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Producto asociado", data.get("producto_asociado_ss", ""))
+    agregar_bullet_point("Presupuesto total estimado", data.get("presupuesto_estimado", ""))
+    agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ss", ""))
+    agregar_bullet_point("Descripción del servicio", data.get("servicio_ss", ""))
+    
+    agregar_encabezado("Logística de la Actividad")
+    agregar_bullet_point("Desplazamiento de ponentes", data.get("desplazamiento_ponentes_ss", ""))
+    agregar_bullet_point("Alojamiento de ponentes", data.get("alojamiento_ponentes", ""))
+    
+    if data.get("alojamiento_ponentes", "") == "Sí":
+        agregar_bullet_point("Nº de noches", data.get("num_noches_ss", ""))
+        agregar_bullet_point("Hotel", data.get("hotel_ss", ""))
+    
+    agregar_encabezado("Detalles del Evento")
+    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
+    agregar_bullet_point("Nº Asistentes Totales", data.get("num_asistentes_totales_ss", ""))
+    agregar_bullet_point("Sede", data.get("sede_ss", ""))
+    agregar_bullet_point("Ciudad", data.get("ciudad_ss", ""))
+    agregar_bullet_point("Público objetivo del programa", data.get("publico_objetivo_ss", ""))
+
+    agregar_encabezado("Criterios de Selección")
+    agregar_bullet_point("Nº de participantes", data.get("num_ponentes", ""))
+    agregar_bullet_point("Criterios de selección", data.get("criterios_seleccion_ss", ""))
+
+    agregar_encabezado("Detalles de los Ponentes")
+    def agregar_tabla_participantes(participantes):
+        tabla = documento.add_table(rows=1, cols=8)
+        tabla.style = 'Table Grid'  # Aplicar bordes a la tabla
+        encabezados = ["Nombre y Apellidos", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Honorarios", "Tiempos"]
+        hdr_cells = tabla.rows[0].cells
+        for i, encabezado in enumerate(encabezados):
+            hdr_cells[i].text = encabezado
+            hdr_cells[i].paragraphs[0].runs[0].bold = True
+            hdr_cells[i]._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
+        
+        for participante in participantes.values():
+            id_participante = participante["id"]
+            row_cells = tabla.add_row().cells
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            row_cells[1].text = participante.get(f"dni_{id_participante}", "")
+            row_cells[2].text = participante.get(f"tier_{id_participante}", "")
+            row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
+            row_cells[4].text = participante.get(f"email_{id_participante}", "")
+            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
+            row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
+            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas {participante.get(f'preparacion_ss_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_ss_horas_{id_participante}', '')} horas {participante.get(f'ponencia_ss_minutos_{id_participante}', '')} minutos"
+            
+            for cell in row_cells:
+                cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
+    
+    agregar_tabla_participantes(data.get("participantes_ss", {}))
+    
+#     # Guardar el documento en un archivo temporal
+#     nombre_archivo = 'Speaking_Services_Participation.docx'
+#     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
+#     os.makedirs(output_dir, exist_ok=True)
+#     archivo_docx = os.path.join(output_dir, nombre_archivo)
+#     documento.save(archivo_docx)
+
+    # Crear un archivo ZIP y agregar el documento
+    nombre_zip = 'Speaking_Service_Merck_Program.zip'
+    output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
+    os.makedirs(output_dir, exist_ok=True)
+    archivo_zip = os.path.join(output_dir, nombre_zip)
+
+    with zipfile.ZipFile(archivo_zip, 'w') as zipf:
+        # Guardar el documento Word en el ZIP
+        nombre_archivo = 'Speaking_Services_Participation.docx'
+        archivo_docx = os.path.join(output_dir, nombre_archivo)
+        documento.save(archivo_docx)
+        zipf.write(archivo_docx, os.path.basename(archivo_docx))
+
+        doc1 = data.get("doc1_ss", None)
+        doc2 = data.get("doc2_ss", None)
+
+        # Si doc1 y doc2 están presentes, guardarlos en el ZIP
+        if doc1 is not None:
+            doc1_path = os.path.join(output_dir, "AgendaEvennto.pdf")  # Cambia la extensión si no es PDF
+            with open(doc1_path, "wb") as f:
+                f.write(doc1.getbuffer())  # Guarda el archivo en el sistema temporal
+            zipf.write(doc1_path, os.path.basename(doc1_path))  # Añade el archivo al ZIP
+
+        if doc2 is not None:
+            doc2_path = os.path.join(output_dir, "Contratos.pdf")  # Cambia la extensión si no es PDF
+            with open(doc2_path, "wb") as f:
+                f.write(doc2.getbuffer())  # Guarda el archivo en el sistema temporal
+            zipf.write(doc2_path, os.path.basename(doc2_path))  # Añade el archivo al ZIP
+
+    # Eliminar los archivos temporales si es necesario
+    os.remove(archivo_docx)
+    if doc1 is not None:
+        os.remove(doc1_path)
+    if doc2 is not None:
+        os.remove(doc2_path)
+    
+    print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
+
+    return documento, archivo_zip
+
+    
+
+def crear_documento_speaking_reducido(data):
+    documento = Document()
+
+    # Agregar el título
+    titulo = documento.add_paragraph()
+    run_titulo = titulo.add_run('Speaking Engagement Paragüas')
+    run_titulo.font.size = Pt(16)
+    run_titulo.font.bold = True
+    run_titulo.font.color.rgb = RGBColor(0, 0, 128)  # Azul oscuro
+    titulo.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+    def agregar_encabezado(texto):
+        parrafo = documento.add_paragraph()
+        run = parrafo.add_run(texto)
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0, 102, 204)  # Azul
+        parrafo.space_after = Pt(6)
+
+    def agregar_bullet_point(campo, valor):
+        parrafo = documento.add_paragraph(style='List Bullet')
+        run_campo = parrafo.add_run(f"{campo}: ")
+        run_campo.font.size = Pt(11)
+        run_campo.font.bold = True
+        run_valor = parrafo.add_run(f"{valor}")
+        run_valor.font.size = Pt(11)
+
+    # Agregar secciones
+    agregar_encabezado("Detalles de la Actividad")
+    agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
+    agregar_bullet_point("Fecha de inicio", data.get("start_date_ss", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
+    agregar_bullet_point("Sede", data.get("sede_ss", ""))
+    agregar_bullet_point("Ciudad", data.get("ciudad_ss", ""))
+    
+    agregar_encabezado("Detalles de los Ponentes")
+    def agregar_tabla_participantes(participantes):
+        tabla = documento.add_table(rows=1, cols=8)
+        tabla.style = 'Table Grid'  # Aplicar bordes a la tabla
+        encabezados = ["Nombre y Apellidos", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Honorarios", "Tiempos"]
+        hdr_cells = tabla.rows[0].cells
+        for i, encabezado in enumerate(encabezados):
+            hdr_cells[i].text = encabezado
+            hdr_cells[i].paragraphs[0].runs[0].bold = True
+            hdr_cells[i]._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
+        
+        for participante in participantes.values():
+            id_participante = participante["id"]
+            row_cells = tabla.add_row().cells
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            row_cells[1].text = participante.get(f"dni_{id_participante}", "")
+            row_cells[2].text = participante.get(f"tier_{id_participante}", "")
+            row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
+            row_cells[4].text = participante.get(f"email_{id_participante}", "")
+            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
+            row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
+            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas {participante.get(f'preparacion_ss_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_ss_horas_{id_participante}', '')} horas {participante.get(f'ponencia_ss_minutos_{id_participante}', '')} minutos"
+            
+            for cell in row_cells:
+                cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
+    
+    agregar_tabla_participantes(data.get("participantes_ss", {}))
+    
+    # Crear un archivo ZIP y agregar el documento
+    nombre_zip = 'Speaking_Service_Paragüas.zip'
+    output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
+    os.makedirs(output_dir, exist_ok=True)
+    archivo_zip = os.path.join(output_dir, nombre_zip)
+
+    with zipfile.ZipFile(archivo_zip, 'w') as zipf:
+        # Guardar el documento Word en el ZIP
+        nombre_archivo = 'Speaking_Services_Paragüas.docx'
+        archivo_docx = os.path.join(output_dir, nombre_archivo)
+        documento.save(archivo_docx)
+        zipf.write(archivo_docx, os.path.basename(archivo_docx))
+    
+    print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
+
+    return documento, archivo_zip

@@ -11,6 +11,8 @@ import auxiliar.aux_functions as af
 import io
 import os
 import base64
+import zipfile
+
 
 tarifas = {
     "0": 50,  # Ejemplo de valores, cambia según tu lógica
@@ -35,7 +37,8 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
         None
     """
     if key != "participantes_ss":
-        st.session_state[key] = value
+        if key not in ["doc1_ss", "doc2_ss"]:
+            st.session_state[key] = value
         st.session_state["form_data_speaking_services"][key] = value
     else:
         st.session_state[field_participante] = value
@@ -120,6 +123,10 @@ def add_ponente():
     
     st.session_state["participantes_ss"].append(new_participant)
     st.session_state["id_participantes_ss"].append(id_user)
+
+    # Inicializar participantes_ab en form_data_advisory_board si no existe
+    if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
+        st.session_state["form_data_speaking_services"]["participantes_ss"] = {}
         
 
     st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] = new_participant
@@ -286,6 +293,7 @@ def button_form(tipo):
                     doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
                 else:
                     doc, st.session_state.path_doc_ss = cd.crear_documento_speaking_reducido(st.session_state["form_data_speaking_services"])
+                st.session_state.download_enabled_ss = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
                 msg_general = ""
@@ -293,7 +301,7 @@ def button_form(tipo):
                     msg_general += f"\n* {msg}\n"
                 st.error(msg_general)
 
-                print(st.session_state['form_data_speaking_services']['participantes_ss'])
+                #print(st.session_state['form_data_speaking_services']['participantes_ss'])
                 for id_user, list_errors in errores_participantes.items():
                     if len(list_errors) > 0:
                         # Obtener el diccionario de participantes
@@ -314,13 +322,17 @@ def button_form(tipo):
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
 
-def download_document(disabled):
+def download_document(disabled, tipo):
+    if tipo == "Reunión Merck Program":
+        nombre = "Speaking_Service_Merck_Program.zip"
+    else:
+        nombre = "Speaking_Service_Paragüas.zip"
     if st.session_state.path_doc_ss:
         with open(st.session_state.path_doc_ss, "rb") as file:
             st.download_button(
-                label="Descargar documento Word",
+                label="Descargar documento ZIP",
                 data=file,
-                file_name="documento_speaking_service.docx",
+                file_name=nombre,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True,
                 icon="📥",
@@ -328,9 +340,9 @@ def download_document(disabled):
             )
     else:
         st.download_button(
-            label="Descargar documento Word",
+            label="Descargar documento ZIP",
             data=io.BytesIO(),
-            file_name="documento_speaking_service.docx",
+            file_name=nombre,
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True,
             icon="📥",
@@ -353,14 +365,23 @@ if "form_data_speaking_services" not in st.session_state:
         "start_date_ss": date.today(),
         "end_date_ss": date.today(),
         "tipo_evento_ss": "Virtual",
-        "alojamiento_ponentes": "No",
         "num_noches_ss": 0,
         "hotel_ss": "",
-        "desplazamiento_ponentes_ss": "No"
+        "doc1_ss": None,
+        "doc2_ss": None,
+        "desplazamiento_ponentes_ss": "No",
+        "alojamiento_ponentes": "No",
+        "presupuesto_estimado": 0,
+        "publico_objetivo_ss": "",
+        "nombre_evento_ss": "",
+        "descripcion_objetivo_ss": "",
+        "producto_asociado_ss": "",
+        "necesidad_reunion_ss": "",
+        "servicio_ss": "",
+        "num_ponentes": 0
     }
 
     st.session_state["form_data_speaking_services"] = {}
-    #st.session_state["participantes_ss"] = []
     st.session_state["id_participantes_ss"] = []
 
     st.session_state["download_enabled_ss"] = False
@@ -372,14 +393,15 @@ if "form_data_speaking_services" not in st.session_state:
 
     if "participantes_ss" not in st.session_state:
         st.session_state.participantes_ss = [] 
+    add_ponente()
+
 
     # Inicializar participantes en form_data_speaking_services si no existe
-    if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
-        st.session_state["form_data_speaking_services"]["participantes_ss"] = {}
+    # if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
+    #     st.session_state["form_data_speaking_services"]["participantes_ss"] = {}
 
     # if "participant_index_ss" not in st.session_state:
     #     st.session_state["participant_index_ss"] = 0
-    add_ponente()
 
 
 
@@ -395,7 +417,7 @@ if meeting_type == "Reunión Merck Program":
     "end_date_ss",
     "presupuesto_estimado",
     "necesidad_reunion_ss",
-    "descripcion_objetivo_ss",
+    "servicio_ss",
     "desplazamiento_ponentes_ss",
     "alojamiento_ponentes",
     "nombre_evento_ss",
@@ -404,7 +426,9 @@ if meeting_type == "Reunión Merck Program":
     "num_asistentes_totales_ss",
     "publico_objetivo_ss",
     "num_ponentes",
-    "criterios_seleccion_ss"
+    "criterios_seleccion_ss",
+    "doc1_ss",
+    "doc2_ss"
     ]
 
     # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
@@ -421,13 +445,24 @@ if meeting_type == "Reunión Merck Program":
 
 
     st.header("1. Documentos", divider=True)
-    st.file_uploader("Agenda del evento *", type=["pdf"], key="doc1_ss", on_change=lambda: save_to_session_state("doc1_ss", st.session_state["doc1_ss"])) 
-    st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", type=["pdf"], key="doc2_ss", on_change=lambda: save_to_session_state("doc2_ss", st.session_state["doc2_ss"])) 
+    with st.expander("Ver documentos necesarios"):
+        st.file_uploader("Agenda del evento *",
+                  type=["pdf"], 
+                  key="doc1_ss", 
+                  on_change=lambda: save_to_session_state("doc1_ss", st.session_state["doc1_ss"] if st.session_state["doc1_ss"] else "")) 
+        st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", 
+                 type=["pdf"], 
+                 key="doc2_ss", 
+                 on_change=lambda: save_to_session_state("doc2_ss", st.session_state["doc2_ss"] if st.session_state["doc2_ss"] else "")) 
+        st.info(st.session_state.doc1_ss)
+        # st.file_uploader("Agenda del evento *", type=["pdf"], key="doc1_ss")
+        # st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", type=["pdf"], key="doc2_ss")
 
-    st.header("2. Detalles del evento", divider=True)
+
+    st.header("2. Detalles del Evento", divider=True)
     col1, col2 = st.columns(2)
-    st.text_input("Nombre del evento *", max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
-    st.text_area("Descripción y objetivo *", max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
+    st.text_input("Nombre del evento *", value=st.session_state["form_data_speaking_services"]["nombre_evento_ss"], max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
+    st.text_area("Descripción y objetivo *", value=st.session_state["form_data_speaking_services"]["descripcion_objetivo_ss"], max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
 
     col1, col2 = st.columns(2)
 
@@ -447,6 +482,7 @@ if meeting_type == "Reunión Merck Program":
     col1, col2 = st.columns(2)
     with col1:
         st.selectbox("Tipo de evento *", ["Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
+                    #value =st.session_state["form_data_speaking_services"]["tipo_evento_ss"],
                     on_change=lambda: (
                         save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
                         save_to_session_state("sede_ss", ""),
@@ -483,27 +519,34 @@ if meeting_type == "Reunión Merck Program":
             "Público objetivo del programa *",
             max_chars=4000,
             key="publico_objetivo_ss",
+            value =st.session_state["form_data_speaking_services"]["publico_objetivo_ss"],
             on_change=lambda: save_to_session_state("publico_objetivo_ss", st.session_state["publico_objetivo_ss"])
         )
     
-    st.header("3. Detalles de la actividad", divider=True)
+    st.header("3. Detalles de la Actividad", divider=True)
     col1, col2 = st.columns(2)
 
     with col1:
-        st.number_input("Presupuesto total estimado *", min_value=0, step=1, key="presupuesto_estimado", on_change=lambda: save_to_session_state("presupuesto_estimado", st.session_state["presupuesto_estimado"]))
+        st.number_input("Presupuesto total estimado *", min_value=0, 
+                        value= st.session_state["form_data_speaking_services"]["presupuesto_estimado"] if "presupuesto_estimado" in st.session_state["form_data_speaking_services"] else "",
+                        step=1, key="presupuesto_estimado", on_change=lambda: save_to_session_state("presupuesto_estimado", st.session_state["presupuesto_estimado"]))
     with col2:
-        st.text_input("Producto asociado", max_chars=255, key="producto_asociado_ss", on_change=lambda: save_to_session_state("producto_asociado_ss", st.session_state["producto_asociado_ss"]))
+        st.text_input("Producto asociado", max_chars=255, 
+                      value =st.session_state["form_data_speaking_services"]["producto_asociado_ss"],
+                      key="producto_asociado_ss", on_change=lambda: save_to_session_state("producto_asociado_ss", st.session_state["producto_asociado_ss"]))
 
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.text_input("Necesidad de la reunión y resultados esperados *", max_chars=4000, key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
-    with col2:
-        st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
-                    help = "Ponencia [nombre del evento]")
+
+    st.text_input("Necesidad de la reunión y resultados esperados *", max_chars=4000, 
+                      value =st.session_state["form_data_speaking_services"]["necesidad_reunion_ss"],
+                      key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
+    st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
+                    help = "Ponencia [nombre del evento]",
+                    value =st.session_state["form_data_speaking_services"]["servicio_ss"]
+)
         ####### meter campo consideraciones!!!!
 
-    st.header("4. Logística de la actividad", divider=True)
+    st.header("4. Logística de la Actividad", divider=True)
     col1, col2 = st.columns(2)
 
     with col1:
@@ -543,11 +586,13 @@ if meeting_type == "Reunión Merck Program":
 
 
 
-    st.header("5. Criterios de selección (Ponentes)", divider=True)
+    st.header("5. Criterios de Selección", divider=True)
     col1, col2 = st.columns(2)
     col1, col2 = st.columns(2)
     with col1:
-        st.number_input("Nº de ponentes *", min_value=0, step=1, key="num_ponentes", help="Asegúrese de que  se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas.", on_change=lambda: save_to_session_state("num_ponentes", st.session_state["num_ponentes"]))
+        st.number_input("Nº de ponentes *", min_value=0, 
+                        value =st.session_state["form_data_speaking_services"]["num_ponentes"],
+                        step=1, key="num_ponentes", help="Asegúrese de que  se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas.", on_change=lambda: save_to_session_state("num_ponentes", st.session_state["num_ponentes"]))
     with col2:
         st.multiselect(
             "Criterios de selección *",
@@ -557,17 +602,20 @@ if meeting_type == "Reunión Merck Program":
                 "Criterios adicionales: campo abierto"
             ],
             key="criterios_seleccion_ss",
+            default=st.session_state["form_data_speaking_services"]["criterios_seleccion_ss"] if "criterios_seleccion_ss" in st.session_state["form_data_speaking_services"] else [],
             on_change=lambda: save_to_session_state("criterios_seleccion_ss", st.session_state["criterios_seleccion_ss"])
         )
 
 
-    #### seccion última
-    st.header("6. Detalles de Ponentes", divider=True)
+    st.header("6. Detalles de los Ponentes", divider=True)
     ponentes_section()
 
     # Estado inicial para el botón de descargar
     st.session_state.download_enabled_ss = False
     button_form(meeting_type)
+    disabled = not st.session_state.download_enabled_ss
+    download_document(disabled, meeting_type)
+
 
 
 else:
@@ -576,7 +624,7 @@ else:
         "start_date_ss",
         "end_date_ss",
         "nombre_evento_ss",
-        "tipo_evento_ss"
+        "tipo_evento_ss",
     ]
 
     # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
@@ -588,9 +636,11 @@ else:
     }
 
     #st.header("Caso Paragüas", divider=True)
-    st.header("Detalles del Evento", divider=True)
+    st.header("1. Detalles del Evento", divider=True)
     col1, col2 = st.columns(2)
-    st.text_input("Nombre del evento *", max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
+    st.text_input("Nombre del evento *", 
+                  value=st.session_state["form_data_speaking_services"]["nombre_evento_ss"],
+                  max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
     #st.text_area("Descripción y objetivo *", max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
 
     col1, col2 = st.columns(2)
@@ -637,12 +687,12 @@ else:
             on_change=lambda: save_to_session_state("ciudad_ss", st.session_state["ciudad_ss"])
         )
 
-    st.header("Detalles de Ponentes", divider=True)
+    st.header("2. Detalles de los Ponentes", divider=True)
     ponentes_section()
     st.session_state.download_enabled_ss = False
     button_form(meeting_type)
     disabled = not st.session_state.download_enabled_ss
-    download_document(disabled)
+    download_document(disabled, meeting_type)
 
 
 #st.write(st.session_state["form_data_speaking_services"])

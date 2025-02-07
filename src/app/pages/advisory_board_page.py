@@ -125,7 +125,7 @@ af.show_main_title(title="Advisory Board", logo_size=200)
 st.header("1. Documentos", divider=True)
 st.file_uploader("Programa del evento *", type=["pdf"], key="doc1", on_change=lambda: save_to_session_state("doc1", st.session_state["doc1"]))
 
-st.header("2. Detalles de la actividad", divider=True)
+st.header("2. Detalles de la Actividad", divider=True)
 col1, col2 = st.columns(2)
 
 with col1:
@@ -168,7 +168,7 @@ with col2:
                  index= ["No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_otro_departamento_ab"]) if "otra_actividad_otro_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: save_to_session_state("otra_actividad_otro_departamento_ab", st.session_state["otra_actividad_otro_departamento_ab"]))
 
-st.header("3. Logística de la actividad", divider=True)
+st.header("3. Logística de la Actividad", divider=True)
 col1, col2 = st.columns(2)
 with col1:
     st.selectbox("¿Desplazamiento de participantes? *", 
@@ -208,7 +208,7 @@ with col2:
         on_change=lambda: save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"])
     )
     
-st.header("4. Detalles del evento", divider=True)
+st.header("4. Detalles del Evento", divider=True)
 st.text_input("Nombre *", 
               max_chars=255, 
               key="nombre_evento_ab",
@@ -312,7 +312,7 @@ st.text_area("Justificación de número de participantes *",
              on_change=lambda: save_to_session_state("justificacion_participantes_ab", st.session_state["justificacion_participantes_ab"]))
 
 def participantes_section():
-    st.header("6. Detalles de los Participantes del Advisory", divider=True)
+    st.header("6. Detalles de los Participantes", divider=True)
 
     if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()

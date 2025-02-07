@@ -17,6 +17,29 @@ FIELD_MAPPINGS = {
     "numero_consultores_cs": "Número Consultores",
     "justificacion_numero_participantes_cs": "Justificación Número Participantes",
     "criterios_seleccion_cs": "Criterios Selección",
+
+    # Speaking Services
+    "doc1_ss": "Agenda del Evento",
+    "doc2_ss": "Contratos inferiores a 1000€",
+    "start_date_ss": "Start Date",
+    "end_date_ss": "End Date",
+    "presupuesto_estimado": "Presupuesto Estimado",
+    "necesidad_reunion_ss": "Necesidad Reunión",
+    "descripcion_objetivo_ss": "Descripción y objetivo",
+    "desplazamiento_ponentes_ss": "Desplazamiento de los ponentes",
+    "alojamiento_ponentes": "Alojamiento de los ponentes",
+    "nombre_evento_ss": "Nombre Evento",
+    "descripcion_objetivo_ss": "Descripción y objetivo",
+    "tipo_evento_ss": "Tipo Evento",
+    "num_asistentes_totales_ss": "Número Asistentes Totales",
+    "publico_objetivo_ss": "Público Objetivo",
+    "num_ponentes": "Número Ponentes",
+    "criterios_seleccion_ss": "Criterios Selección",
+    "servicio_ss": "Servicio",
+    "desplazamiento_ponentes_ss": "Desplazamiento Ponentes",
+    "alojamiento_ponentes": "Alojamiento Ponentes",
+    "num_noches_ss": "Número Noches",
+    "hotel_ss":"Hotel",
     
     # Detalle Consultores
     "nombre_": "Nombre",
@@ -92,7 +115,12 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
         # Se considera "sin valor" si no está presente, es None o es cadena vacía.
         if param not in input_data or input_data[param] is None or input_data[param] == "" or (isinstance(input_data[param], list) and len(input_data[param]) == 0):
             # Get friendly name from MAPPINGS or use original param name if not found
-            errores_general.append(f"El parámetro *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
+            #if param.startswith("documento_subido")
+            if param in ["doc1_ss", "doc2_ss"]:
+                print(param)
+                errores_general.append(f"El documento *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
+            else:
+                errores_general.append(f"El parámetro *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
 
     # Validar los parámetros dependientes
     for parametro_principal, reglas in parametros_dependientes.items():
