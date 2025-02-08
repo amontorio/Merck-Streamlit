@@ -17,10 +17,12 @@ FIELD_MAPPINGS = {
     "numero_consultores_cs": "Número Consultores",
     "justificacion_numero_participantes_cs": "Justificación Número Participantes",
     "criterios_seleccion_cs": "Criterios Selección",
+    "documentosubido_1_cs": "Agenda/Guión del Evento",
+
 
     # Speaking Services
-    "doc1_ss": "Agenda del Evento",
-    "doc2_ss": "Contratos inferiores a 1000€",
+    "documentosubido_1_ss": "Agenda del Evento",
+    "documentosubido_2_ss": "Contratos inferiores a 1000€",
     "start_date_ss": "Start Date",
     "end_date_ss": "End Date",
     "presupuesto_estimado": "Presupuesto Estimado",
@@ -40,6 +42,7 @@ FIELD_MAPPINGS = {
     "alojamiento_ponentes": "Alojamiento Ponentes",
     "num_noches_ss": "Número Noches",
     "hotel_ss":"Hotel",
+    "tipo_evento_ss": "Tipo Evento",
     
     # Detalle Consultores
     "nombre_": "Nombre",
@@ -54,6 +57,58 @@ FIELD_MAPPINGS = {
     "preparacion_minutos_": "Preparación Minutos",
     "ponencia_horas_": "Ponencia Horas",
     "ponencia_minutos_": "Ponencia Minutos",
+
+    # Advisory Board
+    "documentosubido_1": "Programa del Evento",
+    "start_date_ab": "Start Date",
+    "end_date_ab": "End Date",
+    "estado_aprobacion_ab": "Estado Aprobación",
+    "otra_actividad_departamento_ab": "Otra Actividad Departamento",
+    "otra_actividad_otro_departamento_ab": "Otra Actividad de Otro Departamento",
+    "desplazamiento_ab": "Desplazamiento",
+    "alojamiento_ab": "Alojamiento",
+    "tipo_evento_ab": "Tipo Evento",
+    "participantes_ab": "Participantes",
+    "producto_asociado_ab": "Producto Asociado",
+    "descripcion_servicio_ab": "Descripción Servicio",
+    "necesidad_reunion_ab": "Necesidad Reunión",
+    "descripcion_objetivo_ab": "Descripción Objetivo",
+    "num_participantes_totales_ab": "Número Participantes Totales",
+    "publico_objetivo_ab": "Público Objetivo",
+    "num_participantes_ab": "Número Participantes",
+    "criterios_seleccion_ab": "Criterios Selección",
+    "justificacion_participantes_ab": "Justificación Participantes",
+    "sede_ab": "Sede",
+    "ciudad_ab": "Ciudad",
+    "num_noches_ab": "Número Noches",
+    "hotel_ab": "Hotel",
+
+    "documentosubido_1_event": "Agenda del Evento",
+    "documentosubido_2_event": "Solicitud de Patrocinio",
+    "documentosubido_3_event": "Presupuesto Desglosado/Dossier Comercial",
+    "event_name": "Nombre del Evento",
+    "event_type": "Tipo de Evento",
+    "start_date": "Fecha de Inicio",
+    "end_date": "Fecha de Fin",
+    "num_attendees": "Número de Asistentes",
+    "attendee_profile": "Perfil de Asistentes",
+    "event_objetive": "Objetivo del Evento",
+    "amount": "Importe",
+    "payment_type": "Tipo de Pago",
+    "short_description": "Descripción Corta",
+    "benefits": "Beneficios",
+    "exclusive_sponsorship": "Patrocinio Exclusivo",
+    "recurrent_sponsorship": "Patrocinio Recurrente",
+    "organization_name": "Nombre de la Organización",
+    "organization_cif": "CIF de la Organización",
+    "signer_first_name": "Nombre del Firmante",
+    "signer_position": "Cargo del Firmante",
+    "signer_email": "Email del Firmante",
+    "event_objetive": "Objetivo del Evento",
+    "name_st": "Nombre ST",
+    "recurrent_text": "Texto Recurrente",
+    "city": "Ciudad",
+    "venue": "Sede"
 }
 
 def show_main_title(title, logo_size):
@@ -115,9 +170,7 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
         # Se considera "sin valor" si no está presente, es None o es cadena vacía.
         if param not in input_data or input_data[param] is None or input_data[param] == "" or (isinstance(input_data[param], list) and len(input_data[param]) == 0):
             # Get friendly name from MAPPINGS or use original param name if not found
-            #if param.startswith("documento_subido")
-            if param in ["doc1_ss", "doc2_ss"]:
-                print(param)
+            if param.strip().startswith("documentosubido"):
                 errores_general.append(f"El documento *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
             else:
                 errores_general.append(f"El parámetro *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
@@ -135,9 +188,14 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
             if condicion(valor_principal):
                 for dep in dependientes:
                     if dep not in input_data or input_data[dep] is None or input_data[dep] == "":
-                        errores_general.append(
-                            f"El parámetro dependiente '{dep}' es obligatorio cuando '{parametro_principal}' cumple la condición."
+                        if dep.strip().startswith("documentosubido"):
+                            errores_general.append(
+                            f"El documento *{FIELD_MAPPINGS.get(dep, dep)}* es obligatorio cuando *{FIELD_MAPPINGS.get(parametro_principal, parametro_principal)}* cumple la condición."
                         )
+                        else:
+                            errores_general.append(
+                                f"El parámetro dependiente *{FIELD_MAPPINGS.get(dep, dep)}* es obligatorio cuando *{FIELD_MAPPINGS.get(parametro_principal, parametro_principal)}* cumple la condición."
+                            )
         else:
             # Opcional: Se puede reportar si el parámetro principal no está presente.
             errores_general.append(f"El parámetro principal '{parametro_principal}' no se encontró en los datos.")
@@ -154,8 +212,9 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
     if participanes_name in input_data:
         errores_participantes = validar_participantes(input_data[participanes_name])
     else:
-        errores_general.append("No se encontró la clave 'participantes' en los datos.")
-
+        #errores_general.append("No se encontró la clave 'participantes' en los datos.")
+        errores_participantes = {}
+        
     return errores_general, errores_participantes
 
 def validar_participantes(participantes):

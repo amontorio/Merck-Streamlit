@@ -8,6 +8,7 @@ import auxiliar.aux_functions as af
 import auxiliar.create_docx as cd
 import traceback
 import os
+import io
 from streamlit.components.v1 import html
 
 # Diccionario de tarifas según el tier
@@ -31,6 +32,8 @@ mandatory_fields = [
         "descripcion_servicio_cs",
         "numero_consultores_cs",
         "criterios_seleccion_cs",
+        "documentosubido_1_cs"
+
 ]
 
 dependendent_fields = {
@@ -48,7 +51,8 @@ def render_svg(svg_string):
 
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_cs":
-        st.session_state[key] = value
+        if key not in ["documentosubido_1_cs"]:
+            st.session_state[key] = value
         st.session_state["form_data_consulting_services"][key] = value
     else:
         st.session_state[field_participante] = value
@@ -112,7 +116,7 @@ if "form_data_consulting_services" not in st.session_state:
 
 af.show_main_title(title="Consulting Services", logo_size=200)
 st.header("1. Documentos", divider=True)
-st.file_uploader("Agenda o Guión  del evento *", type=["pdf"], key="doc1", on_change=lambda: save_to_session_state("doc1", st.session_state["doc1"]))
+st.file_uploader("Agenda o Guión  del evento *", type=["pdf"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
 
 st.header("2. Declaración de necesidades", divider=True)
 col1, col2 = st.columns(2)
@@ -124,10 +128,11 @@ with col1:
                   value= st.session_state["form_data_consulting_services"]["nombre_necesidades_cs"] if "nombre_necesidades_cs" in st.session_state["form_data_consulting_services"] else "",
                   on_change=lambda: save_to_session_state("nombre_necesidades_cs", st.session_state["nombre_necesidades_cs"]))
     
-    st.date_input("Fecha de inicio *",
+    date_cs = st.date_input("Fecha de inicio *",
                   value=st.session_state["form_data_consulting_services"]["start_date_cs"],
                   key="start_date_cs",
-                  on_change=lambda: save_to_session_state("start_date_cs", st.session_state["start_date_cs"]))
+                  on_change=lambda: save_to_session_state("start_date_cs", st.session_state["start_date_cs"]),
+                  format = "DD/MM/YYYY")
     
     st.text_input("Producto asociado *",
                   max_chars=255,
@@ -152,9 +157,11 @@ with col2:
                     on_change=lambda: save_to_session_state("presupuesto_estimado_cs", st.session_state["presupuesto_estimado_cs"]))
     
     st.date_input("Fecha de fin *",
-                  value=st.session_state["form_data_consulting_services"]["end_date_cs"],
+                  value= date_cs if st.session_state["form_data_consulting_services"]["end_date_cs"] < date_cs else st.session_state["form_data_consulting_services"]["end_date_cs"],
+                  min_value = date_cs,
                   key="end_date_cs",
-                  on_change=lambda: save_to_session_state("end_date_cs", st.session_state["end_date_cs"]))
+                  on_change=lambda: save_to_session_state("end_date_cs", st.session_state["end_date_cs"]),
+                  format = "DD/MM/YYYY")
     
     st.selectbox("Estado de la aprobación",
                  ["N/A", "Aprobado", "No Aprobado"],
@@ -358,13 +365,16 @@ def participantes_section():
                 st.rerun()
 participantes_section()
 
+
+st.session_state.download_enabled_cs = False
 # Botón para enviar
 def button_form():
     if st.button(label="Enviar", use_container_width=True, type="primary"):
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
-                doc, st.session_state.path_doc = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
+                doc, st.session_state.path_doc_cs = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
+                st.session_state.download_enabled_cs = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
                 msg_general = ""
@@ -372,7 +382,7 @@ def button_form():
                     msg_general += f"\n* {msg}\n"
                 st.error(msg_general)
 
-                print(st.session_state['form_data_consulting_services']['participantes_cs'])
+                #print(st.session_state['form_data_consulting_services']['participantes_cs'])
                 for id_user, list_errors in errores_participantes.items():
                     if len(list_errors) > 0:
                         # Obtener el diccionario de participantes
@@ -393,5 +403,33 @@ def button_form():
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
 button_form()
+
+
+def download_document(disabled):
+    nombre = "Consulting_Services.zip"
+    if st.session_state.path_doc_cs:
+        with open(st.session_state.path_doc_cs, "rb") as file:
+            st.download_button(
+                label="Descargar documento ZIP",
+                data=file,
+                file_name=nombre,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                icon="📥",
+                disabled=disabled
+            )
+    else:
+        st.download_button(
+            label="Descargar documento ZIP",
+            data=io.BytesIO(),
+            file_name=nombre,
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            use_container_width=True,
+            icon="📥",
+            disabled=True
+        )
+
+disabled = not st.session_state.download_enabled_cs
+download_document(disabled)
 
 #st.write(st.session_state["form_data_consulting_services"])

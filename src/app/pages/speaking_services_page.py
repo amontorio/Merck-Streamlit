@@ -37,7 +37,7 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
         None
     """
     if key != "participantes_ss":
-        if key not in ["doc1_ss", "doc2_ss"]:
+        if key not in ["documentosubido_1_ss", "documentosubido_2_ss"]:
             st.session_state[key] = value
         st.session_state["form_data_speaking_services"][key] = value
     else:
@@ -367,8 +367,8 @@ if "form_data_speaking_services" not in st.session_state:
         "tipo_evento_ss": "Virtual",
         "num_noches_ss": 0,
         "hotel_ss": "",
-        "doc1_ss": None,
-        "doc2_ss": None,
+        "documentosubido_1_ss": None,
+        "documentosubido_2_ss": None,
         "desplazamiento_ponentes_ss": "No",
         "alojamiento_ponentes": "No",
         "presupuesto_estimado": 0,
@@ -427,8 +427,8 @@ if meeting_type == "Reunión Merck Program":
     "publico_objetivo_ss",
     "num_ponentes",
     "criterios_seleccion_ss",
-    "doc1_ss",
-    "doc2_ss"
+    "documentosubido_1_ss",
+    "documentosubido_2_ss"
     ]
 
     # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
@@ -448,15 +448,12 @@ if meeting_type == "Reunión Merck Program":
     with st.expander("Ver documentos necesarios"):
         st.file_uploader("Agenda del evento *",
                   type=["pdf"], 
-                  key="doc1_ss", 
-                  on_change=lambda: save_to_session_state("doc1_ss", st.session_state["doc1_ss"] if st.session_state["doc1_ss"] else "")) 
+                  key="documentosubido_1_ss", 
+                  on_change=lambda: save_to_session_state("documentosubido_1_ss", st.session_state["documentosubido_1_ss"] if st.session_state["documentosubido_1_ss"] else "")) 
         st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", 
                  type=["pdf"], 
-                 key="doc2_ss", 
-                 on_change=lambda: save_to_session_state("doc2_ss", st.session_state["doc2_ss"] if st.session_state["doc2_ss"] else "")) 
-
-        # st.file_uploader("Agenda del evento *", type=["pdf"], key="doc1_ss")
-        # st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", type=["pdf"], key="doc2_ss")
+                 key="documentosubido_2_ss", 
+                 on_change=lambda: save_to_session_state("documentosubido_2_ss", st.session_state["documentosubido_2_ss"] if st.session_state["documentosubido_2_ss"] else "")) 
 
 
     st.header("2. Detalles del Evento", divider=True)
@@ -470,13 +467,15 @@ if meeting_type == "Reunión Merck Program":
         start_date_ss = st.date_input("Fecha de inicio del evento *", 
                     value=st.session_state["form_data_speaking_services"]["start_date_ss"],
                     key="start_date_ss", 
-                    on_change=lambda: save_to_session_state("start_date_ss", st.session_state["start_date_ss"]))
+                    on_change=lambda: save_to_session_state("start_date_ss", st.session_state["start_date_ss"]),
+                    format = "DD/MM/YYYY")
     with col2:
         st.date_input("Fecha de fin del evento *", 
                     value= start_date_ss if st.session_state["form_data_speaking_services"]["end_date_ss"] < start_date_ss else  st.session_state["form_data_speaking_services"]["end_date_ss"],
                     key="end_date_ss", 
                     min_value = start_date_ss,
-                    on_change=lambda: save_to_session_state("end_date_ss", st.session_state["end_date_ss"]))
+                    on_change=lambda: save_to_session_state("end_date_ss", st.session_state["end_date_ss"]),
+                    format = "DD/MM/YYYY")
 
 
     col1, col2 = st.columns(2)
@@ -648,13 +647,15 @@ else:
         start_date_ss = st.date_input("Fecha de inicio del evento *", 
                     value=st.session_state["form_data_speaking_services"]["start_date_ss"],
                     key="start_date_ss", 
-                    on_change=lambda: save_to_session_state("start_date_ss", st.session_state["start_date_ss"]))
+                    on_change=lambda: save_to_session_state("start_date_ss", st.session_state["start_date_ss"]),
+                    format = "DD/MM/YYYY")
     with col2:
         st.date_input("Fecha de fin del evento *", 
                     value= start_date_ss if st.session_state["form_data_speaking_services"]["end_date_ss"] < start_date_ss else  st.session_state["form_data_speaking_services"]["end_date_ss"],
                     key="end_date_ss", 
                     min_value = start_date_ss,
-                    on_change=lambda: save_to_session_state("end_date_ss", st.session_state["end_date_ss"]))
+                    on_change=lambda: save_to_session_state("end_date_ss", st.session_state["end_date_ss"]),
+                    format = "DD/MM/YYYY")
         
     st.selectbox("Tipo de evento *", ["Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
                     on_change=lambda: (

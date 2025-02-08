@@ -35,7 +35,8 @@ mandatory_fields = [
 "publico_objetivo_ab",
 "num_participantes_ab",
 "criterios_seleccion_ab",
-"justificacion_participantes_ab"
+"justificacion_participantes_ab",
+"documentosubido_1"
 ]
 
 # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
@@ -52,7 +53,8 @@ dependendent_fields = {
 
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_ab":
-        st.session_state[key] = value
+        if key not in ["documentosubido_1"]:
+            st.session_state[key] = value
         st.session_state["form_data_advisory_board"][key] = value
     else:
         st.session_state[field_participante] = value
@@ -123,7 +125,7 @@ if "form_data_advisory_board" not in st.session_state:
 af.show_main_title(title="Advisory Board", logo_size=200)
 
 st.header("1. Documentos", divider=True)
-st.file_uploader("Programa del evento *", type=["pdf"], key="doc1", on_change=lambda: save_to_session_state("doc1", st.session_state["doc1"]))
+st.file_uploader("Programa del evento *", type=["pdf"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
 
 st.header("2. Detalles de la Actividad", divider=True)
 col1, col2 = st.columns(2)
@@ -223,15 +225,20 @@ st.text_area("Descripción y objetivo *",
 
 col1, col2 = st.columns(2)
 with col1:
-    st.date_input("Fecha de inicio del evento *",
+    start_ab = st.date_input("Fecha de inicio del evento *",
                   value=st.session_state["form_data_advisory_board"]["start_date_ab"],
                   key="start_date_ab",
-                  on_change=lambda: save_to_session_state("start_date_ab", st.session_state["start_date_ab"]))
+                  on_change=lambda: save_to_session_state("start_date_ab", st.session_state["start_date_ab"]),
+                  format = "DD/MM/YYYY")
+
 with col2:
     st.date_input("Fecha de fin del evento *",
-                  value=st.session_state["form_data_advisory_board"]["end_date_ab"],
+                  value= start_ab if st.session_state["form_data_advisory_board"]["end_date_ab"] < start_ab else st.session_state["form_data_advisory_board"]["end_date_ab"],
+                  min_value = start_ab,
                   key="end_date_ab",
-                  on_change=lambda: save_to_session_state("end_date_ab", st.session_state["end_date_ab"]))
+                  on_change=lambda: save_to_session_state("end_date_ab", st.session_state["end_date_ab"]),
+                  format = "DD/MM/YYYY")
+
 
 col1, col2 = st.columns(2)
 with col1:
@@ -508,7 +515,7 @@ def download_document():
             st.download_button(
                 label="Descargar documento Word",
                 data=file,
-                file_name="documento_advisory_board.docx",
+                file_name="Advisory_Board.zip",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True,
                 icon="📥",

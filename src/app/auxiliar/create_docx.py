@@ -39,13 +39,6 @@ def crear_documento_sponsorship_of_event(dataframe):
     # Leer los datos del DataFrame
     datos = dataframe.iloc[0].to_dict()
 
-    # Documentos a adjuntar
-    agregar_encabezado("Documentos a Adjuntar:")
-    agregar_bullet_point("Agenda del evento", "Adjunto")
-    agregar_bullet_point("Solicitud de patrocinio", "Adjunto")
-    if datos.get("exclusive_sponsorship", "No") == "Sí":
-        agregar_bullet_point("Dossier comercial", "Adjunto")
-
     # Detalles del evento
     agregar_encabezado("Detalles del Evento:")
     agregar_bullet_point("Nombre del evento", f"Sponsorship of Event/Activity {datos.get('event_name', '')}")
@@ -65,7 +58,7 @@ def crear_documento_sponsorship_of_event(dataframe):
     agregar_bullet_point("Tipo de pago", datos.get("payment_type", ""))
     if datos.get("payment_type") == "Pago a través de la secretaría técnica (ST)":
         agregar_bullet_point("Nombre ST", datos.get("name_st", ""))
-    agregar_bullet_point("Producto asociado", datos.get("associated_product", ""))
+    agregar_bullet_point("Producto asociado", datos.get("associated_product", "N/A"))
     agregar_bullet_point("Descripción del evento", datos.get("short_description", ""))
     agregar_bullet_point("Contraprestaciones", datos.get("benefits", ""))
     agregar_bullet_point("Patrocinador único o mayoritario", datos.get("exclusive_sponsorship", "No"))
@@ -81,18 +74,53 @@ def crear_documento_sponsorship_of_event(dataframe):
     agregar_bullet_point("Cargo", datos.get("signer_position", ""))
     agregar_bullet_point("Email", datos.get("signer_email", ""))
 
-    # Guardar el documento
-    nombre_archivo = 'Formulario_Sponsorship_of_event.docx'
-    # Establecer la ruta a la carpeta 'app/docs'
+    nombre_zip = 'Sponshorship_Event.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
-    output_dir = os.path.abspath(output_dir)  # Convertir en una ruta absoluta
-    os.makedirs(output_dir, exist_ok=True)  # Crear la carpeta si no existe
+    os.makedirs(output_dir, exist_ok=True)
+    archivo_zip = os.path.join(output_dir, nombre_zip)
 
-    # Guardar el archivo en la carpeta 'app/docs'
-    documento.save(os.path.join(output_dir, nombre_archivo))
-    print(f'Documento guardado como {nombre_archivo}')
+    with zipfile.ZipFile(archivo_zip, 'w') as zipf:
+        nombre_archivo = 'Speaking_Services_Participation.docx'
+        archivo_docx = os.path.join(output_dir, nombre_archivo)
+        documento.save(archivo_docx)
+        zipf.write(archivo_docx, os.path.basename(archivo_docx))
+
+        print(datos)
+        doc1 = datos.get("documentosubido_1_event", None)
+        doc2 = datos.get("documentosubido_2_event", None)
+        doc3 = datos.get("documentosubido_3_event", None)
+
+        if doc1 is not None:
+            doc1_path = os.path.join(output_dir, "AgendaEvento.pdf")  
+            with open(doc1_path, "wb") as f:
+                f.write(doc1.getbuffer()) 
+            zipf.write(doc1_path, os.path.basename(doc1_path))  
+
+        if doc2 is not None:
+            doc2_path = os.path.join(output_dir, "Contratos.pdf")  
+            with open(doc2_path, "wb") as f:
+                f.write(doc2.getbuffer()) 
+            zipf.write(doc2_path, os.path.basename(doc2_path))  
+
+        if doc3 is not None and doc3 != "":
+            doc3_path = os.path.join(output_dir, "DossierComercial.pdf")  
+            with open(doc3_path, "wb") as f:
+                f.write(doc3.getbuffer()) 
+            zipf.write(doc3_path, os.path.basename(doc3_path))  
+
+    os.remove(archivo_docx)
+    if doc1 is not None:
+        os.remove(doc1_path)
+    if doc2 is not None:
+        os.remove(doc2_path)
+    if doc3 is not None and doc3 != "":
+        os.remove(doc3_path)
     
-    return documento, os.path.join(output_dir, nombre_archivo)
+    print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
+
+    return documento, archivo_zip
+
+
 
 def crear_documento_advisory(data):
     documento = Document()
@@ -126,7 +154,10 @@ def crear_documento_advisory(data):
     agregar_bullet_point("Nombre", f"Advisory Board Participation {data.get('nombre_ab', '')}")
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ab", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ab", "").strftime("%d/%m/%Y"))
-    agregar_bullet_point("Producto asociado", data.get("producto_asociado_ab", ""))
+    if data.get("producto_asociado_ab", "") != "":
+        agregar_bullet_point("Producto asociado", data.get("producto_asociado_ab", ""))
+    else:
+        agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Estado de la aprobación", data.get("estado_aprobacion_ab", ""))
     agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ab", ""))
     agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_ab", ""))
@@ -140,8 +171,8 @@ def crear_documento_advisory(data):
 
     agregar_encabezado("Información del Evento")
     agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ab", ""))
-    agregar_bullet_point("Sede", data.get("sede_ab", ""))
-    agregar_bullet_point("Ciudad", data.get("ciudad_ab", ""))
+    agregar_bullet_point("Sede", data.get("sede_ab", "N/A"))
+    agregar_bullet_point("Ciudad", data.get("ciudad_ab", "N/A"))
     agregar_bullet_point("Número de participantes totales", data.get("num_participantes_totales_ab", ""))
     
     agregar_encabezado("Criterios de Selección")
@@ -177,14 +208,33 @@ def crear_documento_advisory(data):
                 cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
     
     agregar_tabla_participantes(data.get("participantes_ab", {}))
-    # Guardar el documento
-    nombre_archivo = 'Advisory_Board_Participation.docx'
+
+    nombre_zip = 'Advisory_Board.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
     os.makedirs(output_dir, exist_ok=True)
-    documento.save(os.path.join(output_dir, nombre_archivo))
-    print(f'Documento guardado como {nombre_archivo}')
+    archivo_zip = os.path.join(output_dir, nombre_zip)
+
+    with zipfile.ZipFile(archivo_zip, 'w') as zipf:
+        nombre_archivo = 'Advisory_Board_Participation.docx'
+        archivo_docx = os.path.join(output_dir, nombre_archivo)
+        documento.save(archivo_docx)
+        zipf.write(archivo_docx, os.path.basename(archivo_docx))
+
+        doc1 = data.get("documentosubido_1", None)
+
+        if doc1 is not None:
+            doc1_path = os.path.join(output_dir, "ProgramaEvento.pdf")  
+            with open(doc1_path, "wb") as f:
+                f.write(doc1.getbuffer()) 
+            zipf.write(doc1_path, os.path.basename(doc1_path))  
+
+    os.remove(archivo_docx)
+    if doc1 is not None:
+        os.remove(doc1_path)
     
-    return documento, os.path.join(output_dir, nombre_archivo)
+    print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
+
+    return documento, archivo_zip
 
 def crear_documento_consulting_services(data):
     documento = Document()
@@ -219,14 +269,20 @@ def crear_documento_consulting_services(data):
     agregar_bullet_point("Fecha de inicio", data.get("start_date_cs", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_cs", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Presupuesto estimado", f"{data.get('presupuesto_estimado_cs', 0)} €")
-    agregar_bullet_point("Producto asociado", data.get("producto_asociado_cs", ""))
+    if data.get("producto_asociado_cs", "") != "":
+        agregar_bullet_point("Producto asociado", data.get("producto_asociado_cs", ""))
+    else:
+        agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Estado de aprobación", data.get("estado_aprobacion_cs", "N/A"))
     agregar_bullet_point("Necesidad de la reunión", data.get("necesidad_reunion_cs", ""))
     agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_cs", ""))
 
     agregar_encabezado("Criterios del destinatario")
     agregar_bullet_point("Número de consultores", data.get("numero_consultores_cs", ""))
-    agregar_bullet_point("Justificación", data.get("justificacion_numero_participantes_cs", ""))
+    if data.get("justificacion_numero_participantes_cs", "") != "":
+        agregar_bullet_point("Justificación", data.get("justificacion_numero_participantes_cs", ""))
+    else:
+        agregar_bullet_point("Justificación", "N/A")
     criterios = ", ".join(data.get("criterios_seleccion_cs", []))
     agregar_bullet_point("Criterios del destinatario", criterios)
 
@@ -265,14 +321,34 @@ def crear_documento_consulting_services(data):
             pon_mins = participante.get(f"ponencia_minutos_{id_participante}", 0)
             
             row_cells[8].text = f"Preparación: {prep_horas}h {prep_mins}m, Ponencia: {pon_horas}h {pon_mins}m"
-    # Guardar el documento
-    nombre_archivo = 'Consulting_Services.docx'
-    output_dir = os.path.join(os.getcwd(), 'docs')
+
+    nombre_zip = 'Consulting_Services.zip'
+    output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
     os.makedirs(output_dir, exist_ok=True)
-    documento.save(os.path.join(output_dir, nombre_archivo))
-    print(f'Documento guardado como {nombre_archivo}')
+    archivo_zip = os.path.join(output_dir, nombre_zip)
+
+    with zipfile.ZipFile(archivo_zip, 'w') as zipf:
+        nombre_archivo = 'Consulting_Services_Participation.docx'
+        archivo_docx = os.path.join(output_dir, nombre_archivo)
+        documento.save(archivo_docx)
+        zipf.write(archivo_docx, os.path.basename(archivo_docx))
+
+        doc1 = data.get("documentosubido_1_cs", None)
+
+        if doc1 is not None:
+            doc1_path = os.path.join(output_dir, "AgendaEvento.pdf")  
+            with open(doc1_path, "wb") as f:
+                f.write(doc1.getbuffer())  
+            zipf.write(doc1_path, os.path.basename(doc1_path)) 
+
+
+    os.remove(archivo_docx)
+    if doc1 is not None:
+        os.remove(doc1_path)
     
-    return documento, os.path.join(output_dir, nombre_archivo)
+    print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
+
+    return documento, archivo_zip
 
 
 def crear_documento_speaking(data):
@@ -303,30 +379,34 @@ def crear_documento_speaking(data):
         run_valor.font.size = Pt(11)
 
     # Agregar secciones
-    agregar_encabezado("Detalles de la Actividad")
+    agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
+    agregar_bullet_point("Descripción", data.get("descripcion_objetivo_ss", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
-    agregar_bullet_point("Producto asociado", data.get("producto_asociado_ss", ""))
+    agregar_bullet_point("Nº Asistentes Totales", data.get("num_asistentes_totales_ss", ""))
+    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
+    agregar_bullet_point("Sede", data.get("sede_ss", "N/A"))
+    agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
+    agregar_bullet_point("Público objetivo del programa", data.get("publico_objetivo_ss", ""))
+    
+    agregar_encabezado("Detalles de la Actividad")
     agregar_bullet_point("Presupuesto total estimado", data.get("presupuesto_estimado", ""))
+    if data.get("producto_asociado_ss", "") != "":
+        agregar_bullet_point("Producto asociado", data.get("producto_asociado_ss", ""))
+    else:
+        agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ss", ""))
     agregar_bullet_point("Descripción del servicio", data.get("servicio_ss", ""))
     
     agregar_encabezado("Logística de la Actividad")
     agregar_bullet_point("Desplazamiento de ponentes", data.get("desplazamiento_ponentes_ss", ""))
     agregar_bullet_point("Alojamiento de ponentes", data.get("alojamiento_ponentes", ""))
-    
     if data.get("alojamiento_ponentes", "") == "Sí":
         agregar_bullet_point("Nº de noches", data.get("num_noches_ss", ""))
         agregar_bullet_point("Hotel", data.get("hotel_ss", ""))
     
-    agregar_encabezado("Detalles del Evento")
-    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
-    agregar_bullet_point("Nº Asistentes Totales", data.get("num_asistentes_totales_ss", ""))
-    agregar_bullet_point("Sede", data.get("sede_ss", ""))
-    agregar_bullet_point("Ciudad", data.get("ciudad_ss", ""))
-    agregar_bullet_point("Público objetivo del programa", data.get("publico_objetivo_ss", ""))
-
+    
     agregar_encabezado("Criterios de Selección")
     agregar_bullet_point("Nº de participantes", data.get("num_ponentes", ""))
     agregar_bullet_point("Criterios de selección", data.get("criterios_seleccion_ss", ""))
@@ -359,43 +439,32 @@ def crear_documento_speaking(data):
     
     agregar_tabla_participantes(data.get("participantes_ss", {}))
     
-#     # Guardar el documento en un archivo temporal
-#     nombre_archivo = 'Speaking_Services_Participation.docx'
-#     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
-#     os.makedirs(output_dir, exist_ok=True)
-#     archivo_docx = os.path.join(output_dir, nombre_archivo)
-#     documento.save(archivo_docx)
-
-    # Crear un archivo ZIP y agregar el documento
     nombre_zip = 'Speaking_Service_Merck_Program.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
     os.makedirs(output_dir, exist_ok=True)
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        # Guardar el documento Word en el ZIP
         nombre_archivo = 'Speaking_Services_Participation.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
 
-        doc1 = data.get("doc1_ss", None)
-        doc2 = data.get("doc2_ss", None)
+        doc1 = data.get("documentosubido_1_ss", None)
+        doc2 = data.get("documentosubido_2_ss", None)
 
-        # Si doc1 y doc2 están presentes, guardarlos en el ZIP
         if doc1 is not None:
-            doc1_path = os.path.join(output_dir, "AgendaEvennto.pdf")  # Cambia la extensión si no es PDF
+            doc1_path = os.path.join(output_dir, "AgendaEvento.pdf")  
             with open(doc1_path, "wb") as f:
-                f.write(doc1.getbuffer())  # Guarda el archivo en el sistema temporal
-            zipf.write(doc1_path, os.path.basename(doc1_path))  # Añade el archivo al ZIP
+                f.write(doc1.getbuffer()) 
+            zipf.write(doc1_path, os.path.basename(doc1_path))  
 
         if doc2 is not None:
-            doc2_path = os.path.join(output_dir, "Contratos.pdf")  # Cambia la extensión si no es PDF
+            doc2_path = os.path.join(output_dir, "Contratos.pdf")  
             with open(doc2_path, "wb") as f:
-                f.write(doc2.getbuffer())  # Guarda el archivo en el sistema temporal
-            zipf.write(doc2_path, os.path.basename(doc2_path))  # Añade el archivo al ZIP
+                f.write(doc2.getbuffer()) 
+            zipf.write(doc2_path, os.path.basename(doc2_path))  
 
-    # Eliminar los archivos temporales si es necesario
     os.remove(archivo_docx)
     if doc1 is not None:
         os.remove(doc1_path)
@@ -436,13 +505,13 @@ def crear_documento_speaking_reducido(data):
         run_valor.font.size = Pt(11)
 
     # Agregar secciones
-    agregar_encabezado("Detalles de la Actividad")
+    agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
-    agregar_bullet_point("Sede", data.get("sede_ss", ""))
-    agregar_bullet_point("Ciudad", data.get("ciudad_ss", ""))
+    agregar_bullet_point("Sede", data.get("sede_ss", "N/A"))
+    agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
     
     agregar_encabezado("Detalles de los Ponentes")
     def agregar_tabla_participantes(participantes):
@@ -472,18 +541,17 @@ def crear_documento_speaking_reducido(data):
     
     agregar_tabla_participantes(data.get("participantes_ss", {}))
     
-    # Crear un archivo ZIP y agregar el documento
     nombre_zip = 'Speaking_Service_Paragüas.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
     os.makedirs(output_dir, exist_ok=True)
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        # Guardar el documento Word en el ZIP
         nombre_archivo = 'Speaking_Services_Paragüas.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
+        os.remove(archivo_docx)  
     
     print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
 
