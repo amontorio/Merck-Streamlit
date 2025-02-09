@@ -410,7 +410,7 @@ def download_document(disabled):
     if st.session_state.path_doc_cs:
         with open(st.session_state.path_doc_cs, "rb") as file:
             st.download_button(
-                label="Descargar documento ZIP",
+                label="Descargar ZIP",
                 data=file,
                 file_name=nombre,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -420,7 +420,7 @@ def download_document(disabled):
             )
     else:
         st.download_button(
-            label="Descargar documento ZIP",
+            label="Descargar ZIP",
             data=io.BytesIO(),
             file_name=nombre,
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

@@ -418,13 +418,21 @@ def crear_detalles_patrocinio():
             st.file_uploader("Adjuntar presupuesto desglosado o dossier comercial", type=["pdf", "docx"], key="documentosubido_3_event", accept_multiple_files=False, 
                     on_change=lambda: save_to_session_state("documentosubido_3_event", st.session_state["documentosubido_3_event"] if st.session_state["documentosubido_3_event"] else "")) 
 
-
+        def handle_recurrent_text():
+            new_value = "Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else ""
+            save_to_session_state("recurrent_text", new_value)
+            return new_value
+        
         col11, col12 = st.columns(2, vertical_alignment="center")
         with col11:
             st.selectbox("Patrocinio recurrente *", options=["No lo sé","Sí", "No"], key="recurrent_sponsorship", help="¿Merck ha colaborado en ediciones anteriores de este evento?", on_change=lambda: save_to_session_state("recurrent_sponsorship", st.session_state["recurrent_sponsorship"]))
         with col12:
             #if st.session_state.recurrent_sponsorship == "Sí":
-            st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
+            st.text_area("Detalles del patrocinio recurrente",
+                         value=handle_recurrent_text(),
+                         max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí",
+                         key="recurrent_text",
+                         on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
 
 crear_detalles_patrocinio()
 
@@ -469,7 +477,7 @@ def download_document():
     if st.session_state.path_doc:
         with open(st.session_state.path_doc, "rb") as file:
             st.download_button(
-                label="Descargar documento Word",
+                label="Descargar ZIP",
                 data=file,
                 file_name="Sponshorship_Event.zip",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -479,7 +487,7 @@ def download_document():
             )
     else:
         st.download_button(
-            label="Descargar documento Word",
+            label="Descargar ZIP",
             data=io.BytesIO(),
             file_name="Sponshorship_Event.zip",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -493,4 +501,4 @@ button_form()
 disabled = not st.session_state.download_enabled
 download_document()
 
-st.write(st.session_state["form_data_event"])
+#st.write(st.session_state["form_data_event"])

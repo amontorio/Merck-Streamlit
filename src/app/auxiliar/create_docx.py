@@ -13,7 +13,7 @@ def crear_documento_sponsorship_of_event(dataframe):
 
     # Agregar el título con estilo y color personalizado
     titulo = documento.add_paragraph()
-    run_titulo = titulo.add_run('Formulario de Patrocinio de Evento')
+    run_titulo = titulo.add_run('Sponsorship of Event')
     run_titulo.font.size = Pt(16)
     run_titulo.font.bold = True
     run_titulo.font.color.rgb = RGBColor(128, 0, 128)  # Color morado
@@ -80,7 +80,7 @@ def crear_documento_sponsorship_of_event(dataframe):
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        nombre_archivo = 'Speaking_Services_Participation.docx'
+        nombre_archivo = 'Sponsorship of Event.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
@@ -91,19 +91,23 @@ def crear_documento_sponsorship_of_event(dataframe):
         doc3 = datos.get("documentosubido_3_event", None)
 
         if doc1 is not None:
-            doc1_path = os.path.join(output_dir, "AgendaEvento.pdf")  
+            print(str(doc1.type))
+            file_type = str(doc1.name).split(".")[-1]
+            doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
 
         if doc2 is not None:
-            doc2_path = os.path.join(output_dir, "Contratos.pdf")  
+            file_type = str(doc2.name).split(".")[-1]
+            doc2_path = os.path.join(output_dir, f"Contratos.{file_type}")  
             with open(doc2_path, "wb") as f:
                 f.write(doc2.getbuffer()) 
             zipf.write(doc2_path, os.path.basename(doc2_path))  
 
         if doc3 is not None and doc3 != "":
-            doc3_path = os.path.join(output_dir, "DossierComercial.pdf")  
+            file_type = str(doc3.name).split(".")[-1]
+            doc3_path = os.path.join(output_dir, f"DossierComercial.{file_type}")  
             with open(doc3_path, "wb") as f:
                 f.write(doc3.getbuffer()) 
             zipf.write(doc3_path, os.path.basename(doc3_path))  
@@ -223,7 +227,8 @@ def crear_documento_advisory(data):
         doc1 = data.get("documentosubido_1", None)
 
         if doc1 is not None:
-            doc1_path = os.path.join(output_dir, "ProgramaEvento.pdf")  
+            file_type = str(doc1.name).split(".")[-1]
+            doc1_path = os.path.join(output_dir, f"ProgramaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
@@ -336,7 +341,8 @@ def crear_documento_consulting_services(data):
         doc1 = data.get("documentosubido_1_cs", None)
 
         if doc1 is not None:
-            doc1_path = os.path.join(output_dir, "AgendaEvento.pdf")  
+            file_type = str(doc1.name).split(".")[-1]
+            doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer())  
             zipf.write(doc1_path, os.path.basename(doc1_path)) 
@@ -356,7 +362,7 @@ def crear_documento_speaking(data):
 
     # Agregar el título
     titulo = documento.add_paragraph()
-    run_titulo = titulo.add_run('Speaking Engagement Participation')
+    run_titulo = titulo.add_run('Speaking Participation')
     run_titulo.font.size = Pt(16)
     run_titulo.font.bold = True
     run_titulo.font.color.rgb = RGBColor(0, 0, 128)  # Azul oscuro
@@ -454,13 +460,15 @@ def crear_documento_speaking(data):
         doc2 = data.get("documentosubido_2_ss", None)
 
         if doc1 is not None:
-            doc1_path = os.path.join(output_dir, "AgendaEvento.pdf")  
+            file_type = str(doc1.name).split(".")[-1]
+            doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
 
         if doc2 is not None:
-            doc2_path = os.path.join(output_dir, "Contratos.pdf")  
+            file_type = str(doc2.name).split(".")[-1]
+            doc2_path = os.path.join(output_dir, f"Contratos.{file_type}")  
             with open(doc2_path, "wb") as f:
                 f.write(doc2.getbuffer()) 
             zipf.write(doc2_path, os.path.basename(doc2_path))  

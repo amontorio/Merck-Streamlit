@@ -513,7 +513,7 @@ def download_document():
     if st.session_state.path_doc_ab:
         with open(st.session_state.path_doc_ab, "rb") as file:
             st.download_button(
-                label="Descargar documento Word",
+                label="Descargar ZIP",
                 data=file,
                 file_name="Advisory_Board.zip",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -523,7 +523,7 @@ def download_document():
             )
     else:
         st.download_button(
-            label="Descargar documento Word",
+            label="Descargar ZIP",
             data=io.BytesIO(),
             file_name="documento_advisory_board.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

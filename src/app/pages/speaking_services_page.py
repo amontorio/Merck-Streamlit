@@ -54,55 +54,6 @@ def normalize_text(text):
     text = text.strip()
     return text
 
-def search_function(search_text):
-    #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    # Eliminar filas donde 'Nombre de la cuenta' sea NaN
-    df = df.dropna(subset=['Nombre de la cuenta'])
-    # Reemplazar NaN en 'Especialidad' con 'Ninguna'
-    df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
-
-    # Reemplazar NaN en 'Tier' con 0
-    df['Tier'] = df['Tier'].fillna(0)
-
-    # Asegurarse de que la columna 'Tier' sea numérica
-    df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
-
-    # Extraer las columnas necesarias y convertirlas a una lista de tuplas
-    lista = list(df[['Nombre de la cuenta', 'Especialidad', 'Tier']].itertuples(index=False, name=None))
-    
-    # Normalizar el texto de búsqueda
-    texto_normalizado = normalize_text(search_text)
-    # Buscar coincidencias normalizando los elementos de la lista
-    return [
-        f"{elemento[0]} - {elemento[1]}" for elemento in lista
-        if texto_normalizado in normalize_text(elemento[0])
-    ]
-
-def handle_tier_from_name(id_user, name):
-    #df = pd.read_excel(r"C:\Users\AMONTORIOP002\Documents\Merck-Streamlit\src\app\database\Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    df = pd.read_excel(r"C:\Users\mcantabela001\Desktop\PROYECTOS\MERCK\Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    # Eliminar filas donde 'Nombre de la cuenta' sea NaN
-    df = df.dropna(subset=['Nombre de la cuenta'])
-
-    # Reemplazar NaN en 'Especialidad' con 'Ninguna'
-    df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
-
-    # Reemplazar NaN en 'Tier' con 0
-    df['Tier'] = df['Tier'].fillna(0)
-
-    # Asegurarse de que la columna 'Tier' sea numérica
-    df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
-    
-    raw_name = name["result"].split("-")[0].strip()
-    print(raw_name)
-    tier = df.loc[df["Nombre de la cuenta"] == raw_name, "Tier"]
-        
-    if not tier.empty:
-        return str(int(tier.values[0]))  # Devuelve el Tier encontrado
-    return "0" 
-
-
 def add_ponente():
     id_user = str(uuid.uuid4())
     new_participant = {
@@ -159,11 +110,11 @@ def ponentes_section():
                 with st.expander(f"Ponente {index + 1}", expanded=False, icon="👩‍⚕️"):
                     nombre = st_searchbox(
                             #label="Buscador de HCO / HCP *",
-                            search_function=search_function,
+                            search_function=af.search_function,
                             placeholder="Busca un HCO / HCP *",
                             key=f"nombre_{id_user}",
                             edit_after_submit="option",
-                            submit_function= lambda x: (save_to_session_state("participantes_ss", handle_tier_from_name(id_user, st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"))                    )
+                            submit_function= lambda x: (save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"))                    )
 
                     st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"] = nombre
                     
@@ -330,7 +281,7 @@ def download_document(disabled, tipo):
     if st.session_state.path_doc_ss:
         with open(st.session_state.path_doc_ss, "rb") as file:
             st.download_button(
-                label="Descargar documento ZIP",
+                label="Descargar ZIP",
                 data=file,
                 file_name=nombre,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -340,7 +291,7 @@ def download_document(disabled, tipo):
             )
     else:
         st.download_button(
-            label="Descargar documento ZIP",
+            label="Descargar ZIP",
             data=io.BytesIO(),
             file_name=nombre,
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -370,15 +321,16 @@ if "form_data_speaking_services" not in st.session_state:
         "documentosubido_1_ss": None,
         "documentosubido_2_ss": None,
         "desplazamiento_ponentes_ss": "No",
-        "alojamiento_ponentes": "No",
-        "presupuesto_estimado": 0,
+        "alojamiento_ponentes_ss": "No",
+        "presupuesto_estimado_ss": 0,
         "publico_objetivo_ss": "",
         "nombre_evento_ss": "",
         "descripcion_objetivo_ss": "",
         "producto_asociado_ss": "",
         "necesidad_reunion_ss": "",
         "servicio_ss": "",
-        "num_ponentes": 0
+        "num_ponentes_ss": 0,
+        "num_asistentes_totales_ss":0
     }
 
     st.session_state["form_data_speaking_services"] = {}
@@ -415,17 +367,17 @@ if meeting_type == "Reunión Merck Program":
     mandatory_fields = [
     "start_date_ss",
     "end_date_ss",
-    "presupuesto_estimado",
+    "presupuesto_estimado_ss",
     "necesidad_reunion_ss",
     "servicio_ss",
     "desplazamiento_ponentes_ss",
-    "alojamiento_ponentes",
+    "alojamiento_ponentes_ss",
     "nombre_evento_ss",
     "descripcion_objetivo_ss",
     "tipo_evento_ss",
     "num_asistentes_totales_ss",
     "publico_objetivo_ss",
-    "num_ponentes",
+    "num_ponentes_ss",
     "criterios_seleccion_ss",
     "documentosubido_1_ss",
     "documentosubido_2_ss"
@@ -433,7 +385,7 @@ if meeting_type == "Reunión Merck Program":
 
     # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
     dependendent_fields = {
-        "alojamiento_ponentes": {
+        "alojamiento_ponentes_ss": {
             "condicion": lambda x: x == "Sí",
             "dependientes": ["num_noches_ss", "hotel_ss"]
         },
@@ -489,7 +441,11 @@ if meeting_type == "Reunión Merck Program":
                     ) if st.session_state["tipo_evento_ss"] == "Virtual" else 
                         save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]))
     with col2:
-        st.number_input("Nº de asistentes totales *", min_value=0, step=1, key="num_asistentes_totales_ss", help="Ratio obligatorio (5 asistentes por ponente)",
+        st.number_input("Nº de asistentes totales *",
+                        min_value=0,
+                        step=1,
+                        key="num_asistentes_totales_ss",
+                        help="Ratio obligatorio (5 asistentes por ponente)",
                         on_change=lambda: save_to_session_state("num_asistentes_totales_ss", st.session_state["num_asistentes_totales_ss"]))
 
         
@@ -527,8 +483,8 @@ if meeting_type == "Reunión Merck Program":
 
     with col1:
         st.number_input("Presupuesto total estimado *", min_value=0, 
-                        value= st.session_state["form_data_speaking_services"]["presupuesto_estimado"] if "presupuesto_estimado" in st.session_state["form_data_speaking_services"] else "",
-                        step=1, key="presupuesto_estimado", on_change=lambda: save_to_session_state("presupuesto_estimado", st.session_state["presupuesto_estimado"]))
+                        value= st.session_state["form_data_speaking_services"]["presupuesto_estimado_ss"] if "presupuesto_estimado_ss" in st.session_state["form_data_speaking_services"] else "",
+                        step=1, key="presupuesto_estimado_ss", on_change=lambda: save_to_session_state("presupuesto_estimado_ss", st.session_state["presupuesto_estimado_ss"]))
     with col2:
         st.text_input("Producto asociado", max_chars=255, 
                       value =st.session_state["form_data_speaking_services"]["producto_asociado_ss"],
@@ -549,16 +505,21 @@ if meeting_type == "Reunión Merck Program":
     col1, col2 = st.columns(2)
 
     with col1:
-        st.selectbox("¿Desplazamiento de ponentes? *", ["Sí", "No"], key="desplazamiento_ponentes_ss", on_change=lambda: save_to_session_state("desplazamiento_ponentes_ss", st.session_state["desplazamiento_ponentes_ss"]))
+        st.selectbox("¿Desplazamiento de ponentes? *",
+                     ["Sí", "No"],
+                     index=["Sí", "No"].index(st.session_state["form_data_speaking_services"]["desplazamiento_ponentes_ss"]),
+                     key="desplazamiento_ponentes_ss",
+                     on_change=lambda: save_to_session_state("desplazamiento_ponentes_ss", st.session_state["desplazamiento_ponentes_ss"]))
     with col2:
         st.selectbox("¿Alojamiento de ponentes? *", ["Sí", "No"], 
-                    key="alojamiento_ponentes", 
+                    index=["Sí", "No"].index(st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"]),
+                    key="alojamiento_ponentes_ss", 
                     on_change=lambda: (
-                                        save_to_session_state("alojamiento_ponentes", st.session_state["alojamiento_ponentes"]),
+                                        save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]),
                                         save_to_session_state("num_noches_ss", 0),
                                         save_to_session_state("hotel_ss", "")
-                                    ) if st.session_state["alojamiento_ponentes"] == "No" else 
-                                        save_to_session_state("alojamiento_ponentes", st.session_state["alojamiento_ponentes"]))
+                                    ) if st.session_state["alojamiento_ponentes_ss"] == "No" else 
+                                        save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]))
 
     col1, col2 = st.columns(2)
 
@@ -568,16 +529,16 @@ if meeting_type == "Reunión Merck Program":
                         min_value=0, 
                         step=1, 
                         key="num_noches_ss", 
-                        disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes"] == "No",
-                        value= 0 if st.session_state["form_data_speaking_services"]["alojamiento_ponentes"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", 0),
+                        disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No",
+                        value= 0 if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", 0),
                         on_change=lambda: save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]))
                         
     with col2:
         st.text_input("Hotel *", 
                     max_chars=255, 
                     key="hotel_ss",
-                    disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes"] == "No", 
-                    value="" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes"] == "No" else st.session_state["form_data_speaking_services"].get("hotel_ss", ""),
+                    disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No", 
+                    value="" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("hotel_ss", ""),
                     on_change=lambda: save_to_session_state("hotel_ss", st.session_state["hotel_ss"]))
 
 
@@ -590,8 +551,8 @@ if meeting_type == "Reunión Merck Program":
     col1, col2 = st.columns(2)
     with col1:
         st.number_input("Nº de ponentes *", min_value=0, 
-                        value =st.session_state["form_data_speaking_services"]["num_ponentes"],
-                        step=1, key="num_ponentes", help="Asegúrese de que  se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas.", on_change=lambda: save_to_session_state("num_ponentes", st.session_state["num_ponentes"]))
+                        value =st.session_state["form_data_speaking_services"]["num_ponentes_ss"],
+                        step=1, key="num_ponentes_ss", help="Asegúrese de que  se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas.", on_change=lambda: save_to_session_state("num_ponentes_ss", st.session_state["num_ponentes_ss"]))
     with col2:
         st.multiselect(
             "Criterios de selección *",
