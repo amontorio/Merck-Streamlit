@@ -85,6 +85,7 @@ def add_participant():
         
     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] = new_participant
 
+
 # Inicializar estado del formulario en session_state
 if "form_data_consulting_services" not in st.session_state:
     field_defaults = {
@@ -98,13 +99,15 @@ if "form_data_consulting_services" not in st.session_state:
         "descripcion_servicio_cs": "",
         "numero_consultores_cs": 0,
         "justificacion_numero_participantes_cs": "",
-        "criterios_seleccion_cs": []
+        "criterios_seleccion_cs": [],
+        "sesion": False
     }
 
     st.session_state["form_data_consulting_services"] = {}
     
     st.session_state["download_enabled_cs"] = False
     st.session_state["path_doc_cs"] = None
+    st.session_state["sesion"] = False
     
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
@@ -114,11 +117,12 @@ if "form_data_consulting_services" not in st.session_state:
         
     add_participant()
 
-af.show_main_title(title="Consulting Services", logo_size=200)
-st.header("1. Documentos", divider=True)
-st.file_uploader("Agenda o Guión  del evento *", type=["pdf"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
 
-st.header("2. Declaración de necesidades", divider=True)
+expander = st.session_state["sesion"]
+
+af.show_main_title(title="Consulting Services", logo_size=200)
+
+st.header("1. Declaración de necesidades", divider=True)
 col1, col2 = st.columns(2)
 
 with col1:
@@ -176,7 +180,7 @@ st.text_area("Descripción del servicio *",
                 value= st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
                 on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]))
 
-st.header("3. Criterios del destinatario", divider=True)
+st.header("2. Criterios del destinatario", divider=True)
 col3, col4 = st.columns(2)
 
 with col3:
@@ -210,9 +214,9 @@ st.text_area("Justificación de número de participantes",
              disabled=st.session_state["form_data_consulting_services"]["numero_consultores_cs"] <= 1, 
              on_change=lambda: save_to_session_state("justificacion_numero_participantes_cs", st.session_state["justificacion_numero_participantes_cs"]))
 
-
+@st.fragment
 def participantes_section():
-    st.header("6. Detalles de los consultores", divider=True)
+    st.header("3. Detalles de los consultores", divider=True)
 
     if st.button("Agregar consultor", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()
@@ -225,7 +229,13 @@ def participantes_section():
 
         col_participant, col_remove_participant_individual = st.columns([10,1])
         with col_participant:
-            with st.expander(f"Consultor {index + 1}", expanded=False, icon="👩‍⚕️"):
+            if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "") != None and st.session_state.sesion == True:
+                name = "- " + st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "").split('-')[0]
+            else:
+                name = ""
+
+            #name = ""
+            with st.expander(f"Consultor {index + 1} {name}", expanded = st.session_state.sesion, icon="👩‍⚕️"):
                 nombre = st_searchbox(
                         #label="Buscador de HCO / HCP *",
                         search_function=af.search_function,
@@ -243,7 +253,7 @@ def participantes_section():
                 with col1:
                     
                     dni = st.text_input(
-                        f"DNI del participante {index + 1} *", 
+                        f"DNI del participante {index + 1}", 
                         value=info_user.get(f"dni_{id_user}", ""), 
                         key=f"dni_{id_user}"
                     )
@@ -266,7 +276,7 @@ def participantes_section():
                     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                     
                     st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
- 
+
                     
                 with col2:
                     tier = st.selectbox(
@@ -356,6 +366,7 @@ def participantes_section():
                     disabled=True
                 )
                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"honorarios_{id_user}"] = honorarios
+                
         index +=1
         with col_remove_participant_individual:
             if st.button("🗑️", key=f"remove_participant_{id_user}", use_container_width=True, type="secondary"):
@@ -365,6 +376,10 @@ def participantes_section():
 
                 st.rerun()
 participantes_section()
+
+
+st.header("4. Documentos", divider=True)
+st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
 
 
 st.session_state.download_enabled_cs = False
@@ -432,5 +447,8 @@ def download_document(disabled):
 
 disabled = not st.session_state.download_enabled_cs
 download_document(disabled)
+st.session_state.sesion = True
 
-#st.write(st.session_state["form_data_consulting_services"])
+
+st.write(st.session_state["form_data_consulting_services"])
+st.write(st.session_state)

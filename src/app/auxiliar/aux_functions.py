@@ -251,8 +251,8 @@ def validar_participantes(participantes):
                    datos_participante[f"nombre_sociedad_{id_participante}"].strip() == "":
                     #errores_participantes[id_participante].append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
                     errores_participantes[id_participante].append(f"El campo Nombre de la Sociedad del participante *{cnt}* es obligatorio cuando cobra a través de sociedad.\n")
-            # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí"), verificar que no estén vacíos
-            elif not campo.startswith("nombre_sociedad_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
+            # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí" y dni_), verificar que no estén vacíos
+            elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
                 print(remove_after_last_underscore(campo))
                 errores_participantes[id_participante].append(
                     f"El campo *{FIELD_MAPPINGS.get(remove_after_last_underscore(campo) + '_', campo)}* "

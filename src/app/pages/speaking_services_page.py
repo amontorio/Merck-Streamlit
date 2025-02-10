@@ -122,7 +122,7 @@ def ponentes_section():
                     with col1:
                         
                         dni = st.text_input(
-                            f"DNI del participante {index + 1} *", 
+                            f"DNI del participante {index + 1}", 
                             value=info_user.get(f"dni_{id_user}", ""), 
                             key=f"dni_{id_user}"
                         )
@@ -329,7 +329,7 @@ if "form_data_speaking_services" not in st.session_state:
         "producto_asociado_ss": "",
         "necesidad_reunion_ss": "",
         "servicio_ss": "",
-        "num_ponentes_ss": 1,
+        "num_ponentes_ss": "",
         "num_asistentes_totales_ss":0
     }
 
@@ -396,19 +396,7 @@ if meeting_type == "Reunión Merck Program":
     }
 
 
-    st.header("1. Documentos", divider=True)
-    with st.expander("Ver documentos necesarios"):
-        st.file_uploader("Agenda del evento *",
-                  type=["pdf"], 
-                  key="documentosubido_1_ss", 
-                  on_change=lambda: save_to_session_state("documentosubido_1_ss", st.session_state["documentosubido_1_ss"] if st.session_state["documentosubido_1_ss"] else "")) 
-        st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", 
-                 type=["pdf"], 
-                 key="documentosubido_2_ss", 
-                 on_change=lambda: save_to_session_state("documentosubido_2_ss", st.session_state["documentosubido_2_ss"] if st.session_state["documentosubido_2_ss"] else "")) 
-
-
-    st.header("2. Detalles del Evento", divider=True)
+    st.header("1. Detalles del Evento", divider=True)
     col1, col2 = st.columns(2)
     st.text_input("Nombre del evento *", value=st.session_state["form_data_speaking_services"]["nombre_evento_ss"], max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
     st.text_area("Descripción y objetivo *", value=st.session_state["form_data_speaking_services"]["descripcion_objetivo_ss"], max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
@@ -478,7 +466,7 @@ if meeting_type == "Reunión Merck Program":
             on_change=lambda: save_to_session_state("publico_objetivo_ss", st.session_state["publico_objetivo_ss"])
         )
     
-    st.header("3. Detalles de la Actividad", divider=True)
+    st.header("2. Detalles de la Actividad", divider=True)
     col1, col2 = st.columns(2)
 
     with col1:
@@ -501,7 +489,7 @@ if meeting_type == "Reunión Merck Program":
 )
         ####### meter campo consideraciones!!!!
 
-    st.header("4. Logística de la Actividad", divider=True)
+    st.header("3. Logística de la Actividad", divider=True)
     col1, col2 = st.columns(2)
 
     with col1:
@@ -546,18 +534,24 @@ if meeting_type == "Reunión Merck Program":
 
 
 
-    st.header("5. Criterios de Selección", divider=True)
+    st.header("4. Criterios de Selección", divider=True)
     col1, col2 = st.columns(2)
     col1, col2 = st.columns(2)
     with col1:
-        st.number_input("Nº de ponentes *", min_value=0, 
-                        value =st.session_state["form_data_speaking_services"]["num_ponentes_ss"],
-                        step=1, key="num_ponentes_ss", help="Asegúrese de que  se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas.", on_change=lambda: save_to_session_state("num_ponentes_ss", st.session_state["num_ponentes_ss"]))
+        num_ponentes = st.text_input(
+            "Nº de ponentes *", 
+            value=st.session_state["form_data_speaking_services"]["num_ponentes_ss"], 
+            key="num_ponentes_ss", 
+            help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas. El valor del campo debe de ser un número entero.",
+            on_change = lambda: save_to_session_state("num_ponentes_ss", st.session_state["num_ponentes_ss"]) if st.session_state.num_ponentes_ss.isdigit()
+                            else save_to_session_state("num_ponentes_ss", "")
+        )
+        
     with col2:
         st.multiselect(
             "Criterios de selección *",
             [
-                "Tier 1", "Tier 2", "Tier 3", "Tier 4", "Kol Global", "Experiencia como ponente", "Experiencia como profesor",
+                "Kol Global", "Experiencia como ponente", "Experiencia como profesor",
                 "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
             ],
             key="criterios_seleccion_ss",
@@ -566,8 +560,20 @@ if meeting_type == "Reunión Merck Program":
         )
 
 
-    st.header("6. Detalles de los Ponentes", divider=True)
+    st.header("5. Detalles de los Ponentes", divider=True)
     ponentes_section()
+
+    st.header("6. Documentos", divider=True)
+    with st.expander("Ver documentos necesarios"):
+        st.file_uploader("Agenda del evento *",
+                  type=["pdf", "docx", "xlsx", "ppt"],
+                  key="documentosubido_1_ss", 
+                  on_change=lambda: save_to_session_state("documentosubido_1_ss", st.session_state["documentosubido_1_ss"] if st.session_state["documentosubido_1_ss"] else "")) 
+        st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", 
+                 type=["pdf", "docx", "xlsx", "ppt"],
+                 key="documentosubido_2_ss", 
+                 on_change=lambda: save_to_session_state("documentosubido_2_ss", st.session_state["documentosubido_2_ss"] if st.session_state["documentosubido_2_ss"] else "")) 
+
 
     # Estado inicial para el botón de descargar
     st.session_state.download_enabled_ss = False
@@ -656,4 +662,4 @@ else:
     download_document(disabled, meeting_type)
 
 
-#st.write(st.session_state["form_data_speaking_services"])
+st.write(st.session_state["form_data_speaking_services"])

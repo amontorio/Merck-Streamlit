@@ -205,13 +205,6 @@ def save_form_data_event():
 
 # Sección de documentos a adjuntar
 af.show_main_title(title="Sponsorship of Event", logo_size=200)
-st.header("1. Documentos", divider=True)
-
-with st.expander("Ver documentos necesarios"):
-    st.file_uploader("Adjuntar agenda del evento *", type=["pdf", "docx", "xlsx"], key="documentosubido_1_event", accept_multiple_files=False, 
-                     on_change=lambda: save_to_session_state("documentosubido_1_event", st.session_state["documentosubido_1_event"] if st.session_state["documentosubido_1_event"] else "")) 
-    st.file_uploader("Adjuntar solicitud de patrocinio *", type=["pdf", "docx"], key="documentosubido_2_event", accept_multiple_files=False,
-                    on_change=lambda: save_to_session_state("documentosubido_2_event", st.session_state["documentosubido_2_event"] if st.session_state["documentosubido_2_event"] else "")) 
 
 # Sección Detalles del Evento
 def crear_detalles_evento():
@@ -346,7 +339,7 @@ def display_objective_field():
                 st.markdown(message, unsafe_allow_html=True)
             st.session_state.prev_event_objetive = st.session_state.event_objetive
 
-st.header("2. Detalles del Evento", divider=True)
+st.header("1. Detalles del Evento", divider=True)
 with st.container(border=True):     
     crear_detalles_evento()
     display_objective_field()
@@ -355,7 +348,7 @@ with st.container(border=True):
 # Sección Información del Firmante
 @st.fragment()
 def crear_detalles_firmante():
-    st.header("3. Detalles del Organizador", divider=True)
+    st.header("2. Detalles del Organizador", divider=True)
     with st.container(border=True):
         col13, col14 = st.columns(2)
         with col13:
@@ -380,7 +373,7 @@ def crear_descripción_ia():
     st.button("Generar", help="Genera una breve descripción con IA en base al resto de campos", icon="📄", use_container_width=True, type="primary", on_click=handle_invoke_chain_event_description)
 @st.fragment
 def crear_detalles_patrocinio():
-    st.header("4. Detalles del Patrocinio", divider=True)
+    st.header("3. Detalles del Patrocinio", divider=True)
     st.text_input(
         "Nombre del evento",
         placeholder="Este se actualizará automáticamente",
@@ -415,26 +408,27 @@ def crear_detalles_patrocinio():
                                     save_to_session_state("exclusive_sponsorship", st.session_state["exclusive_sponsorship"]))
         if st.session_state.exclusive_sponsorship == "Sí":
             st.warning("Debes enviar el dossier comercial o presupuesto del organizador.")
-            st.file_uploader("Adjuntar presupuesto desglosado o dossier comercial", type=["pdf", "docx"], key="documentosubido_3_event", accept_multiple_files=False, 
+            st.file_uploader("Adjuntar presupuesto desglosado o dossier comercial", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_3_event", accept_multiple_files=False, 
                     on_change=lambda: save_to_session_state("documentosubido_3_event", st.session_state["documentosubido_3_event"] if st.session_state["documentosubido_3_event"] else "")) 
 
-        def handle_recurrent_text():
-            new_value = "Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else ""
-            save_to_session_state("recurrent_text", new_value)
-            return new_value
-        
+
         col11, col12 = st.columns(2, vertical_alignment="center")
         with col11:
             st.selectbox("Patrocinio recurrente *", options=["No lo sé","Sí", "No"], key="recurrent_sponsorship", help="¿Merck ha colaborado en ediciones anteriores de este evento?", on_change=lambda: save_to_session_state("recurrent_sponsorship", st.session_state["recurrent_sponsorship"]))
         with col12:
             #if st.session_state.recurrent_sponsorship == "Sí":
-            st.text_area("Detalles del patrocinio recurrente",
-                         value=handle_recurrent_text(),
-                         max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí",
-                         key="recurrent_text",
-                         on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
+            st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
 
 crear_detalles_patrocinio()
+
+st.header("4. Documentos", divider=True)
+
+with st.expander("Ver documentos necesarios"):
+    st.file_uploader("Adjuntar agenda del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1_event", accept_multiple_files=False, 
+                     on_change=lambda: save_to_session_state("documentosubido_1_event", st.session_state["documentosubido_1_event"] if st.session_state["documentosubido_1_event"] else "")) 
+    st.file_uploader("Adjuntar solicitud de patrocinio *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_event", accept_multiple_files=False,
+                    on_change=lambda: save_to_session_state("documentosubido_2_event", st.session_state["documentosubido_2_event"] if st.session_state["documentosubido_2_event"] else "")) 
+
 
 # Estado inicial para el botón de descargar
 st.session_state.download_enabled = False
@@ -477,7 +471,7 @@ def download_document():
     if st.session_state.path_doc:
         with open(st.session_state.path_doc, "rb") as file:
             st.download_button(
-                label="Descargar ZIP",
+                label="Descargar documento Word",
                 data=file,
                 file_name="Sponshorship_Event.zip",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -487,7 +481,7 @@ def download_document():
             )
     else:
         st.download_button(
-            label="Descargar ZIP",
+            label="Descargar documento Word",
             data=io.BytesIO(),
             file_name="Sponshorship_Event.zip",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -501,4 +495,4 @@ button_form()
 disabled = not st.session_state.download_enabled
 download_document()
 
-#st.write(st.session_state["form_data_event"])
+st.write(st.session_state["form_data_event"])

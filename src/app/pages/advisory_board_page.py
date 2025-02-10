@@ -124,10 +124,7 @@ if "form_data_advisory_board" not in st.session_state:
 
 af.show_main_title(title="Advisory Board", logo_size=200)
 
-st.header("1. Documentos", divider=True)
-st.file_uploader("Programa del evento *", type=["pdf"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
-
-st.header("2. Detalles de la Actividad", divider=True)
+st.header("1. Detalles de la Actividad", divider=True)
 col1, col2 = st.columns(2)
 
 with col1:
@@ -170,7 +167,7 @@ with col2:
                  index= ["No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_otro_departamento_ab"]) if "otra_actividad_otro_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: save_to_session_state("otra_actividad_otro_departamento_ab", st.session_state["otra_actividad_otro_departamento_ab"]))
 
-st.header("3. Logística de la Actividad", divider=True)
+st.header("2. Logística de la Actividad", divider=True)
 col1, col2 = st.columns(2)
 with col1:
     st.selectbox("¿Desplazamiento de participantes? *", 
@@ -210,7 +207,7 @@ with col2:
         on_change=lambda: save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"])
     )
     
-st.header("4. Detalles del Evento", divider=True)
+st.header("3. Detalles del Evento", divider=True)
 st.text_input("Nombre *", 
               max_chars=255, 
               key="nombre_evento_ab",
@@ -290,7 +287,7 @@ st.text_input(
         on_change=lambda: save_to_session_state("publico_objetivo_ab", st.session_state["publico_objetivo_ab"])
     )
 
-st.header("5. Participantes del Advisory", divider=True)
+st.header("4. Participantes del Advisory", divider=True)
 col1, col2 = st.columns(2)
 with col1:
     st.number_input("Nº de participantes *",
@@ -318,7 +315,7 @@ st.text_area("Justificación de número de participantes *",
              on_change=lambda: save_to_session_state("justificacion_participantes_ab", st.session_state["justificacion_participantes_ab"]))
 
 def participantes_section():
-    st.header("6. Detalles de los Participantes", divider=True)
+    st.header("5. Detalles de los Participantes", divider=True)
 
     if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()
@@ -349,7 +346,7 @@ def participantes_section():
                 with col1:
                     
                     dni = st.text_input(
-                        f"DNI del participante {index + 1} *", 
+                        f"DNI del participante {index + 1}", 
                         value=info_user.get(f"dni_{id_user}", ""), 
                         key=f"dni_{id_user}"
                     )
@@ -471,6 +468,10 @@ def participantes_section():
 
                 st.rerun()
 participantes_section()
+
+st.header("6. Documentos", divider=True)
+st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
+
 
 # Estado inicial para el botón de descargar
 st.session_state.download_enabled_ab = False
