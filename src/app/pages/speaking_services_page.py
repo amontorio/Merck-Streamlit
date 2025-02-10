@@ -316,7 +316,7 @@ if "form_data_speaking_services" not in st.session_state:
         "start_date_ss": date.today(),
         "end_date_ss": date.today(),
         "tipo_evento_ss": "Virtual",
-        "num_noches_ss": 0,
+        "num_noches_ss": 1,
         "hotel_ss": "",
         "documentosubido_1_ss": None,
         "documentosubido_2_ss": None,
@@ -329,7 +329,7 @@ if "form_data_speaking_services" not in st.session_state:
         "producto_asociado_ss": "",
         "necesidad_reunion_ss": "",
         "servicio_ss": "",
-        "num_ponentes_ss": 0,
+        "num_ponentes_ss": 1,
         "num_asistentes_totales_ss":0
     }
 
@@ -506,17 +506,17 @@ if meeting_type == "Reunión Merck Program":
 
     with col1:
         st.selectbox("¿Desplazamiento de ponentes? *",
-                     ["Sí", "No"],
-                     index=["Sí", "No"].index(st.session_state["form_data_speaking_services"]["desplazamiento_ponentes_ss"]),
+                     ["No", "Sí"],
+                     index=["No", "Sí"].index(st.session_state["form_data_speaking_services"]["desplazamiento_ponentes_ss"]),
                      key="desplazamiento_ponentes_ss",
                      on_change=lambda: save_to_session_state("desplazamiento_ponentes_ss", st.session_state["desplazamiento_ponentes_ss"]))
     with col2:
-        st.selectbox("¿Alojamiento de ponentes? *", ["Sí", "No"], 
-                    index=["Sí", "No"].index(st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"]),
+        st.selectbox("¿Alojamiento de ponentes? *", ["No", "Sí"], 
+                    index=["No", "Sí"].index(st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"]),
                     key="alojamiento_ponentes_ss", 
                     on_change=lambda: (
                                         save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]),
-                                        save_to_session_state("num_noches_ss", 0),
+                                        save_to_session_state("num_noches_ss", 1),
                                         save_to_session_state("hotel_ss", "")
                                     ) if st.session_state["alojamiento_ponentes_ss"] == "No" else 
                                         save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]))
@@ -526,11 +526,11 @@ if meeting_type == "Reunión Merck Program":
 
     with col1:
         st.number_input("Nº de noches *", 
-                        min_value=0, 
+                        min_value=1, 
                         step=1, 
                         key="num_noches_ss", 
                         disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No",
-                        value= 0 if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", 0),
+                        value= 1 if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", 1),
                         on_change=lambda: save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]))
                         
     with col2:

@@ -224,7 +224,7 @@ def participantes_section():
 
         col_participant, col_remove_participant_individual = st.columns([10,1])
         with col_participant:
-            with st.expander(f"Participante {index + 1}", expanded=False, icon="👩‍⚕️"):
+            with st.expander(f"Consultor {index + 1}", expanded=False, icon="👩‍⚕️"):
                 nombre = st_searchbox(
                         #label="Buscador de HCO / HCP *",
                         search_function=af.search_function,

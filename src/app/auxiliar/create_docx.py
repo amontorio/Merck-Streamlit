@@ -169,7 +169,7 @@ def crear_documento_advisory(data):
     agregar_encabezado("Logística de la Actividad")
     agregar_bullet_point("Desplazamiento de participantes", data.get("desplazamiento_ab", ""))
     agregar_bullet_point("Alojamiento de participantes", data.get("alojamiento_ab", ""))
-    if data.get("alojamiento") == "Sí":
+    if data.get("alojamiento_ab") == "Sí":
         agregar_bullet_point("Nº de noches", data.get("num_noches_ab", ""))
         agregar_bullet_point("Hotel", data.get("hotel_ab", ""))
 
@@ -325,7 +325,7 @@ def crear_documento_consulting_services(data):
             pon_horas = participante.get(f"ponencia_horas_{id_participante}", 0)
             pon_mins = participante.get(f"ponencia_minutos_{id_participante}", 0)
             
-            row_cells[8].text = f"Preparación: {prep_horas}h {prep_mins}m, Ponencia: {pon_horas}h {pon_mins}m"
+            row_cells[8].text = f"Preparación: {prep_horas}horas y {prep_mins}minutos, Ponencia: {pon_horas}horas y {pon_mins}minutos"
 
     nombre_zip = 'Consulting_Services.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
@@ -397,7 +397,7 @@ def crear_documento_speaking(data):
     agregar_bullet_point("Público objetivo del programa", data.get("publico_objetivo_ss", ""))
     
     agregar_encabezado("Detalles de la Actividad")
-    agregar_bullet_point("Presupuesto total estimado", data.get("presupuesto_estimado", ""))
+    agregar_bullet_point("Presupuesto total estimado",  f"{data.get('presupuesto_estimado_ss', 0)} €")
     if data.get("producto_asociado_ss", "") != "":
         agregar_bullet_point("Producto asociado", data.get("producto_asociado_ss", ""))
     else:
@@ -407,14 +407,14 @@ def crear_documento_speaking(data):
     
     agregar_encabezado("Logística de la Actividad")
     agregar_bullet_point("Desplazamiento de ponentes", data.get("desplazamiento_ponentes_ss", ""))
-    agregar_bullet_point("Alojamiento de ponentes", data.get("alojamiento_ponentes", ""))
-    if data.get("alojamiento_ponentes", "") == "Sí":
+    agregar_bullet_point("Alojamiento de ponentes", data.get("alojamiento_ponentes_ss", ""))
+    if data.get("alojamiento_ponentes_ss", "") == "Sí":
         agregar_bullet_point("Nº de noches", data.get("num_noches_ss", ""))
         agregar_bullet_point("Hotel", data.get("hotel_ss", ""))
     
     
     agregar_encabezado("Criterios de Selección")
-    agregar_bullet_point("Nº de participantes", data.get("num_ponentes", ""))
+    agregar_bullet_point("Nº de ponentes", data.get("num_ponentes_ss", ""))
     agregar_bullet_point("Criterios de selección", data.get("criterios_seleccion_ss", ""))
 
     agregar_encabezado("Detalles de los Ponentes")
@@ -438,7 +438,7 @@ def crear_documento_speaking(data):
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
             row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
             row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
-            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas {participante.get(f'preparacion_ss_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_ss_horas_{id_participante}', '')} horas {participante.get(f'ponencia_ss_minutos_{id_participante}', '')} minutos"
+            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_ss_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_ss_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_ss_minutos_{id_participante}', '')} minutos"
             
             for cell in row_cells:
                 cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
@@ -542,7 +542,7 @@ def crear_documento_speaking_reducido(data):
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
             row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
             row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
-            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas {participante.get(f'preparacion_ss_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_ss_horas_{id_participante}', '')} horas {participante.get(f'ponencia_ss_minutos_{id_participante}', '')} minutos"
+            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_minutos_{id_participante}', '')} minutos"
             
             for cell in row_cells:
                 cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))

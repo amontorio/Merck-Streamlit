@@ -25,7 +25,7 @@ FIELD_MAPPINGS = {
     "documentosubido_2_ss": "Contratos inferiores a 1000€",
     "start_date_ss": "Start Date",
     "end_date_ss": "End Date",
-    "presupuesto_estimado": "Presupuesto Estimado",
+    "presupuesto_estimado_ss": "Presupuesto Estimado",
     "necesidad_reunion_ss": "Necesidad Reunión",
     "descripcion_objetivo_ss": "Descripción y objetivo",
     "desplazamiento_ponentes_ss": "Desplazamiento de los ponentes",
@@ -35,14 +35,16 @@ FIELD_MAPPINGS = {
     "tipo_evento_ss": "Tipo Evento",
     "num_asistentes_totales_ss": "Número Asistentes Totales",
     "publico_objetivo_ss": "Público Objetivo",
-    "num_ponentes": "Número Ponentes",
+    "num_ponentes_ss": "Número Ponentes",
     "criterios_seleccion_ss": "Criterios Selección",
     "servicio_ss": "Servicio",
     "desplazamiento_ponentes_ss": "Desplazamiento Ponentes",
-    "alojamiento_ponentes": "Alojamiento Ponentes",
+    "alojamiento_ponentes_ss": "Alojamiento Ponentes",
     "num_noches_ss": "Número Noches",
     "hotel_ss":"Hotel",
     "tipo_evento_ss": "Tipo Evento",
+    "sede_ss": "Sede",
+    "ciudad_ss": "Ciudad",
     
     # Detalle Consultores
     "nombre_": "Nombre",
@@ -247,7 +249,8 @@ def validar_participantes(participantes):
                 if f"nombre_sociedad_{id_participante}" not in datos_participante or \
                    datos_participante[f"nombre_sociedad_{id_participante}"] is None or \
                    datos_participante[f"nombre_sociedad_{id_participante}"].strip() == "":
-                    errores_participantes[id_participante].append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
+                    #errores_participantes[id_participante].append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
+                    errores_participantes[id_participante].append(f"El campo Nombre de la Sociedad del participante *{cnt}* es obligatorio cuando cobra a través de sociedad.\n")
             # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí"), verificar que no estén vacíos
             elif not campo.startswith("nombre_sociedad_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
                 print(remove_after_last_underscore(campo))
