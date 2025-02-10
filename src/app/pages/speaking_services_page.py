@@ -492,10 +492,10 @@ if meeting_type == "Reunión Merck Program":
 
 
 
-    st.text_input("Necesidad de la reunión y resultados esperados *", max_chars=4000, 
+    st.text_area("Necesidad de la reunión y resultados esperados *", max_chars=4000, 
                       value =st.session_state["form_data_speaking_services"]["necesidad_reunion_ss"],
                       key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
-    st.text_input("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
+    st.text_area("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
                     help = "Ponencia [nombre del evento]",
                     value =st.session_state["form_data_speaking_services"]["servicio_ss"]
 )

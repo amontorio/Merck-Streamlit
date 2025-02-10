@@ -139,14 +139,7 @@ with col1:
                   key="producto_asociado_cs",
                   value= st.session_state["form_data_consulting_services"]["producto_asociado_cs"] if "producto_asociado_cs" in st.session_state["form_data_consulting_services"] else "",
                   on_change=lambda: save_to_session_state("producto_asociado_cs", st.session_state["producto_asociado_cs"]))
-    
-    st.text_area("Necesidad de la reunión y resultados esperados *",
-                 max_chars=4000,
-                 key="necesidad_reunion_cs",
-                 help="Describa la necesidad de obtener información de los consultores y el propósito para el cual se utilizará dicha información.",
-                 value= st.session_state["form_data_consulting_services"]["necesidad_reunion_cs"] if "necesidad_reunion_cs" in st.session_state["form_data_consulting_services"] else "",
-                 on_change=lambda: save_to_session_state("necesidad_reunion_cs", st.session_state["necesidad_reunion_cs"]))
-    
+        
 with col2:
     st.number_input("Presupuesto total estimado *",
                     min_value=0.0,
@@ -169,11 +162,19 @@ with col2:
                  index= ["N/A", "Aprobado", "No Aprobado"].index(st.session_state["form_data_consulting_services"]["estado_aprobacion_cs"]) if "estado_aprobacion_cs" in st.session_state["form_data_consulting_services"] else 0,
                  on_change=lambda: save_to_session_state("estado_aprobacion_cs", st.session_state["estado_aprobacion_cs"]))
     
-    st.text_area("Descripción del servicio *",
-                 max_chars=4000,
-                 key="descripcion_servicio_cs",
-                 value= st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
-                 on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]))
+
+st.text_area("Necesidad de la reunión y resultados esperados *",
+                max_chars=4000,
+                key="necesidad_reunion_cs",
+                help="Describa la necesidad de obtener información de los consultores y el propósito para el cual se utilizará dicha información.",
+                value= st.session_state["form_data_consulting_services"]["necesidad_reunion_cs"] if "necesidad_reunion_cs" in st.session_state["form_data_consulting_services"] else "",
+                on_change=lambda: save_to_session_state("necesidad_reunion_cs", st.session_state["necesidad_reunion_cs"]))
+
+st.text_area("Descripción del servicio *",
+                max_chars=4000,
+                key="descripcion_servicio_cs",
+                value= st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
+                on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]))
 
 st.header("3. Criterios del destinatario", divider=True)
 col3, col4 = st.columns(2)
