@@ -12,6 +12,7 @@ import io
 import os
 import base64
 import zipfile
+import time
 
 
 tarifas = {
@@ -43,6 +44,10 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_speaking_services"][key][key_participante][field_participante] = value
+        st.session_state[f"session_ss_{key_participante}"] = True
+        #print(st.session_state["form_data_speaking_services"]["participantes_ss"][f"{key_participante}"].get(f"nombre_{key_participante}", ""))
+
+
 
 
 def normalize_text(text):
@@ -60,6 +65,7 @@ def add_ponente():
         "id": id_user,
         f"nombre_{id_user}": "",
         f"dni_{id_user}": "",
+        f"dni_correcto_{id_user}": True,
         f"tier_{id_user}": "0",
         f"centro_trabajo_{id_user}": "",
         f"email_{id_user}": "",
@@ -70,10 +76,11 @@ def add_ponente():
         f"preparacion_minutos_{id_user}": 0,
         f"ponencia_horas_{id_user}": 0,
         f"ponencia_minutos_{id_user}": 0,
+        f"session_{id_user}": False
     }
     
     st.session_state["participantes_ss"].append(new_participant)
-    st.session_state["id_participantes_ss"].append(id_user)
+    #st.session_state["id_participantes_ss"].append(id_user)
 
     # Inicializar participantes_ab en form_data_advisory_board si no existe
     if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
@@ -92,48 +99,98 @@ def remove_last_participant():
 
         #st.session_state["participant_index_ss"] -= 1
 
+def asignacion_nombre(id_user):
+        if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "") != None: #not in [None, (None,)]:
+            nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "").rsplit('-', 1)[0] 
+            st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = nombre_ponente
+        else:
+            #st.session_state["name_ponente_ss"] = ""
+            st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = ""
+            st.session_state[f"session_ss_{id_user}"] = False
 
+def validacion_dni(id_user):
+        dni = st.session_state.get(f"dni_{id_user}", "")
+        print(dni)
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
+        try:
+            numero = int(dni[:-1])
+            letra = dni[-1].upper()
+            letras_validas = "TRWAGMYFPDXBNJZSQVHLCKE"
+            letra_correcta = letras_validas[numero % 23]
+
+            if letra != letra_correcta:
+                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
+
+        except:
+            if dni != "":
+                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
+
+        print("validacion final", st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"])
+        
 def ponentes_section():
-
         if st.button("Agregar ponente", use_container_width=True, icon="➕", key="add_ponente_button"):
             add_ponente()
-            print(st.session_state["form_data_speaking_services"]["participantes_ss"])
-
 
         index = 0
         # Renderizar los participantes
         for info_user in st.session_state["participantes_ss"]:
             id_user = info_user["id"]
-            print(id_user)
             col_participant, col_remove_participant_individual = st.columns([10,1])
             with col_participant:
-                with st.expander(f"Ponente {index + 1}", expanded=False, icon="👩‍⚕️"):
+
+                asignacion_nombre(id_user)
+                nombre_expander_ss = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']['name_ponente_ss']
+                if nombre_expander_ss != "":
+                    aux = ": "
+                else:
+                    aux = ""
+                with st.expander(f"Ponente {index + 1}{aux}{nombre_expander_ss}", expanded = st.session_state[f"session_ss_{id_user}"], icon="👩‍⚕️"):
                     nombre = st_searchbox(
                             #label="Buscador de HCO / HCP *",
                             search_function=af.search_function,
                             placeholder="Busca un HCO / HCP *",
                             key=f"nombre_{id_user}",
                             edit_after_submit="option",
-                            submit_function= lambda x: (save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"))                    )
-
-                    st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"] = nombre
+                            default_searchterm=info_user.get(f"nombre_{id_user}", ""),
+                            submit_function= lambda x: (
+                                save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
+                                )
+                    )
                     
+                    st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"] = nombre
+                    #print(nombre)
+                    if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"] != None:
+                        if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"].rsplit('-', 1)[0] != st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']["name_ponente_ss"]:
+                            #asignacion_nombre(id_user)
+                            st.rerun()
+                   
+
                     col1, col2 = st.columns(2)
                     with col1:
                         
                         dni = st.text_input(
                             f"DNI del participante {index + 1}", 
                             value=info_user.get(f"dni_{id_user}", ""), 
-                            key=f"dni_{id_user}"
-                        )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
+                            key=f"dni_{id_user}",
+                            on_change=lambda: (validacion_dni(id_user),
+                                               save_to_session_state("participantes_ss", st.session_state[f"dni_{id_user}"], id_user, f"dni_{id_user}")
+                                               if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True 
+                                               else save_to_session_state("participantes_ss", "", id_user, f"dni_{id_user}")
+                                )   
+                            )
+
+                        if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == False:
+                            st.toast("El DNI introducido no es correcto.", icon="❌")
+
 
                         centro = st.text_input(
                             f"Centro de trabajo del participante {index + 1} *", 
                             value=info_user.get(f"centro_trabajo_{id_user}", ""), 
-                            key=f"centro_trabajo_{id_user}"
+                            key=f"centro_trabajo_{id_user}",
+                            on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"centro_trabajo_{id_user}"], id_user, f"centro_trabajo_{id_user}")
+
                         )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"centro_trabajo_{id_user}"] = centro
+                       #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"centro_trabajo_{id_user}"] = centro
 
                         cobra = st.selectbox(
                             "¿Cobra a través de sociedad? *", 
@@ -156,14 +213,18 @@ def ponentes_section():
                         email = st.text_input(
                             f"Email del participante {index + 1} *", 
                             value=info_user.get(f"email_{id_user}", ""), 
-                            key=f"email_{id_user}"
+                            key=f"email_{id_user}",
+                            on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"email_{id_user}"], id_user, f"email_{id_user}")
                         )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = email
+                        #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = email
                         
                         nombre_sociedad = st.text_input(
                             "Nombre de la sociedad",
                             value = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
                             key=f"nombre_sociedad_{id_user}",
+                            on_change = lambda: save_to_session_state("participantes_ss","", id_user, f"nombre_sociedad_{id_user}")
+                              if st.session_state[f"cobra_sociedad_{id_user}"] == "No" else 
+                              save_to_session_state("participantes_ss", st.session_state[f"nombre_sociedad_{id_user}"], id_user, f"nombre_sociedad_{id_user}"),
                             disabled= cobra == "No"
                         )
                         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
@@ -232,11 +293,18 @@ def ponentes_section():
                     if id_user in st.session_state["form_data_speaking_services"]["participantes_ss"].keys():
                         del st.session_state["form_data_speaking_services"]["participantes_ss"][id_user]
                         st.session_state["participantes_ss"] = list(filter(lambda x: x['id'] != id_user, st.session_state["participantes_ss"]))
+                        st.session_state[f"session_ss_{id_user}"] = False
 
                     st.rerun()
 
 def button_form(tipo):
-    if st.button(label="Enviar", use_container_width=True, type="primary"):
+    if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        with st.status("Validando campos...", expanded=True, state = "running") as status:
+            st.write("Validando información general del formulario...")
+            time.sleep(4)
+            st.write("Validando información de los ponentes...")
+            time.sleep(4)
+
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
@@ -250,7 +318,8 @@ def button_form(tipo):
                 msg_general = ""
                 for msg in errores_general:
                     msg_general += f"\n* {msg}\n"
-                st.error(msg_general)
+                if msg_general != "":
+                    st.error(msg_general)
 
                 #print(st.session_state['form_data_speaking_services']['participantes_ss'])
                 for id_user, list_errors in errores_participantes.items():
@@ -271,6 +340,16 @@ def button_form(tipo):
         except Exception as e:
             traceback.print_exc()
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+            
+        # Actualizo el estado
+        if st.session_state.download_enabled_ss == True:
+            status.update(
+                label="Validación completada!", state="complete", expanded=False
+            )
+        else:
+            status.update(
+                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+            )
 
 
 def download_document(disabled, tipo):
@@ -310,13 +389,16 @@ def download_document(disabled, tipo):
 # if "id_participantes_ss" not in st.session_state:
 #     st.session_state["id_participantes_ss"] = []
 
+if "name_ponente_ss" not in st.session_state:
+        st.session_state["name_ponente_ss"] = ""
+
 # Inicializar estado del formulario en session_state
 if "form_data_speaking_services" not in st.session_state:
     field_defaults = {
         "start_date_ss": date.today(),
         "end_date_ss": date.today(),
         "tipo_evento_ss": "Virtual",
-        "num_noches_ss": 1,
+        "num_noches_ss": "",
         "hotel_ss": "",
         "documentosubido_1_ss": None,
         "documentosubido_2_ss": None,
@@ -331,6 +413,7 @@ if "form_data_speaking_services" not in st.session_state:
         "servicio_ss": "",
         "num_ponentes_ss": "",
         "num_asistentes_totales_ss":0
+        #"session_ss": False
     }
 
     st.session_state["form_data_speaking_services"] = {}
@@ -338,13 +421,15 @@ if "form_data_speaking_services" not in st.session_state:
 
     st.session_state["download_enabled_ss"] = False
     st.session_state["path_doc_ss"] = None
-
+    #st.session_state["session_ss"] = False
+    
 
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
 
     if "participantes_ss" not in st.session_state:
         st.session_state.participantes_ss = [] 
+
     add_ponente()
 
 
@@ -355,7 +440,8 @@ if "form_data_speaking_services" not in st.session_state:
     # if "participant_index_ss" not in st.session_state:
     #     st.session_state["participant_index_ss"] = 0
 
-
+# if 'session_ss' not in st.session_state:
+#     st.session_state.session_ss = False
 
 af.show_main_title(title="Speaking Services", logo_size=200)
 
@@ -369,7 +455,7 @@ if meeting_type == "Reunión Merck Program":
     "end_date_ss",
     "presupuesto_estimado_ss",
     "necesidad_reunion_ss",
-    "servicio_ss",
+    #"servicio_ss",
     "desplazamiento_ponentes_ss",
     "alojamiento_ponentes_ss",
     "nombre_evento_ss",
@@ -435,6 +521,9 @@ if meeting_type == "Reunión Merck Program":
                         key="num_asistentes_totales_ss",
                         help="Ratio obligatorio (5 asistentes por ponente)",
                         on_change=lambda: save_to_session_state("num_asistentes_totales_ss", st.session_state["num_asistentes_totales_ss"]))
+        
+    if st.session_state["num_asistentes_totales_ss"] >= 20:
+        st.warning("Cuando el número de asistentes es mayor o igual a 20, y si alguno pernocta, se debería haber comunicado y rellenado el **Formulario Industria** con antelación.")
 
         
     col1, col2 = st.columns(2)
@@ -485,9 +574,8 @@ if meeting_type == "Reunión Merck Program":
                       key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
     st.text_area("Descripción del servicio *", max_chars=4000, key="servicio_ss", on_change=lambda: save_to_session_state("servicio_ss", st.session_state["servicio_ss"]),
                     help = "Ponencia [nombre del evento]",
-                    value =st.session_state["form_data_speaking_services"]["servicio_ss"]
-)
-        ####### meter campo consideraciones!!!!
+                    value = f"Ponencia - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}", #st.session_state["form_data_speaking_services"]["servicio_ss"]
+                    disabled=True)
 
     st.header("3. Logística de la Actividad", divider=True)
     col1, col2 = st.columns(2)
@@ -504,7 +592,7 @@ if meeting_type == "Reunión Merck Program":
                     key="alojamiento_ponentes_ss", 
                     on_change=lambda: (
                                         save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]),
-                                        save_to_session_state("num_noches_ss", 1),
+                                        save_to_session_state("num_noches_ss", ""),
                                         save_to_session_state("hotel_ss", "")
                                     ) if st.session_state["alojamiento_ponentes_ss"] == "No" else 
                                         save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]))
@@ -513,13 +601,12 @@ if meeting_type == "Reunión Merck Program":
 
 
     with col1:
-        st.number_input("Nº de noches *", 
-                        min_value=1, 
-                        step=1, 
+        st.text_input("Nº de noches *", 
                         key="num_noches_ss", 
                         disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No",
-                        value= 1 if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", 1),
-                        on_change=lambda: save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]))
+                        value= "" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", ""),
+                        on_change=lambda: save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) if st.session_state.num_noches_ss.isdigit()
+                            else save_to_session_state("num_noches_ss", ""))
                         
     with col2:
         st.text_input("Hotel *", 
@@ -528,10 +615,6 @@ if meeting_type == "Reunión Merck Program":
                     disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No", 
                     value="" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("hotel_ss", ""),
                     on_change=lambda: save_to_session_state("hotel_ss", st.session_state["hotel_ss"]))
-
-
-
-
 
 
     st.header("4. Criterios de Selección", divider=True)
@@ -662,4 +745,5 @@ else:
     download_document(disabled, meeting_type)
 
 
-st.write(st.session_state["form_data_speaking_services"])
+# st.write(st.session_state["form_data_speaking_services"])
+st.write(st.session_state)

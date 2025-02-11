@@ -45,6 +45,7 @@ FIELD_MAPPINGS = {
     "tipo_evento_ss": "Tipo Evento",
     "sede_ss": "Sede",
     "ciudad_ss": "Ciudad",
+    "name_ponente_ss": "Nombre Ponente",
     
     # Detalle Consultores
     "nombre_": "Nombre",
@@ -143,6 +144,19 @@ def remove_after_last_underscore(s: str) -> str:
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
+
+def validaciones_especiales(input_data, param, errores_general):
+    if param.startswith("dni_"):
+        dni = input_data.get(param, "")
+        if dni != "":
+            numero = int(dni[:-1])
+            letra = dni[-1].upper()
+            letras_validas = "TRWAGMYFPDXBNJZSQVHLCKE"
+            letra_correcta = letras_validas[numero % 23]
+            
+            if letra != letra_correcta:
+                errores_general.append(f"El DNI *{param}* no es válido.")
+
 def validar_campos(input_data, parametros_obligatorios, parametros_dependientes):
     """
     Valida que los parámetros obligatorios y los parámetros dependientes (según su condición)
@@ -177,6 +191,7 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
             else:
                 errores_general.append(f"El parámetro *{FIELD_MAPPINGS.get(param, param)}* es obligatorio y no tiene valor.")
 
+
     # Validar los parámetros dependientes
     for parametro_principal, reglas in parametros_dependientes.items():
         # Obtener la función de condición y la lista de dependientes.
@@ -201,7 +216,9 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
         else:
             # Opcional: Se puede reportar si el parámetro principal no está presente.
             errores_general.append(f"El parámetro principal '{parametro_principal}' no se encontró en los datos.")
-
+    
+    # if param.strip().startswith("dni"): 
+    #             validaciones_especiales(input_data, param)
     # Validar los participantes de forma modular
     participanes_name = ""
     if "participantes_ab" in input_data:

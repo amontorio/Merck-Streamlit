@@ -29,7 +29,7 @@ mandatory_fields = [
         "producto_asociado_cs",
         "estado_aprobacion_cs",
         "necesidad_reunion_cs",
-        "descripcion_servicio_cs",
+        #"descripcion_servicio_cs",
         "numero_consultores_cs",
         "criterios_seleccion_cs",
         "documentosubido_1_cs"
@@ -57,6 +57,14 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_consulting_services"][key][key_participante][field_participante] = value
+        st.session_state[f"session_cs_{key_participante}"] = True
+        
+def save_and_name(key, value, key_participante=None, field_participante=None):
+    save_to_session_state(key, value, key_participante, field_participante)
+    nombre = asignacion_nombre(key_participante)
+    st.rerun()
+    return nombre
+
 
 def add_participant():
     # Añadir un nuevo participante con campos inicializados
@@ -74,7 +82,7 @@ def add_participant():
         f"preparacion_horas_{id_user}": 0,
         f"preparacion_minutos_{id_user}": 0,
         f"ponencia_horas_{id_user}": 0,
-        f"ponencia_minutos_{id_user}": 0,
+        f"ponencia_minutos_{id_user}": 0
     }
     
     st.session_state["participantes_cs"].append(new_participant)
@@ -84,6 +92,7 @@ def add_participant():
         st.session_state["form_data_consulting_services"]["participantes_cs"] = {}
         
     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] = new_participant
+
 
 
 # Inicializar estado del formulario en session_state
@@ -100,14 +109,13 @@ if "form_data_consulting_services" not in st.session_state:
         "numero_consultores_cs": 0,
         "justificacion_numero_participantes_cs": "",
         "criterios_seleccion_cs": [],
-        "sesion": False
-    }
+        }
 
     st.session_state["form_data_consulting_services"] = {}
     
     st.session_state["download_enabled_cs"] = False
     st.session_state["path_doc_cs"] = None
-    st.session_state["sesion"] = False
+    #st.session_state["session_cs"] = False
     
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
@@ -118,7 +126,8 @@ if "form_data_consulting_services" not in st.session_state:
     add_participant()
 
 
-expander = st.session_state["sesion"]
+# if 'session_cs' not in st.session_state:
+#     st.session_state.session_cs = False
 
 af.show_main_title(title="Consulting Services", logo_size=200)
 
@@ -177,8 +186,9 @@ st.text_area("Necesidad de la reunión y resultados esperados *",
 st.text_area("Descripción del servicio *",
                 max_chars=4000,
                 key="descripcion_servicio_cs",
-                value= st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
-                on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]))
+                value= f"Consulting Services - {st.session_state['form_data_consulting_services']['nombre_necesidades_cs']}", #st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
+                on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]),
+                disabled=True)
 
 st.header("2. Criterios del destinatario", divider=True)
 col3, col4 = st.columns(2)
@@ -200,7 +210,7 @@ with col4:
     st.multiselect(
         "Criterios de selección *",
         [
-            "Tier 1", "Tier 2", "Tier 3", "Tier 4", "Kol Global", "Experiencia como ponente", "Experiencia como consultor",
+            "Kol Global", "Experiencia como ponente", "Experiencia como consultor",
             "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
         ],
         key="criterios_seleccion_cs",
@@ -214,7 +224,17 @@ st.text_area("Justificación de número de participantes",
              disabled=st.session_state["form_data_consulting_services"]["numero_consultores_cs"] <= 1, 
              on_change=lambda: save_to_session_state("justificacion_numero_participantes_cs", st.session_state["justificacion_numero_participantes_cs"]))
 
-@st.fragment
+
+def asignacion_nombre(id_user):
+        if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "") != None:
+            name = "- " + st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "").split('-')[0]
+            #st.rerun()
+        else:
+            name = ""
+            st.session_state[f"session_cs_{id_user}"] = False
+        #print("ahora", name)
+        return name
+
 def participantes_section():
     st.header("3. Detalles de los consultores", divider=True)
 
@@ -229,29 +249,27 @@ def participantes_section():
 
         col_participant, col_remove_participant_individual = st.columns([10,1])
         with col_participant:
-            if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "") != None and st.session_state.sesion == True:
-                name = "- " + st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "").split('-')[0]
-            else:
-                name = ""
+            name = asignacion_nombre(id_user)
 
-            #name = ""
-            with st.expander(f"Consultor {index + 1} {name}", expanded = st.session_state.sesion, icon="👩‍⚕️"):
+            with st.expander(f"Consultor {index + 1} {name}", expanded=st.session_state[f"session_cs_{id_user}"], icon="👩‍⚕️"):
                 nombre = st_searchbox(
-                        #label="Buscador de HCO / HCP *",
-                        search_function=af.search_function,
-                        placeholder="Busca un HCO / HCP *",
-                        key=f"nombre_{id_user}",
-                        edit_after_submit="option",
-                        default_searchterm=info_user.get(f"nombre_{id_user}", ""),
-                        #submit_function=print(st.session_state[f"nombre_{id_user}"])
-                        submit_function= lambda x: save_to_session_state("participantes_cs", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
+                    search_function=af.search_function,
+                    placeholder="Busca un HCO / HCP *",
+                    key=f"nombre_{id_user}",
+                    edit_after_submit="option",
+                    default_searchterm=info_user.get(f"nombre_{id_user}", ""),
+                    submit_function=lambda x: (
+                        save_and_name("participantes_cs", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
+                        #save_to_session_state("participantes_cs", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
                     )
-
+                )
+        
                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"nombre_{id_user}"] = nombre
+                #name = asignacion_nombre(id_user)
+                #print(name)
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    
                     dni = st.text_input(
                         f"DNI del participante {index + 1}", 
                         value=info_user.get(f"dni_{id_user}", ""), 
@@ -373,6 +391,7 @@ def participantes_section():
                 if id_user in st.session_state["form_data_consulting_services"]["participantes_cs"].keys():
                     del st.session_state["form_data_consulting_services"]["participantes_cs"][id_user]
                     st.session_state["participantes_cs"] = list(filter(lambda x: x['id'] != id_user, st.session_state["participantes_cs"]))
+                    st.session_state[f"session_cs_{id_user}"] = False
 
                 st.rerun()
 participantes_section()
@@ -447,8 +466,7 @@ def download_document(disabled):
 
 disabled = not st.session_state.download_enabled_cs
 download_document(disabled)
-st.session_state.sesion = True
 
 
-st.write(st.session_state["form_data_consulting_services"])
+#st.write(st.session_state["form_data_consulting_services"])
 st.write(st.session_state)

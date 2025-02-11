@@ -10,6 +10,7 @@ consulting_services = st.Page("./pages/consulting_services_page.py", title="Cons
 speaking_services = st.Page("./pages/speaking_services_page.py", title="Speaking Services", icon="🗣️")
 
 
+
 pg = st.navigation(
     {
     #    "Información": [welcome, doc],
@@ -17,6 +18,20 @@ pg = st.navigation(
        "Plantillas": [event_page, advisory_board, speaking_services, consulting_services] 
     }
     )
+
+def reset_session_participant():
+    for key in list(st.session_state.keys()):
+        if key.startswith("session"):
+            st.session_state[key] = False
+
+if 'last_page' not in st.session_state:
+    st.session_state.last_page = pg.title
+
+if st.session_state.last_page != pg.title:
+    # print(f"Last page: {st.session_state.last_page}")
+    # print(f"Page changed to: {pg.title}")
+    reset_session_participant()
+    st.session_state.current_page = pg.title
 
 
 st.set_page_config(
