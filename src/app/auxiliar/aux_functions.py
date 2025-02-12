@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit as st
 import os
 import base64
+
+
 FIELD_MAPPINGS = {
     
     # Consulting Services
@@ -145,17 +147,6 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-def validaciones_especiales(input_data, param, errores_general):
-    if param.startswith("dni_"):
-        dni = input_data.get(param, "")
-        if dni != "":
-            numero = int(dni[:-1])
-            letra = dni[-1].upper()
-            letras_validas = "TRWAGMYFPDXBNJZSQVHLCKE"
-            letra_correcta = letras_validas[numero % 23]
-            
-            if letra != letra_correcta:
-                errores_general.append(f"El DNI *{param}* no es válido.")
 
 def validar_campos(input_data, parametros_obligatorios, parametros_dependientes):
     """
@@ -217,8 +208,7 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
             # Opcional: Se puede reportar si el parámetro principal no está presente.
             errores_general.append(f"El parámetro principal '{parametro_principal}' no se encontró en los datos.")
     
-    # if param.strip().startswith("dni"): 
-    #             validaciones_especiales(input_data, param)
+
     # Validar los participantes de forma modular
     participanes_name = ""
     if "participantes_ab" in input_data:
@@ -272,8 +262,8 @@ def validar_participantes(participantes):
             elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
                 print(remove_after_last_underscore(campo))
                 errores_participantes[id_participante].append(
-                    f"El campo *{FIELD_MAPPINGS.get(remove_after_last_underscore(campo) + '_', campo)}* "
-                    f"del participante *{cnt}* está vacío.\n"
+                    f"El campo *{FIELD_MAPPINGS.get(remove_after_last_underscore(campo) + '_', campo)}* es obligatorio y no tiene valor.\n"
+                    #f"del participante *{cnt}* está vacío.\n"
                 )
 
         cnt+=1
@@ -340,3 +330,5 @@ def handle_tier_from_name(name):
     if not tier.empty:
         return str(int(tier.values[0]))  # Devuelve el Tier encontrado
     return "0"  # Devuelve 0 si el nombre no está en los datos
+
+

@@ -26,12 +26,14 @@ def reset_session_participant():
 
 if 'last_page' not in st.session_state:
     st.session_state.last_page = pg.title
+st.session_state.current_page = pg.title
 
 if st.session_state.last_page != pg.title:
-    # print(f"Last page: {st.session_state.last_page}")
-    # print(f"Page changed to: {pg.title}")
+    print(f"Last page: {st.session_state.last_page}")
+    print(f"Page changed to: {pg.title}")
+    st.session_state.last_page = pg.title
     reset_session_participant()
-    st.session_state.current_page = pg.title
+     
 
 
 st.set_page_config(

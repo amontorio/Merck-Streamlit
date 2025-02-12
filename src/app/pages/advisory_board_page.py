@@ -7,13 +7,15 @@ import auxiliar.aux_functions as af
 import auxiliar.create_docx as cd
 import traceback
 import io
+import time
 # Diccionario de tarifas según el tier
+
 tarifas = {
-    "0": 50,  # Ejemplo de valores, cambia según tu lógica
-    "1": 75,
-    "2": 100,
+    "0": 300, 
+    "1": 250,
+    "2": 200,
     "3": 150,
-    "4": 200
+    "4": 200 #NO APARECE
 }
 
 # Lista de parámetros obligatorios
@@ -59,6 +61,7 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_advisory_board"][key][key_participante][field_participante] = value
+        st.session_state[f"session_ab_{key_participante}"] = True
 
 def add_participant():
     # Añadir un nuevo participante con campos inicializados
@@ -67,9 +70,11 @@ def add_participant():
         "id": id_user,
         f"nombre_{id_user}": "",
         f"dni_{id_user}": "",
+        f"dni_correcto_{id_user}": True,
         f"tier_{id_user}": "0",
         f"centro_trabajo_{id_user}": "",
         f"email_{id_user}": "",
+        f"email_correcto_{id_user}": True,
         f"cobra_sociedad_{id_user}": "No",
         f"nombre_sociedad_{id_user}": "",
         f"honorarios_{id_user}": 0.0,
@@ -87,6 +92,268 @@ def add_participant():
         st.session_state["form_data_advisory_board"]["participantes_ab"] = {}
         
     st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] = new_participant
+
+
+def asignacion_nombre(id_user):
+        if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"].get(f"nombre_{id_user}", "") != None:
+            nombre_ponente = st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"].get(f"nombre_{id_user}", "").rsplit('-', 1)[0] 
+            st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"]["name_ponente_ab"] = nombre_ponente
+        else:
+            st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"]["name_ponente_ab"] = ""
+            st.session_state[f"session_ab_{id_user}"] = False
+
+########## validaciones especiales
+def validacion_dni(id_user):
+        if not f'dni_{id_user}' in st.session_state:
+            st.session_state[f'dni_{id_user}'] = ""
+            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = True
+        else:
+            dni = st.session_state.get(f"dni_{id_user}", "")
+            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = True
+            if dni =="":
+                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = True
+            else:
+                try:
+                    numero = int(dni[:-1])
+                    letra = dni[-1].upper()
+                    letras_validas = "TRWAGMYFPDXBNJZSQVHLCKE"
+                    letra_correcta = letras_validas[numero % 23]
+
+                    if letra != letra_correcta:
+                        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = False
+
+                except:
+                    if dni != "":
+                        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = False
+
+
+def validacion_completa_dni(id_user):
+        validacion_dni(id_user)
+        if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == True:
+            save_to_session_state("participantes_ab", st.session_state[f"dni_{id_user}"], id_user, f"dni_{id_user}")
+        else:
+            st.toast("El DNI introducido no es correcto.", icon="❌")
+            time.sleep(1)
+            save_to_session_state("participantes_ab", "", id_user, f"dni_{id_user}")
+
+def validacion_email(id_user):
+        if not f'email_{id_user}' in st.session_state:
+            st.session_state[f'email_{id_user}'] = ""
+            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = True
+        else:
+            mail = st.session_state.get(f"email_{id_user}", "")
+            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = True
+            if mail =="":
+                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = True
+            else:
+                try:
+                    #patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                    tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
+                    tlds_pattern = '|'.join(tlds_validos)
+                    patron = rf'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:{tlds_pattern})$'
+
+                    matcheo = re.match(patron, mail) 
+
+                    if matcheo == None:
+                        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = False
+
+                except:
+                    if mail != "":
+                        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = False
+
+
+def validacion_completa_email(id_user):
+        validacion_email(id_user)
+        if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == True:
+            save_to_session_state("participantes_ab", st.session_state[f"email_{id_user}"], id_user, f"email_{id_user}")
+        else:
+            st.toast("El email introducido no es correcto.", icon="❌")
+            time.sleep(1)
+            save_to_session_state("participantes_ab", "", id_user, f"email_{id_user}")
+            
+
+def participantes_section():
+    st.header("5. Detalles de los Participantes", divider=True)
+
+    if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
+        add_participant()
+
+    index = 0
+    # Renderizar los participantes_ab
+    for info_user in st.session_state["participantes_ab"]:
+
+        id_user = info_user["id"]
+
+        col_participant, col_remove_participant_individual = st.columns([10,1])
+        with col_participant:
+            asignacion_nombre(id_user)
+            nombre_expander_ab = st.session_state['form_data_advisory_board']['participantes_ab'][f'{id_user}']['name_ponente_ab']
+            if nombre_expander_ab != "":
+                aux = ": "
+            else:
+                aux = ""
+            with st.expander(f"Participante {index + 1}{aux}{nombre_expander_ab}", expanded=st.session_state[f"session_ab_{id_user}"], icon="👩‍⚕️"):
+                nombre = st_searchbox(
+                        #label="Buscador de HCO / HCP *",
+                        search_function=af.search_function,
+                        placeholder="Busca un HCO / HCP *",
+                        key=f"nombre_{id_user}",
+                        edit_after_submit="option",
+                        default_searchterm=info_user.get(f"nombre_{id_user}", ""),
+                        #submit_function=print(st.session_state[f"nombre_{id_user}"])
+                        submit_function= lambda x: save_to_session_state("participantes_ab", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
+                    )
+
+                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_{id_user}"] = nombre
+                if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_{id_user}"] != None:
+                        if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_{id_user}"].rsplit('-', 1)[0] != st.session_state['form_data_advisory_board']['participantes_ab'][f'{id_user}']["name_ponente_ab"]:
+                            st.rerun()
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    
+                    dni = st.text_input(
+                        f"DNI del participante {index + 1}", 
+                        value=info_user.get(f"dni_{id_user}", ""), 
+                        key=f"dni_{id_user}",
+                        on_change= validacion_completa_dni(id_user)
+                    )
+
+                    centro = st.text_input(
+                        f"Centro de trabajo del participante {index + 1} *", 
+                        value=info_user.get(f"centro_trabajo_{id_user}", ""), 
+                        key=f"centro_trabajo_{id_user}",
+                        on_change=lambda: save_to_session_state("participantes_ab", st.session_state[f"centro_trabajo_{id_user}"], id_user, f"centro_trabajo_{id_user}")
+                    )
+
+                    cobra = st.selectbox(
+                        "¿Cobra a través de sociedad? *", 
+                        ["No", "Sí"], 
+                        key=f"cobra_sociedad_{id_user}",
+                        index= ["No", "Sí"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0
+
+                    )
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"] = cobra
+                    
+                    st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
+ 
+                    
+                with col2:
+                    tier = st.selectbox(
+                        f"Tier del participante {index + 1} *", 
+                        ["0", "1", "2", "3", "4"],
+                        key=f"tier_{id_user}",
+                        index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+
+                    )
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"] = tier
+                    
+                    email = st.text_input(
+                        f"Email del participante {index + 1} *", 
+                        value=info_user.get(f"email_{id_user}", ""), 
+                        key=f"email_{id_user}",
+                        on_change= validacion_completa_email(id_user)
+                    )
+                    
+                    nombre_sociedad = st.text_input(
+                        "Nombre de la sociedad",
+                        value = st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
+                        key=f"nombre_sociedad_{id_user}",
+                        on_change = lambda: save_to_session_state("participantes_ab","", id_user, f"nombre_sociedad_{id_user}")
+                              if st.session_state[f"cobra_sociedad_{id_user}"] == "No" else 
+                              save_to_session_state("participantes_ab", st.session_state[f"nombre_sociedad_{id_user}"], id_user, f"nombre_sociedad_{id_user}"),
+                        disabled= cobra == "No"
+                    )
+                    
+                    st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
+                col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
+
+                with col_prep_horas:
+                    tiempo_prep_horas = st.number_input(
+                        label="Horas",
+                        min_value=0,
+                        step=1,
+                        key=f"preparacion_horas_{id_user}",
+                        value= st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_horas_{id_user}"] if f"preparacion_horas_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,  
+                    )
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_horas_{id_user}"] = tiempo_prep_horas
+                    
+                with col_prep_minutos:
+                    
+                    tiempo_prep_minutos = st.selectbox(
+                        label="Minutos",
+                        options=[0,15,30,45],
+                        key=f"preparacion_minutos_{id_user}",
+                        index= [0,15,30,45].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"]) if f"preparacion_minutos_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+                    )
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
+                    
+                with col_ponencia_horas:
+                    tiempo_ponencia_horas = st.number_input(
+                        label="Horas",
+                        min_value=0,
+                        step=1,
+                        key=f"ponencia_horas_{id_user}",
+                        value= st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_horas_{id_user}"] if f"ponencia_horas_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+
+                    )
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_horas_{id_user}"] = tiempo_ponencia_horas
+                    
+                with col_ponencia_minutos:
+                    tiempo_ponencia_minutos = st.selectbox(
+                        label="Minutos",
+                        options=[0,15,30,45],
+                        key=f"ponencia_minutos_{id_user}",
+                        index= [0,15,30,45].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"]) if f"ponencia_minutos_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+                    )
+                    
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
+                        
+                # Obtener valores de tiempo en horas decimales
+                tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60
+                tiempo_prep_horas = tiempo_prep_horas + tiempo_prep_minutos / 60
+
+                # Obtener tarifa en función del tier
+                tarifa = tarifas.get(tier, 0)  # Si no encuentra el tier, usa 0
+
+                # Calcular honorarios
+                honorarios = (tiempo_ponencia_horas + tiempo_prep_horas) * tarifa
+                
+                honorarios = st.number_input(
+                    "Honorarios", 
+                    value= float(honorarios), 
+                    min_value=0.0, 
+                    step=0.01, 
+                    key=f"honorarios_{id_user}",
+                    disabled=True
+                )
+                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"honorarios_{id_user}"] = honorarios
+        index +=1
+        with col_remove_participant_individual:
+            if st.button("🗑️", key=f"remove_participant_{id_user}", use_container_width=True, type="secondary"):
+                if id_user in st.session_state["form_data_advisory_board"]["participantes_ab"].keys():
+                    del st.session_state["form_data_advisory_board"]["participantes_ab"][id_user]
+                    st.session_state["participantes_ab"] = list(filter(lambda x: x['id'] != id_user, st.session_state["participantes_ab"]))
+
+                st.rerun()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Inicializar estado del formulario en session_state
 if "form_data_advisory_board" not in st.session_state:
@@ -323,159 +590,7 @@ st.text_area("Justificación de número de participantes *",
              value= st.session_state["form_data_advisory_board"]["justificacion_participantes_ab"] if "justificacion_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
              on_change=lambda: save_to_session_state("justificacion_participantes_ab", st.session_state["justificacion_participantes_ab"]))
 
-def participantes_section():
-    st.header("5. Detalles de los Participantes", divider=True)
 
-    if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
-        add_participant()
-
-    index = 0
-    # Renderizar los participantes_ab
-    for info_user in st.session_state["participantes_ab"]:
-
-        id_user = info_user["id"]
-
-        col_participant, col_remove_participant_individual = st.columns([10,1])
-        with col_participant:
-            with st.expander(f"Participante {index + 1}", expanded=False, icon="👩‍⚕️"):
-                nombre = st_searchbox(
-                        #label="Buscador de HCO / HCP *",
-                        search_function=af.search_function,
-                        placeholder="Busca un HCO / HCP *",
-                        key=f"nombre_{id_user}",
-                        edit_after_submit="option",
-                        default_searchterm=info_user.get(f"nombre_{id_user}", ""),
-                        #submit_function=print(st.session_state[f"nombre_{id_user}"])
-                        submit_function= lambda x: save_to_session_state("participantes_ab", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
-                    )
-
-                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_{id_user}"] = nombre
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    
-                    dni = st.text_input(
-                        f"DNI del participante {index + 1}", 
-                        value=info_user.get(f"dni_{id_user}", ""), 
-                        key=f"dni_{id_user}"
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = dni
-
-                    centro = st.text_input(
-                        f"Centro de trabajo del participante {index + 1} *", 
-                        value=info_user.get(f"centro_trabajo_{id_user}", ""), 
-                        key=f"centro_trabajo_{id_user}"
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"centro_trabajo_{id_user}"] = centro
-
-                    cobra = st.selectbox(
-                        "¿Cobra a través de sociedad? *", 
-                        ["No", "Sí"], 
-                        key=f"cobra_sociedad_{id_user}",
-                        index= ["No", "Sí"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0
-
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"] = cobra
-                    
-                    st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
- 
-                    
-                with col2:
-                    tier = st.selectbox(
-                        f"Tier del participante {index + 1} *", 
-                        ["0", "1", "2", "3", "4"],
-                        key=f"tier_{id_user}",
-                        index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
-
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"] = tier
-                    
-                    email = st.text_input(
-                        f"Email del participante {index + 1} *", 
-                        value=info_user.get(f"email_{id_user}", ""), 
-                        key=f"email_{id_user}"
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] = email
-                    
-                    nombre_sociedad = st.text_input(
-                        "Nombre de la sociedad",
-                        value = st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
-                        key=f"nombre_sociedad_{id_user}",
-                        disabled= cobra == "No"
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
-                    
-                    st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
-                col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
-
-                with col_prep_horas:
-                    tiempo_prep_horas = st.number_input(
-                        label="Horas",
-                        min_value=0,
-                        step=1,
-                        key=f"preparacion_horas_{id_user}",
-                        value= st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_horas_{id_user}"] if f"preparacion_horas_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,  
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_horas_{id_user}"] = tiempo_prep_horas
-                    
-                with col_prep_minutos:
-                    
-                    tiempo_prep_minutos = st.selectbox(
-                        label="Minutos",
-                        options=[0,15,30,45],
-                        key=f"preparacion_minutos_{id_user}",
-                        index= [0,15,30,45].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"]) if f"preparacion_minutos_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
-                    
-                with col_ponencia_horas:
-                    tiempo_ponencia_horas = st.number_input(
-                        label="Horas",
-                        min_value=0,
-                        step=1,
-                        key=f"ponencia_horas_{id_user}",
-                        value= st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_horas_{id_user}"] if f"ponencia_horas_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
-
-                    )
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_horas_{id_user}"] = tiempo_ponencia_horas
-                    
-                with col_ponencia_minutos:
-                    tiempo_ponencia_minutos = st.selectbox(
-                        label="Minutos",
-                        options=[0,15,30,45],
-                        key=f"ponencia_minutos_{id_user}",
-                        index= [0,15,30,45].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"]) if f"ponencia_minutos_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
-                    )
-                    
-                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
-                        
-                # Obtener valores de tiempo en horas decimales
-                tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60
-                tiempo_prep_horas = tiempo_prep_horas + tiempo_prep_minutos / 60
-
-                # Obtener tarifa en función del tier
-                tarifa = tarifas.get(tier, 0)  # Si no encuentra el tier, usa 0
-
-                # Calcular honorarios
-                honorarios = (tiempo_ponencia_horas + tiempo_prep_horas) * tarifa
-                
-                honorarios = st.number_input(
-                    "Honorarios", 
-                    value= float(honorarios), 
-                    min_value=0.0, 
-                    step=0.01, 
-                    key=f"honorarios_{id_user}",
-                    disabled=True
-                )
-                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"honorarios_{id_user}"] = honorarios
-        index +=1
-        with col_remove_participant_individual:
-            if st.button("🗑️", key=f"remove_participant_{id_user}", use_container_width=True, type="secondary"):
-                if id_user in st.session_state["form_data_advisory_board"]["participantes_ab"].keys():
-                    del st.session_state["form_data_advisory_board"]["participantes_ab"][id_user]
-                    st.session_state["participantes_ab"] = list(filter(lambda x: x['id'] != id_user, st.session_state["participantes_ab"]))
-
-                st.rerun()
 participantes_section()
 
 st.header("6. Documentos", divider=True)
