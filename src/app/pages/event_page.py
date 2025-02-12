@@ -4,6 +4,8 @@ from datetime import date, datetime
 import time
 import traceback
 import io
+import re
+import time
 
 import auxiliar.create_docx as cd
 import model.llm_sponsorship_event as llm_se
@@ -32,6 +34,40 @@ def handle_invoke_chain_event_description():
     print("Fin Chain Event Description")
     st.session_state.res_generate_event_description = res  
     save_to_session_state("short_description", st.session_state.res_generate_event_description)
+
+def validacion_email():
+        if not 'email_correcto' in st.session_state:
+            #st.session_state['signer_email'] = ""
+            st.session_state["email_correcto"] = True
+        else:
+            mail = st.session_state.get("signer_email", "")
+            st.session_state["email_correcto"] = True
+            if mail =="":
+                st.session_state["email_correcto"] = True
+            else:
+                try: 
+                    #patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                    tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
+                    tlds_pattern = '|'.join(tlds_validos)
+                    patron = rf'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:{tlds_pattern})$'
+
+                    matcheo = re.match(patron, mail) 
+                    if matcheo == None:
+                        st.session_state["email_correcto"] = False
+
+                except:
+                    if mail != "":
+                        st.session_state["email_correcto"] = False
+
+
+def validacion_completa_email():
+        validacion_email()
+        if st.session_state["email_correcto"] == True:
+            save_to_session_state("signer_email", st.session_state["signer_email"])
+        else:
+            st.toast("El email introducido no es correcto.", icon="❌")
+            time.sleep(1)
+            save_to_session_state("signer_email", "")
 
 # Inicializar estado del formulario en session_state
 if "form_data_event" not in st.session_state:
@@ -362,7 +398,10 @@ def crear_detalles_firmante():
         with col13_2:
             st.text_input("Cargo del firmante *", value=st.session_state["form_data_event"]["signer_position"], key="signer_position", on_change=lambda: save_to_session_state("signer_position", st.session_state["signer_position"]))
         with col14_2:
-            st.text_input("Email del firmante *", value=st.session_state["form_data_event"]["signer_email"], key="signer_email", on_change=lambda: save_to_session_state("signer_email", st.session_state["signer_email"]))
+            st.text_input("Email del firmante *", value=st.session_state["form_data_event"]["signer_email"], key="signer_email", 
+                          #on_change=lambda: save_to_session_state("signer_email", st.session_state["signer_email"])
+                          on_change= validacion_completa_email())
+                
 
 
 crear_detalles_firmante()
@@ -435,7 +474,7 @@ st.session_state.download_enabled = False
 
 # Botón para enviar
 def button_form():
-    if st.button(label="Enviar", use_container_width=True, type="primary"):
+    if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
@@ -495,4 +534,4 @@ button_form()
 disabled = not st.session_state.download_enabled
 download_document()
 
-st.write(st.session_state["form_data_event"])
+#st.write(st.session_state["form_data_event"])

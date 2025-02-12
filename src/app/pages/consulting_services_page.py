@@ -161,13 +161,14 @@ def validacion_completa_email(id_user):
             save_to_session_state("participantes_cs", "", id_user, f"email_{id_user}")
 
 def asignacion_nombre(id_user):
+        if not f"session_cs_{id_user}" in st.session_state:
+            st.session_state[f"session_cs_{id_user}"] = False
         if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "") != None:
             name = st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"].get(f"nombre_{id_user}", "").rsplit('-', 1)[0] 
             st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"]["name_ponente_cs"] = name
-            #st.session_state[f"session_cs_{id_user}"] = True
         else:
             st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"]["name_ponente_cs"] = ""
-            st.session_state[f"session_cs_{id_user}"] = False
+            #st.session_state[f"session_cs_{id_user}"] = False
 
 
 def participantes_section():
@@ -190,6 +191,17 @@ def participantes_section():
                 aux = ": "
             else:
                 aux = ""
+
+            def on_change_nombre(id_user):
+                    if st.session_state.get(f"nombre_{id_user}", "") != "":
+                        dic = st.session_state.get(f"nombre_{id_user}", "")
+                        search = dic.get("search", "")
+                        result = dic.get("result", "")
+                        if search  == st.session_state["form_data_consulting_services"]["participantes_cs"][id_user].get(f"nombre_{id_user}", "") and result == None:
+                            print("estoy eliminando...")
+                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user].pop(f"nombre_{id_user}", None)
+                            st.rerun()
+
             with st.expander(f"Consultor {index + 1}{aux}{nombre_expander_cs}", expanded=st.session_state[f"session_cs_{id_user}"], icon="👩‍⚕️"):
                 nombre = st_searchbox(
                     search_function=af.search_function,
@@ -197,6 +209,7 @@ def participantes_section():
                     key=f"nombre_{id_user}",
                     edit_after_submit="option",
                     default_searchterm=info_user.get(f"nombre_{id_user}", ""),
+                    reset_function=on_change_nombre(id_user),
                     submit_function=lambda x: (
                         save_to_session_state("participantes_cs", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
                     )
@@ -429,12 +442,12 @@ st.text_area("Necesidad de la reunión y resultados esperados *",
                 value= st.session_state["form_data_consulting_services"]["necesidad_reunion_cs"] if "necesidad_reunion_cs" in st.session_state["form_data_consulting_services"] else "",
                 on_change=lambda: save_to_session_state("necesidad_reunion_cs", st.session_state["necesidad_reunion_cs"]))
 
-st.text_area("Descripción del servicio *",
+servicio = st.text_area("Descripción del servicio *",
                 max_chars=4000,
                 key="descripcion_servicio_cs",
                 value= f"Consulting Services - {st.session_state['form_data_consulting_services']['nombre_necesidades_cs']}", #st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
-                on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]),
                 disabled=True)
+st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] = servicio
 
 st.header("2. Criterios del destinatario", divider=True)
 col3, col4 = st.columns(2)
@@ -482,7 +495,13 @@ st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "
 st.session_state.download_enabled_cs = False
 # Botón para enviar
 def button_form():
-    if st.button(label="Enviar", use_container_width=True, type="primary"):
+    if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        with st.status("Validando campos...", expanded=True, state = "running") as status:
+            st.write("Validando información general del formulario...")
+            time.sleep(4)
+            st.write("Validando información de los consultores...")
+            time.sleep(4)
+        
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
@@ -516,6 +535,15 @@ def button_form():
             traceback.print_exc()
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
+        # Actualizo el estado
+        if st.session_state.download_enabled_cs == True:
+            status.update(
+                label="Validación completada!", state="complete", expanded=False
+            )
+        else:
+            status.update(
+                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+            )
 button_form()
 
 
@@ -548,4 +576,4 @@ download_document(disabled)
 
 
 #st.write(st.session_state["form_data_consulting_services"])
-st.write(st.session_state)
+#st.write(st.session_state)

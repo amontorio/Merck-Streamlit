@@ -23,6 +23,11 @@ def reset_session_participant():
     for key in list(st.session_state.keys()):
         if key.startswith("session"):
             st.session_state[key] = False
+            
+        # quiero reiniciar el search
+        if key.startswith("nombre_") and isinstance(st.session_state[key], dict) and "search" in st.session_state[key]:
+            st.session_state[key]["search"] = "clavecambiopagina"  
+
 
 if 'last_page' not in st.session_state:
     st.session_state.last_page = pg.title

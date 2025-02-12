@@ -95,12 +95,14 @@ def add_participant():
 
 
 def asignacion_nombre(id_user):
+        if not f"session_ab_{id_user}" in st.session_state:
+            st.session_state[f"session_ab_{id_user}"] = False
         if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"].get(f"nombre_{id_user}", "") != None:
             nombre_ponente = st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"].get(f"nombre_{id_user}", "").rsplit('-', 1)[0] 
             st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"]["name_ponente_ab"] = nombre_ponente
         else:
             st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"]["name_ponente_ab"] = ""
-            st.session_state[f"session_ab_{id_user}"] = False
+            #st.session_state[f"session_ab_{id_user}"] = False
 
 ########## validaciones especiales
 def validacion_dni(id_user):
@@ -492,13 +494,13 @@ with col2:
                  on_change=lambda: save_to_session_state("estado_aprobacion_ab", st.session_state["estado_aprobacion_ab"]))
 
 
-st.text_area("Descripción del servicio *", 
+servicio = st.text_area("Descripción del servicio *", 
                  max_chars=4000, 
                  key="descripcion_servicio_ab", 
                  help="Describa la necesidad de obtener información de los paticipantes y el propósito para el cual se utilizará dicha información.", 
                  value= f"Advisory Board Participation - {st.session_state['form_data_advisory_board']['nombre_evento_ab']}", #st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] if "descripcion_servicio_ab" in st.session_state["form_data_advisory_board"] else "",
-                 on_change=lambda: save_to_session_state("descripcion_servicio_ab", st.session_state["descripcion_servicio_ab"]),
                  disabled = True)
+st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] = servicio
 
 st.text_area("Necesidad de la reunión y resultados esperados *",
                  max_chars=4000,
@@ -601,7 +603,13 @@ st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], k
 st.session_state.download_enabled_ab = False
 # Botón para enviar
 def button_form():
-    if st.button(label="Enviar", use_container_width=True, type="primary"):
+    if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        with st.status("Validando campos...", expanded=True, state = "running") as status:
+            st.write("Validando información general del formulario...")
+            time.sleep(4)
+            st.write("Validando información de los consultores...")
+            time.sleep(4)
+        
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
@@ -623,7 +631,7 @@ def button_form():
                         # Obtener la posición del ID en las claves del diccionario
                         keys_list = list(participantes.keys())  # Convertir las claves en una lista
                         posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
-                        msg_participantes = f"\n**Errores del participante {posicion}**\n"
+                        msg_participantes = f"\n**Errores del Participante {posicion}**\n"
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
@@ -633,7 +641,17 @@ def button_form():
         except Exception as e:
             traceback.print_exc()
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
-            
+        
+        # Actualizo el estado
+        if st.session_state.download_enabled_ab == True:
+            status.update(
+                label="Validación completada!", state="complete", expanded=False
+            )
+        else:
+            status.update(
+                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+            )
+        
 def download_document():
     if st.session_state.path_doc_ab:
         with open(st.session_state.path_doc_ab, "rb") as file:
