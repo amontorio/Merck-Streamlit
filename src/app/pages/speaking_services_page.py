@@ -120,7 +120,7 @@ def asignacion_nombre(id_user):
                 and st.session_state[f"nombre_{id_user}"]["search"] not in ["", "clavecambiopagina"] and st.session_state[f"nombre_{id_user}"]["result"] == None:
                 st.session_state[f"session_ss_{id_user}"] = True
             else:
-                print("entro aqui")
+                #print("entro aqui")
                 st.session_state[f"session_ss_{id_user}"] = False
 
 ########## validaciones especiales
@@ -152,8 +152,9 @@ def validacion_completa_dni(id_user):
         validacion_dni(id_user)
         if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True:
             save_to_session_state("participantes_ss", st.session_state[f"dni_{id_user}"], id_user, f"dni_{id_user}")
+            print("dni correcto")
         else:
-            st.warning("El DNI introducido no es correcto.", icon="❌")
+            st.toast("El DNI introducido no es correcto.", icon="❌")
             time.sleep(1)
             save_to_session_state("participantes_ss", "", id_user, f"dni_{id_user}")
 
@@ -188,7 +189,7 @@ def validacion_completa_email(id_user):
         if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == True:
             save_to_session_state("participantes_ss", st.session_state[f"email_{id_user}"], id_user, f"email_{id_user}")
         else:
-            st.warning("El email introducido no es correcto.", icon="❌")
+            st.toast("El email introducido no es correcto.", icon="❌")
             time.sleep(1)
             save_to_session_state("participantes_ss", "", id_user, f"email_{id_user}")
             
@@ -217,8 +218,8 @@ def ponentes_section():
                         dic = st.session_state.get(f"nombre_{id_user}", "")
                         search = dic.get("search", "")
                         result = dic.get("result", "")
-                        print("search", search)
-                        print("result", result)
+                        # print("search", search)
+                        # print("result", result)
                         # print(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].get(f"nombre_{id_user}", ""))
                         if search  == st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].get(f"nombre_{id_user}", "") and result == None:
                             print("estoy eliminando...")
@@ -263,12 +264,13 @@ def ponentes_section():
                         
                         dni = st.text_input(
                             f"DNI del participante {index + 1}", 
+                            value = info_user.get(f"dni_{id_user}", ""),
                             key=f"dni_{id_user}",
-                            value=st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f'dni_{id_user}'],
-                            #value = info_user.get(f"dni_{id_user}", ""), 
-                            on_change = validacion_completa_dni(id_user)
-                            #info_user.get(f"dni_{id_user}", "")
+                            #value=st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f'dni_{id_user}'], 
+                            on_change=validacion_completa_dni, 
+                            args=(id_user,)
                         )
+
                         #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
 
                         centro = st.text_input(
@@ -301,7 +303,8 @@ def ponentes_section():
                             f"Email del participante {index + 1} *", 
                             value=info_user.get(f"email_{id_user}", ""), 
                             key=f"email_{id_user}",
-                            on_change= validacion_completa_email(id_user)
+                            on_change= validacion_completa_email,
+                            args=(id_user,)
                         )
                         
                         nombre_sociedad = st.text_input(
@@ -419,7 +422,7 @@ def button_form(tipo):
 
                         # Obtener la posición del ID en las claves del diccionario
                         keys_list = list(participantes.keys())  # Convertir las claves en una lista
-                        print("key_list", keys_list)
+                        #print("key_list", keys_list)
                         posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                         name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}']['name_ponente_ss'].strip()
                         msg_participantes = f"\n**Errores del Ponente {posicion}:{name_ponente}**\n"
