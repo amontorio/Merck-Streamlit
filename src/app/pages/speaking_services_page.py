@@ -153,10 +153,11 @@ def validacion_completa_dni(id_user):
         if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True:
             save_to_session_state("participantes_ss", st.session_state[f"dni_{id_user}"], id_user, f"dni_{id_user}")
             print("dni correcto")
+            return True
         else:
-            st.toast("El DNI introducido no es correcto.", icon="❌")
-            time.sleep(1)
+            #st.toast("El DNI introducido no es correcto.", icon="❌")
             save_to_session_state("participantes_ss", "", id_user, f"dni_{id_user}")
+            return False
 
 def validacion_email(id_user):
         if not f'email_{id_user}' in st.session_state:
@@ -215,19 +216,21 @@ def on_change_nombre(id_user):
                             #st.session_state[f"session_ss_{id_user}"] = False
                             st.rerun()
 
-@st.dialog("Cast your vote")
+@st.dialog("Rellena los campos", width="large")
 def single_ponente(id_user, info_user, index, nombre_expander_ss, aux):
                         nombre = st_searchbox(
                                 #label="Buscador de HCO / HCP *",
                                 search_function= af.search_function,  # Pasamos df aquí
                                 placeholder="Busca un HCO / HCP *",
                                 key=f"nombre_{id_user}",
-                                edit_after_submit="disabled",
+                                edit_after_submit="option",
                                 default_searchterm=info_user.get(f"nombre_{id_user}", ""),
                                 reset_function = on_change_nombre(id_user), #print("reset", , #lambda: save_to_session_state("participantes_ss", " ", id_user, f"nombre_{id_user}"),
                                 submit_function= lambda x: (
                                     save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
-                                )
+                                ),
+                                rerun_on_update=False,
+                                rerun_scope="fragment"
                         )
 
                         
@@ -248,10 +251,11 @@ def single_ponente(id_user, info_user, index, nombre_expander_ss, aux):
                                 value = info_user.get(f"dni_{id_user}", ""),
                                 key=f"dni_{id_user}",
                                 #value=st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f'dni_{id_user}'], 
-                                on_change=validacion_completa_dni, 
-                                args=(id_user,)
+                                #on_change=validacion_completa_dni, 
+                                #args=(id_user,)
                             )
-
+                            if True:
+                                st.warning("El DNI introducido no es correcto.", icon="❌")
                             #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
 
                             centro = st.text_input(
@@ -357,6 +361,8 @@ def single_ponente(id_user, info_user, index, nombre_expander_ss, aux):
                             disabled=True
                         )
                         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"honorarios_{id_user}"] = honorarios     
+
+                        st.button("Guardar cambios", type="primary", use_container_width=True)
 def ponentes_section():
         if st.button("Agregar ponente", use_container_width=True, icon="➕", key="add_ponente_button"):
             add_ponente()
@@ -393,7 +399,7 @@ def ponentes_section():
                     ### preguntar alvaro
                     #reset_session_participant()
                     st.rerun()
-
+        
 def button_form(tipo):
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
         with st.status("Validando campos...", expanded=True, state = "running") as status:
