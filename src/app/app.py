@@ -1,7 +1,6 @@
 import streamlit as st
-import os
 import base64
-import pandas as pd
+from pathlib import Path
 
 
 
@@ -23,26 +22,6 @@ pg = st.navigation(
     }
     )
 
-def reset_session_participant():
-    for key in list(st.session_state.keys()):
-        if key.startswith("session"):
-            st.session_state[key] = False
-            
-        # quiero reiniciar el search
-        if key.startswith("nombre_") and isinstance(st.session_state[key], dict) and "search" in st.session_state[key]:
-            st.session_state[key]["search"] = "clavecambiopagina"  
-
-
-if 'last_page' not in st.session_state:
-    st.session_state.last_page = pg.title
-st.session_state.current_page = pg.title
-
-if st.session_state.last_page != pg.title:
-    print(f"Last page: {st.session_state.last_page}")
-    print(f"Page changed to: {pg.title}")
-    st.session_state.last_page = pg.title
-    reset_session_participant()
-     
 
 
 st.set_page_config(
@@ -60,10 +39,18 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
+# logo_merck = 'logo-merck-kgaa-2015-1.svg'
+# logo_path = os.path.join(os.getcwd(), f'src/app/images/{logo_merck}')
+# logo_merck_small = "logo-merck-small.png"
+# logo_small_path = os.path.join(os.getcwd(), f'src/app/images/{logo_merck_small}')
+
+BASE_DIR = Path(__file__).resolve().parent
+
 logo_merck = 'logo-merck-kgaa-2015-1.svg'
-logo_path = os.path.join(os.getcwd(), f'src/app/images/{logo_merck}')
+
+logo_path = BASE_DIR / "images" / logo_merck
 logo_merck_small = "logo-merck-small.png"
-logo_small_path = os.path.join(os.getcwd(), f'src/app/images/{logo_merck_small}')
+logo_small_path = BASE_DIR / "images" / logo_merck_small
 
 st.logo(logo_path, 
         link = "https://www.merckgroup.com/en",

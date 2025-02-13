@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 from datetime import date
@@ -9,9 +8,6 @@ import auxiliar.create_docx as cd
 import traceback
 import auxiliar.aux_functions as af
 import io
-import os
-import base64
-import zipfile
 import time
 import re
 
@@ -45,7 +41,6 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_speaking_services"][key][key_participante][field_participante] = value
-        st.session_state[f"session_ss_{key_participante}"] = True
 
 
 
@@ -77,7 +72,6 @@ def add_ponente():
         f"preparacion_minutos_{id_user}": 0,
         f"ponencia_horas_{id_user}": 0,
         f"ponencia_minutos_{id_user}": 0
-        #f"session_{id_user}": False
     }
     
     st.session_state["participantes_ss"].append(new_participant)
@@ -88,9 +82,6 @@ def add_ponente():
         st.session_state["form_data_speaking_services"]["participantes_ss"] = {}        
 
     st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] = new_participant
-    
-    # for (k,v) in new_participant.items():
-    #     st.session_state[k] = v
 
 def remove_last_participant():
     # Eliminar el último participante
@@ -100,65 +91,27 @@ def remove_last_participant():
 
         st.session_state["participantes_ss"].pop()
 
-def asignacion_nombre(id_user):
-        if not f"session_ss_{id_user}" in st.session_state:
-            st.session_state[f"session_ss_{id_user}"] = False
-        if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "") != None:
-            if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "") == " ":
-                nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "")
-                st.session_state[f"session_ss_{id_user}"] = False            
-            else:    
-                # aqui entra al rellenar el formulario
-                if st.session_state[f"nombre_{id_user}"]["search"] == "clavecambiopagina":
-                    st.session_state[f"session_ss_{id_user}"] = False 
-                nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "").rsplit('-', 1)[0] 
-            st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = nombre_ponente
-        else:
-            #st.session_state["name_ponente_ss"] = ""
-            st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = ""
-            if f'nombre_{id_user}' in st.session_state and f'nombre_{id_user}' in st.session_state is not None \
-                and st.session_state[f"nombre_{id_user}"]["search"] not in ["", "clavecambiopagina"] and st.session_state[f"nombre_{id_user}"]["result"] == None:
-                st.session_state[f"session_ss_{id_user}"] = True
-            else:
-                #print("entro aqui")
-                st.session_state[f"session_ss_{id_user}"] = False
 
 ########## validaciones especiales
-def validacion_dni(id_user):
-        if not f'dni_{id_user}' in st.session_state:
-            st.session_state[f'dni_{id_user}'] = ""
-            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
-        else:
-            dni = st.session_state.get(f"dni_{id_user}", "")
-            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
-            if dni =="":
-                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
-            else:
-                try:
-                    numero = int(dni[:-1])
-                    letra = dni[-1].upper()
-                    letras_validas = "TRWAGMYFPDXBNJZSQVHLCKE"
-                    letra_correcta = letras_validas[numero % 23]
-
-                    if letra != letra_correcta:
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
-
-                except:
-                    if dni != "":
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
-
-
 def validacion_completa_dni(id_user):
-        validacion_dni(id_user)
-        if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True:
-            save_to_session_state("participantes_ss", st.session_state[f"dni_{id_user}"], id_user, f"dni_{id_user}")
-            print("dni correcto")
-        else:
-            st.toast("El DNI introducido no es correcto.", icon="❌")
-            time.sleep(1)
-            save_to_session_state("participantes_ss", "", id_user, f"dni_{id_user}")
+    dni = st.session_state.get(f"dni_{id_user}", "")
 
-def validacion_email(id_user):
+    st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
+    try:
+        numero = int(dni[:-1])
+        letra = dni[-1].upper()
+        letras_validas = "TRWAGMYFPDXBNJZSQVHLCKE"
+        letra_correcta = letras_validas[numero % 23]
+
+        if letra != letra_correcta:
+            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
+
+    except:
+        if dni != "":
+            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
+        
+
+def validacion_completa_email(id_user):    
         if not f'email_{id_user}' in st.session_state:
             st.session_state[f'email_{id_user}'] = ""
             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = True
@@ -169,7 +122,6 @@ def validacion_email(id_user):
                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = True
             else:
                 try:
-                    #patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
                     tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
                     tlds_pattern = '|'.join(tlds_validos)
                     patron = rf'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:{tlds_pattern})$'
@@ -178,21 +130,182 @@ def validacion_email(id_user):
 
                     if matcheo == None:
                         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = False
-
                 except:
                     if mail != "":
                         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = False
 
-
-def validacion_completa_email(id_user):
-        validacion_email(id_user)
         if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == True:
             save_to_session_state("participantes_ss", st.session_state[f"email_{id_user}"], id_user, f"email_{id_user}")
         else:
-            st.toast("El email introducido no es correcto.", icon="❌")
-            time.sleep(1)
-            save_to_session_state("participantes_ss", "", id_user, f"email_{id_user}")
-            
+            save_to_session_state("participantes_ss", "", id_user, f"email_{id_user}")            
+
+
+def on_change_nombre(id_user):
+                    if st.session_state.get(f"nombre_{id_user}", "") != "":
+                        dic = st.session_state.get(f"nombre_{id_user}", "")
+                        search = dic.get("search", "")
+                        result = dic.get("result", "")
+
+                        if search  == st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].get(f"nombre_{id_user}", "") and result == None:
+                            st.session_state[f"nombre_{id_user}"]["search"] = " "
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].pop(f"nombre_{id_user}", None)
+
+
+
+def asignacion_nombre(id_user):
+        if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "") != None:
+            if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "") == " ":
+                nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "")
+            else:    
+                nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "").rsplit('-', 1)[0] 
+            st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = nombre_ponente
+        else:
+            st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = ""
+
+
+
+@st.dialog("Rellena los campos", width="large")
+def single_ponente(id_user, info_user, index, nombre_expander_ss, aux):
+                        nombre = st_searchbox(
+                                #label="Buscador de HCO / HCP *",
+                                search_function= af.search_function,  # Pasamos df aquí
+                                placeholder="Busca un HCO / HCP *",
+                                key=f"nombre_{id_user}",
+                                edit_after_submit="option",
+                                default_searchterm=info_user.get(f"nombre_{id_user}", ""),
+                                reset_function = on_change_nombre(id_user), #print("reset", , #lambda: save_to_session_state("participantes_ss", " ", id_user, f"nombre_{id_user}"),
+                                submit_function= lambda x: (
+                                    save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
+                                ),
+                                rerun_on_update=False,
+                                rerun_scope="fragment"
+                        )            
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            
+                            dni = st.text_input(
+                                f"DNI del participante {index + 1}", 
+                                value = info_user.get(f"dni_{id_user}", "") if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True else "" ,
+                                key=f"dni_{id_user}",
+                                on_change = validacion_completa_dni(id_user)
+                            )
+
+                            if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True:
+                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
+                            else:
+                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = ""
+                                st.warning("El DNI introducido no es correcto.", icon="❌")
+
+                            centro = st.text_input(
+                                f"Centro de trabajo del participante {index + 1} *", 
+                                value=info_user.get(f"centro_trabajo_{id_user}", ""), 
+                                key=f"centro_trabajo_{id_user}",
+                                on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"centro_trabajo_{id_user}"], id_user, f"centro_trabajo_{id_user}")
+
+                            )
+
+                            cobra = st.selectbox(
+                                "¿Cobra a través de sociedad? *", 
+                                ["No", "Sí"], 
+                                key=f"cobra_sociedad_{id_user}"
+                            )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
+                            
+                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
+
+                            
+                        with col2:
+                            tier = st.selectbox(
+                                f"Tier del participante {index + 1} *", 
+                                ["0", "1", "2", "3", "4"], 
+                                key=f"tier_{id_user}"
+                            )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"] = tier
+                            
+                            # email = st.text_input(
+                            #     f"Email del participante {index + 1} *", 
+                            #     value=info_user.get(f"email_{id_user}", ""), 
+                            #     key=f"email_{id_user}",
+                            #     on_change= validacion_completa_email,
+                            #     args=(id_user,)
+                            # )
+                            
+                            # if not validacion_completa_email(id_user):
+                            #     st.warning("El email introducido no es correcto.", icon="❌")
+
+                            
+                            nombre_sociedad = st.text_input(
+                                "Nombre de la sociedad",
+                                value = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
+                                key=f"nombre_sociedad_{id_user}",
+                                on_change = lambda: save_to_session_state("participantes_ss","", id_user, f"nombre_sociedad_{id_user}")
+                                    if st.session_state[f"cobra_sociedad_{id_user}"] == "No" else 
+                                    save_to_session_state("participantes_ss", st.session_state[f"nombre_sociedad_{id_user}"], id_user, f"nombre_sociedad_{id_user}"),
+                                disabled= cobra == "No"
+                            )
+                            #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
+                            
+                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
+                        col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
+
+                        with col_prep_horas:
+                            tiempo_prep_horas = st.number_input(
+                                label="Horas",
+                                min_value=0,
+                                step=1,
+                                key=f"preparacion_horas_{id_user}"
+                            )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_horas_{id_user}"] = tiempo_prep_horas
+                            
+                        with col_prep_minutos:
+                            
+                            tiempo_prep_minutos = st.selectbox(
+                                label="Minutos",
+                                options=[0,15,30,45],
+                                key=f"preparacion_minutos_{id_user}"
+                            )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
+                            
+                        with col_ponencia_horas:
+                            tiempo_ponencia_horas = st.number_input(
+                                label="Horas",
+                                min_value=0,
+                                step=1,
+                                key=f"ponencia_horas_{id_user}"
+                            )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_horas_{id_user}"] = tiempo_ponencia_horas
+                            
+                        with col_ponencia_minutos:
+                            tiempo_ponencia_minutos = st.selectbox(
+                                label="Minutos",
+                                options=[0,15,30,45],
+                                key=f"ponencia_minutos_{id_user}"
+                            )
+                            
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
+                                
+                        # Obtener valores de tiempo en horas decimales
+                        tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60
+                        tiempo_prep_horas = tiempo_prep_horas + tiempo_prep_minutos / 60
+
+                        # Obtener tarifa en función del tier
+                        tarifa = tarifas.get(tier, 0)  # Si no encuentra el tier, usa 0
+
+                        # Calcular honorarios
+                        honorarios = (tiempo_ponencia_horas + tiempo_prep_horas) * tarifa
+                        
+                        honorarios = st.number_input(
+                            "Honorarios", 
+                            value= float(honorarios), 
+                            min_value=0.0, 
+                            step=0.01, 
+                            key=f"honorarios_{id_user}",
+                            disabled=True
+                        )
+                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"honorarios_{id_user}"] = honorarios     
+
+                        st.button("Guardar cambios", type="primary", use_container_width=True)
 
         
 def ponentes_section():
@@ -213,169 +326,9 @@ def ponentes_section():
                 else:
                     aux = ""
 
-                def on_change_nombre(id_user):
-                    if st.session_state.get(f"nombre_{id_user}", "") != "":
-                        dic = st.session_state.get(f"nombre_{id_user}", "")
-                        search = dic.get("search", "")
-                        result = dic.get("result", "")
-                        # print("search", search)
-                        # print("result", result)
-                        # print(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].get(f"nombre_{id_user}", ""))
-                        if search  == st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].get(f"nombre_{id_user}", "") and result == None:
-                            print("estoy eliminando...")
-                            # st.session_state[f"nombre_{id_user}"]["result"] = None  # Resetear a None (aunque ya lo es)
-                            # st.session_state[f"nombre_{id_user}"]["search"] = ""
-                            # st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"].get(f"nombre_{id_user}", "") == None
-                            # st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']["name_ponente_ss"] = " "  
-                            # st.session_state["name_ponente_ss"] = " "  
-                            # st.rerun()
-                            st.session_state[f"nombre_{id_user}"]["search"] = " "
-                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user].pop(f"nombre_{id_user}", None)
-                            #st.session_state.pop(f"nombre_{id_user}", None)
-                            #st.session_state[f"session_ss_{id_user}"] = False
-                            st.rerun()
-
-                with st.expander(f"Ponente {index + 1}{aux}{nombre_expander_ss}", expanded = st.session_state[f"session_ss_{id_user}"], icon="👩‍⚕️"):
-                    nombre = st_searchbox(
-                            #label="Buscador de HCO / HCP *",
-                            search_function= af.search_function,  # Pasamos df aquí
-                            placeholder="Busca un HCO / HCP *",
-                            key=f"nombre_{id_user}",
-                            edit_after_submit="disabled",
-                            default_searchterm=info_user.get(f"nombre_{id_user}", ""),
-                            reset_function = on_change_nombre(id_user), #print("reset", , #lambda: save_to_session_state("participantes_ss", " ", id_user, f"nombre_{id_user}"),
-                            submit_function= lambda x: (
-                                save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}")
-                            )
-                    )
-
-                    
-
-                    st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"] = nombre
-                    if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"] != None:
-                        if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_{id_user}"].rsplit('-', 1)[0] != st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']["name_ponente_ss"]:
-                            #asignacion_nombre(id_user)
-                            #reset_session_participant()
-                            st.rerun()
-                   
-
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        
-                        dni = st.text_input(
-                            f"DNI del participante {index + 1}", 
-                            value = info_user.get(f"dni_{id_user}", ""),
-                            key=f"dni_{id_user}",
-                            #value=st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f'dni_{id_user}'], 
-                            on_change=validacion_completa_dni, 
-                            args=(id_user,)
-                        )
-
-                        #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
-
-                        centro = st.text_input(
-                            f"Centro de trabajo del participante {index + 1} *", 
-                            value=info_user.get(f"centro_trabajo_{id_user}", ""), 
-                            key=f"centro_trabajo_{id_user}",
-                            on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"centro_trabajo_{id_user}"], id_user, f"centro_trabajo_{id_user}")
-
-                        )
-
-                        cobra = st.selectbox(
-                            "¿Cobra a través de sociedad? *", 
-                            ["No", "Sí"], 
-                            key=f"cobra_sociedad_{id_user}"
-                        )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
-                        
-                        st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
-    
-                        
-                    with col2:
-                        tier = st.selectbox(
-                            f"Tier del participante {index + 1} *", 
-                            ["0", "1", "2", "3", "4"], 
-                            key=f"tier_{id_user}"
-                        )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"] = tier
-                        
-                        email = st.text_input(
-                            f"Email del participante {index + 1} *", 
-                            value=info_user.get(f"email_{id_user}", ""), 
-                            key=f"email_{id_user}",
-                            on_change= validacion_completa_email,
-                            args=(id_user,)
-                        )
-                        
-                        nombre_sociedad = st.text_input(
-                            "Nombre de la sociedad",
-                            value = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
-                            key=f"nombre_sociedad_{id_user}",
-                            on_change = lambda: save_to_session_state("participantes_ss","", id_user, f"nombre_sociedad_{id_user}")
-                              if st.session_state[f"cobra_sociedad_{id_user}"] == "No" else 
-                              save_to_session_state("participantes_ss", st.session_state[f"nombre_sociedad_{id_user}"], id_user, f"nombre_sociedad_{id_user}"),
-                            disabled= cobra == "No"
-                        )
-                        #st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
-                        
-                        st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
-                    col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
-
-                    with col_prep_horas:
-                        tiempo_prep_horas = st.number_input(
-                            label="Horas",
-                            min_value=0,
-                            step=1,
-                            key=f"preparacion_horas_{id_user}"
-                        )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_horas_{id_user}"] = tiempo_prep_horas
-                        
-                    with col_prep_minutos:
-                        
-                        tiempo_prep_minutos = st.selectbox(
-                            label="Minutos",
-                            options=[0,15,30,45],
-                            key=f"preparacion_minutos_{id_user}"
-                        )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
-                        
-                    with col_ponencia_horas:
-                        tiempo_ponencia_horas = st.number_input(
-                            label="Horas",
-                            min_value=0,
-                            step=1,
-                            key=f"ponencia_horas_{id_user}"
-                        )
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_horas_{id_user}"] = tiempo_ponencia_horas
-                        
-                    with col_ponencia_minutos:
-                        tiempo_ponencia_minutos = st.selectbox(
-                            label="Minutos",
-                            options=[0,15,30,45],
-                            key=f"ponencia_minutos_{id_user}"
-                        )
-                        
-                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
-                            
-                    # Obtener valores de tiempo en horas decimales
-                    tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60
-                    tiempo_prep_horas = tiempo_prep_horas + tiempo_prep_minutos / 60
-
-                    # Obtener tarifa en función del tier
-                    tarifa = tarifas.get(tier, 0)  # Si no encuentra el tier, usa 0
-
-                    # Calcular honorarios
-                    honorarios = (tiempo_ponencia_horas + tiempo_prep_horas) * tarifa
-                    
-                    honorarios = st.number_input(
-                        "Honorarios", 
-                        value= float(honorarios), 
-                        min_value=0.0, 
-                        step=0.01, 
-                        key=f"honorarios_{id_user}",
-                        disabled=True
-                    )
-                    st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"honorarios_{id_user}"] = honorarios
+     
+                if st.button(label=f"Ponente {index + 1}{aux}{nombre_expander_ss}", use_container_width=True, icon="👩‍⚕️"):
+                    single_ponente(id_user, info_user, index, nombre_expander_ss, aux)
             index +=1
 
             
@@ -385,10 +338,10 @@ def ponentes_section():
                     if id_user in st.session_state["form_data_speaking_services"]["participantes_ss"].keys():
                         del st.session_state["form_data_speaking_services"]["participantes_ss"][id_user]
                         st.session_state["participantes_ss"] = list(filter(lambda x: x['id'] != id_user, st.session_state["participantes_ss"]))
-                        st.session_state[f"session_ss_{id_user}"] = False
-                    ### preguntar alvaro
-                    #reset_session_participant()
                     st.rerun()
+
+
+
 
 def button_form(tipo):
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
@@ -422,7 +375,6 @@ def button_form(tipo):
 
                         # Obtener la posición del ID en las claves del diccionario
                         keys_list = list(participantes.keys())  # Convertir las claves en una lista
-                        #print("key_list", keys_list)
                         posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                         name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}']['name_ponente_ss'].strip()
                         msg_participantes = f"\n**Errores del Ponente {posicion}:{name_ponente}**\n"
@@ -529,7 +481,6 @@ if "form_data_speaking_services" not in st.session_state:
         "servicio_ss": "",
         "num_ponentes_ss": "",
         "num_asistentes_totales_ss":0
-        #"session_ss": False
     }
 
     st.session_state["form_data_speaking_services"] = {}
@@ -555,8 +506,6 @@ if "form_data_speaking_services" not in st.session_state:
     # if "participant_index_ss" not in st.session_state:
     #     st.session_state["participant_index_ss"] = 0
 
-# if 'session_ss' not in st.session_state:
-#     st.session_state.session_ss = False
 
 af.show_main_title(title="Speaking Services", logo_size=200)
 

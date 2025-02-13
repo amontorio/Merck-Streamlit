@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 import os
 import base64
+from pathlib import Path
 
 
 FIELD_MAPPINGS = {
@@ -116,16 +117,17 @@ FIELD_MAPPINGS = {
     "venue": "Sede"
 }
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 @st.cache_data
 def load_data():
-    path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    print("LEEEEER")
+    path = BASE_DIR / "database" / "Accounts with HCP tiering_ES_2025_01_29.xlsx"
     return pd.read_excel(path)
 dataset = load_data()
 
 def show_main_title(title, logo_size):
     logo_merck = 'logo-merck-kgaa-2015-1.svg'
-    logo_path = os.path.join(os.getcwd(), 'src', 'app', 'images', logo_merck)
+    logo_path = BASE_DIR / "images" / logo_merck
     print(logo_path)
 
     # Función para convertir la imagen a base64
@@ -311,7 +313,8 @@ def search_function(search_text, datos = dataset):
         f"{elemento[0]} - {elemento[1]}" for elemento in lista
         if texto_normalizado in normalize_text(elemento[0])
     ]
-    if search_text not in lista and len(lista) == 0: lista.append(search_text)  # noqa: E701
+    if search_text not in lista and len(lista) == 0: lista.append(search_text)
+              # noqa: E701
     return lista
 
 def handle_tier_from_name(name, datos = dataset):
