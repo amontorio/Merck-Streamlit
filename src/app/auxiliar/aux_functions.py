@@ -116,6 +116,13 @@ FIELD_MAPPINGS = {
     "venue": "Sede"
 }
 
+@st.cache_data
+def load_data():
+    path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    print("LEEEEER")
+    return pd.read_excel(path)
+dataset = load_data()
+
 def show_main_title(title, logo_size):
     logo_merck = 'logo-merck-kgaa-2015-1.svg'
     logo_path = os.path.join(os.getcwd(), 'src', 'app', 'images', logo_merck)
@@ -278,12 +285,12 @@ def normalize_text(text):
     text = text.strip()
     return text
 
-def search_function(search_text):
+def search_function(search_text, datos = dataset):
 
-    path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    df = pd.read_excel(path)
+    # path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    # df = pd.read_excel(path)
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
-    df = df.dropna(subset=['Nombre de la cuenta'])
+    df = datos.dropna(subset=['Nombre de la cuenta'])
 
     # Reemplazar NaN en 'Especialidad' con 'Ninguna'
     df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
@@ -307,12 +314,12 @@ def search_function(search_text):
     if search_text not in lista and len(lista) == 0: lista.append(search_text)  # noqa: E701
     return lista
 
-def handle_tier_from_name(name):
+def handle_tier_from_name(name, datos = dataset):
 
-    path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    df = pd.read_excel(path)
+    # path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
+    # df = pd.read_excel(path)
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
-    df = df.dropna(subset=['Nombre de la cuenta'])
+    df = datos.dropna(subset=['Nombre de la cuenta'])
 
     # Reemplazar NaN en 'Especialidad' con 'Ninguna'
     df['Especialidad'] = df['Especialidad'].fillna('Ninguna')

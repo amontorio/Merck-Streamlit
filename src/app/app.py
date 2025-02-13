@@ -1,6 +1,9 @@
 import streamlit as st
 import os
 import base64
+import pandas as pd
+
+
 
 #assistant = st.Page("./pages/assistant.py", title="Asistente", icon="🤖")
 
@@ -9,7 +12,8 @@ advisory_board = st.Page("./pages/advisory_board_page.py", title="Advisory Board
 consulting_services = st.Page("./pages/consulting_services_page.py", title="Consulting Services", icon="💡")
 speaking_services = st.Page("./pages/speaking_services_page.py", title="Speaking Services", icon="🗣️")
 
-
+# path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
+# df = pd.read_excel(path)
 
 pg = st.navigation(
     {

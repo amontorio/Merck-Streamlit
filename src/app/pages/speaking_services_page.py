@@ -238,7 +238,7 @@ def ponentes_section():
                 with st.expander(f"Ponente {index + 1}{aux}{nombre_expander_ss}", expanded = st.session_state[f"session_ss_{id_user}"], icon="👩‍⚕️"):
                     nombre = st_searchbox(
                             #label="Buscador de HCO / HCP *",
-                            search_function=af.search_function,
+                            search_function= af.search_function,  # Pasamos df aquí
                             placeholder="Busca un HCO / HCP *",
                             key=f"nombre_{id_user}",
                             edit_after_submit="disabled",
