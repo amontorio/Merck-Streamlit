@@ -479,15 +479,8 @@ def button_form():
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
                 df = save_form_data_event()
-                #st.dataframe(df)
                 doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
-                ## Create a markdown string with bullet points for each column
-                #markdown_text = "### Resumen de la solicitud:\n"
-                #for column in df.columns:
-                #    value = df[column].iloc[0]
-                #    markdown_text += f"* **{column}**: {value}\n"
-                #st.markdown(markdown_text)
-                
+
                 # Cambiar el estado del botón de descarga
                 st.session_state.download_enabled = True
                 

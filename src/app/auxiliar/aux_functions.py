@@ -288,11 +288,11 @@ def normalize_text(text):
     return text
 
 def search_function(search_text, datos = dataset):
-
-    # path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    # df = pd.read_excel(path)
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
-    df = datos.dropna(subset=['Nombre de la cuenta'])
+    df = datos.copy()
+
+    df = df.dropna(subset=['Nombre de la cuenta'])
+    #print(df.head(5))
 
     # Reemplazar NaN en 'Especialidad' con 'Ninguna'
     df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
@@ -318,11 +318,9 @@ def search_function(search_text, datos = dataset):
     return lista
 
 def handle_tier_from_name(name, datos = dataset):
-
-    # path = os.path.join(os.getcwd(), 'src', 'app', 'database', "Accounts with HCP tiering_ES_2025_01_29.xlsx")
-    # df = pd.read_excel(path)
+    df = datos.copy()
     # Eliminar filas donde 'Nombre de la cuenta' sea NaN
-    df = datos.dropna(subset=['Nombre de la cuenta'])
+    df = df.dropna(subset=['Nombre de la cuenta'])
 
     # Reemplazar NaN en 'Especialidad' con 'Ninguna'
     df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
