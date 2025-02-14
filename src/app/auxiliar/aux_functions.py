@@ -126,9 +126,8 @@ def load_data():
 dataset = load_data()
 
 def show_main_title(title, logo_size):
-    logo_merck = 'logo-merck-kgaa-2015-1.svg'
+    logo_merck = "merck-logo.png"
     logo_path = BASE_DIR / "images" / logo_merck
-    print(logo_path)
 
     # Función para convertir la imagen a base64
     def get_base64_image(image_path):
@@ -143,7 +142,7 @@ def show_main_title(title, logo_size):
     st.markdown(
         f"""
         <div style="text-align: center;">
-            <img src="data:image/svg+xml;base64,{base64_image}" alt="Logo Merck" width="{logo_size}">
+            <img src="data:image/png+xml;base64,{base64_image}" alt="Logo Merck" width="{logo_size}">
             <h1>{title}</h1>
         </div>
         """,

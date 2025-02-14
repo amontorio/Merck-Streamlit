@@ -46,10 +46,12 @@ def get_base64_of_bin_file(bin_file):
 
 BASE_DIR = Path(__file__).resolve().parent
 
-logo_merck = 'logo-merck-kgaa-2015-1.svg'
+logo_merck = "MDG_Logo_RPurple_SP.png"
+#logo_merck = "merck-logo.png"
+
 
 logo_path = BASE_DIR / "images" / logo_merck
-logo_merck_small = "logo-merck-small.png"
+logo_merck_small = "purple-mini.png"
 logo_small_path = BASE_DIR / "images" / logo_merck_small
 
 st.logo(logo_path, 

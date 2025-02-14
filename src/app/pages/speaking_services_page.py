@@ -17,7 +17,7 @@ tarifas = {
     "1": 250,
     "2": 200,
     "3": 150,
-    "4": 200 #NO APARECE
+    "4": 200
 }
 
 
@@ -170,7 +170,6 @@ def single_ponente(id_user, info_user, index):
 
                         col1, col2 = st.columns(2)
                         with col1:
-                            
                             dni = st.text_input(
                                 f"DNI del participante {index + 1}", 
                                 value = info_user.get(f"dni_{id_user}", "") if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True else "" ,
@@ -182,26 +181,10 @@ def single_ponente(id_user, info_user, index):
                                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
                             else:
                                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = ""
-                                st.warning("El DNI introducido no es correcto.", icon="❌")
-
-                            centro = st.text_input(
-                                f"Centro de trabajo del participante {index + 1} *", 
-                                value=info_user.get(f"centro_trabajo_{id_user}", ""), 
-                                key=f"centro_trabajo_{id_user}",
-                                on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"centro_trabajo_{id_user}"], id_user, f"centro_trabajo_{id_user}")
-
-                            )
-
-                            cobra = st.selectbox(
-                                "¿Cobra a través de sociedad? *", 
-                                ["No", "Sí"], 
-                                key=f"cobra_sociedad_{id_user}"
-                            )
-                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
-                            
-                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
-
-                            
+                                #st.warning("El DNI introducido no es correcto.", icon="❌")
+                        if not st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"]:
+                            st.warning("El DNI introducido no es correcto.", icon="❌")
+                        
                         with col2:
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
@@ -210,6 +193,17 @@ def single_ponente(id_user, info_user, index):
                             )
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"] = tier
                             
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            centro = st.text_input(
+                                f"Centro de trabajo del participante {index + 1} *", 
+                                value=info_user.get(f"centro_trabajo_{id_user}", ""), 
+                                key=f"centro_trabajo_{id_user}",
+                                on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"centro_trabajo_{id_user}"], id_user, f"centro_trabajo_{id_user}")
+
+                            )
+                        
+                        with col2:       
                             email = st.text_input(
                                 f"Email del participante {index + 1} *", 
                                 value = info_user.get(f"email_{id_user}", "") if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == True else "" ,
@@ -221,9 +215,22 @@ def single_ponente(id_user, info_user, index):
                                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = email
                             else:
                                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = ""
-                                st.warning("El email introducido no es correcto.", icon="❌")
+                        if not st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"]:
+                            st.warning("El email introducido no es correcto.", icon="❌")
 
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            cobra = st.selectbox(
+                                "¿Cobra a través de sociedad? *", 
+                                ["No", "Sí"], 
+                                key=f"cobra_sociedad_{id_user}"
+                            )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
+                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
+
+                           
+                        with col2:                   
                             nombre_sociedad = st.text_input(
                                 "Nombre de la sociedad",
                                 value = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
