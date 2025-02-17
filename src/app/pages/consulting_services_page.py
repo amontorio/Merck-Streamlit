@@ -18,7 +18,7 @@ tarifas = {
     "1": 250,
     "2": 200,
     "3": 150,
-    "4": 200 #NO APARECE
+    "4": 150
 }
 
 # Lista de parámetros obligatorios
@@ -208,6 +208,7 @@ def single_consultant(id_user, info_user, index):
                                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = email
                             else:
                                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = ""
+
                         if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == False:
                             st.warning("El email introducido no es correcto.", icon="❌")
 
@@ -232,7 +233,6 @@ def single_consultant(id_user, info_user, index):
                                     save_to_session_state("participantes_cs", st.session_state[f"nombre_sociedad_{id_user}"], id_user, f"nombre_sociedad_{id_user}"),
                                 disabled= cobra == "No"
                             )
-                            #st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
                             
                             st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
                         col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
@@ -242,36 +242,44 @@ def single_consultant(id_user, info_user, index):
                                 label="Horas",
                                 min_value=0,
                                 step=1,
-                                key=f"preparacion_horas_{id_user}"
+                                key=f"preparacion_horas_{id_user}",
+                                value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_horas_{id_user}"],
+                                on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"preparacion_horas_{id_user}"], id_user, f"preparacion_horas_{id_user}")
+
                             )
-                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_horas_{id_user}"] = tiempo_prep_horas
                             
                         with col_prep_minutos:
                             
                             tiempo_prep_minutos = st.selectbox(
                                 label="Minutos",
                                 options=[0,15,30,45],
-                                key=f"preparacion_minutos_{id_user}"
+                                key=f"preparacion_minutos_{id_user}",
+                                value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_minutos_{id_user}"],
+                                on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"preparacion_minutos_{id_user}"], id_user, f"preparacion_minutos_{id_user}")
+
                             )
-                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
                             
                         with col_ponencia_horas:
                             tiempo_ponencia_horas = st.number_input(
                                 label="Horas",
                                 min_value=0,
                                 step=1,
-                                key=f"ponencia_horas_{id_user}"
+                                key=f"ponencia_horas_{id_user}",
+                                value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_horas_{id_user}"],
+                                on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"ponencia_horas_{id_user}"], id_user, f"ponencia_horas_{id_user}")
+
                             )
-                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_horas_{id_user}"] = tiempo_ponencia_horas
                             
                         with col_ponencia_minutos:
                             tiempo_ponencia_minutos = st.selectbox(
                                 label="Minutos",
                                 options=[0,15,30,45],
-                                key=f"ponencia_minutos_{id_user}"
+                                key=f"ponencia_minutos_{id_user}",
+                                value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_minutos_{id_user}"],
+                                on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"ponencia_minutos_{id_user}"], id_user, f"ponencia_minutos_{id_user}")
+
                             )
                             
-                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
                                 
                         # Obtener valores de tiempo en horas decimales
                         tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60
@@ -284,7 +292,7 @@ def single_consultant(id_user, info_user, index):
                         honorarios = (tiempo_ponencia_horas + tiempo_prep_horas) * tarifa
                         
                         honorarios = st.number_input(
-                            "Honorarios", 
+                            "Honorarios (€)", 
                             value= float(honorarios), 
                             min_value=0.0, 
                             step=0.01, 
@@ -320,7 +328,7 @@ def participantes_section():
             else:
                 aux = ""
 
-            if st.button(label=f"Ponente {index + 1}{aux}{nombre_expander_cs}", use_container_width=True, icon="👩‍⚕️"):
+            if st.button(label=f"Consultor {index + 1}{aux}{nombre_expander_cs}", use_container_width=True, icon="👩‍⚕️"):
                     
                 single_consultant(id_user, info_user, index)
 
@@ -394,7 +402,7 @@ with col1:
                   on_change=lambda: save_to_session_state("producto_asociado_cs", st.session_state["producto_asociado_cs"]))
         
 with col2:
-    st.number_input("Presupuesto total estimado *",
+    st.number_input("Presupuesto total estimado (€)*",
                     min_value=0.0,
                     step=100.00,
                     key="presupuesto_estimado_cs",
@@ -479,9 +487,11 @@ def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
-            time.sleep(4)
+            time.sleep(2)
+            st.write("Validando campos obligatorios y dependientes...")
+            time.sleep(2)
             st.write("Validando información de los consultores...")
-            time.sleep(4)
+            time.sleep(2)
         
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
@@ -490,7 +500,7 @@ def button_form():
                 st.session_state.download_enabled_cs = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
-                msg_general = ""
+                msg_general = "\n**Errores Generales del Formulario**\n"
                 for msg in errores_general:
                     msg_general += f"\n* {msg}\n"
                 st.error(msg_general)

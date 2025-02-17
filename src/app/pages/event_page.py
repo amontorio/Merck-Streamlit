@@ -36,9 +36,9 @@ def handle_invoke_chain_event_description():
     save_to_session_state("short_description", st.session_state.res_generate_event_description)
 
 def validacion_email():
-        if not 'email_correcto' in st.session_state:
-            #st.session_state['signer_email'] = ""
-            st.session_state["email_correcto"] = True
+        st.session_state["email_correcto"] = True
+        if not 'signer_email' in st.session_state:
+            st.session_state['signer_email'] = ""
         else:
             mail = st.session_state.get("signer_email", "")
             st.session_state["email_correcto"] = True
@@ -61,13 +61,25 @@ def validacion_email():
 
 
 def validacion_completa_email():
-        validacion_email()
-        if st.session_state["email_correcto"] == True:
-            save_to_session_state("signer_email", st.session_state["signer_email"])
-        else:
-            st.toast("El email introducido no es correcto.", icon="❌")
-            time.sleep(1)
-            save_to_session_state("signer_email", "")
+        mail = st.session_state.get("signer_email", "")
+        st.session_state["email_correcto"] = True
+        try: 
+            #patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
+            tlds_pattern = '|'.join(tlds_validos)
+            patron = rf'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:{tlds_pattern})$'
+
+            matcheo = re.match(patron, mail) 
+            if matcheo == None and mail !="":
+                #st.session_state["email_correcto"] = False
+                st.session_state["email_correcto"] = False
+                st.session_state["form_data_event"]["signer_email"] = ""
+
+        except:
+            if mail != "":
+                st.session_state["email_correcto"] = False
+                st.session_state["form_data_event"]["signer_email"] = ""
+  
 
 # Inicializar estado del formulario en session_state
 if "form_data_event" not in st.session_state:
@@ -108,6 +120,8 @@ if "form_data_event" not in st.session_state:
     st.session_state["res_generate_event_description"] = ""
     st.session_state["download_enabled"] = False
     st.session_state["path_doc"] = None
+    st.session_state["email_correcto"] = True
+    st.session_state["signer_email"] = ""
 
 mandatory_fields = [
     "event_name",
@@ -398,9 +412,15 @@ def crear_detalles_firmante():
         with col13_2:
             st.text_input("Cargo del firmante *", value=st.session_state["form_data_event"]["signer_position"], key="signer_position", on_change=lambda: save_to_session_state("signer_position", st.session_state["signer_position"]))
         with col14_2:
-            st.text_input("Email del firmante *", value=st.session_state["form_data_event"]["signer_email"], key="signer_email", 
-                          #on_change=lambda: save_to_session_state("signer_email", st.session_state["signer_email"])
+            email = st.text_input("Email del firmante *", value=st.session_state["form_data_event"]["signer_email"], key="signer_email", 
                           on_change= validacion_completa_email())
+        
+        if st.session_state["email_correcto"] == True:
+            st.session_state["form_data_event"]["email"] = email
+        else:
+            st.session_state["form_data_event"]["email"] = ""
+        if not st.session_state["email_correcto"]:
+            st.warning("El email introducido no es correcto.", icon="❌")
                 
 
 
@@ -475,6 +495,12 @@ st.session_state.download_enabled = False
 # Botón para enviar
 def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        with st.status("Validando campos...", expanded=True, state = "running") as status:
+            st.write("Validando información general del formulario...")
+            time.sleep(2)
+            st.write("Validando campos obligatorios y dependientes...")
+            time.sleep(2)
+
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
@@ -487,7 +513,7 @@ def button_form():
                 #st.success("Formulario generado correctamente correctamente.")
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
-                msg_general = ""
+                msg_general = "\n**Errores Generales del Formulario**\n"
                 for msg in errores_general:
                     msg_general += f"\n* {msg}\n"
                 st.error(msg_general)
