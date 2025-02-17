@@ -217,7 +217,10 @@ def single_consultant(id_user, info_user, index):
                             cobra = st.selectbox(
                                 "¿Cobra a través de sociedad? *", 
                                 ["No", "Sí"], 
-                                key=f"cobra_sociedad_{id_user}"
+                                key=f"cobra_sociedad_{id_user}",
+                                index= ["No", "Sí"].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
+                                on_change= lambda: save_to_session_state("participantes_cs", st.session_state[f"cobra_sociedad_{id_user}"], id_user, f"cobra_sociedad_{id_user}")
+
                             )
                             st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
@@ -254,10 +257,12 @@ def single_consultant(id_user, info_user, index):
                                 label="Minutos",
                                 options=[0,15,30,45],
                                 key=f"preparacion_minutos_{id_user}",
-                                value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_minutos_{id_user}"],
+                                index= [0,15,30,45].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_minutos_{id_user}"]) if f"preparacion_minutos_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
                                 on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"preparacion_minutos_{id_user}"], id_user, f"preparacion_minutos_{id_user}")
 
                             )
+                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
+
                             
                         with col_ponencia_horas:
                             tiempo_ponencia_horas = st.number_input(
@@ -267,7 +272,6 @@ def single_consultant(id_user, info_user, index):
                                 key=f"ponencia_horas_{id_user}",
                                 value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_horas_{id_user}"],
                                 on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"ponencia_horas_{id_user}"], id_user, f"ponencia_horas_{id_user}")
-
                             )
                             
                         with col_ponencia_minutos:
@@ -275,11 +279,11 @@ def single_consultant(id_user, info_user, index):
                                 label="Minutos",
                                 options=[0,15,30,45],
                                 key=f"ponencia_minutos_{id_user}",
-                                value =st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_minutos_{id_user}"],
+                                index= [0,15,30,45].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_minutos_{id_user}"]) if f"ponencia_minutos_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
                                 on_change = lambda: save_to_session_state("participantes_cs", st.session_state[f"ponencia_minutos_{id_user}"], id_user, f"ponencia_minutos_{id_user}")
-
                             )
-                            
+                            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
+
                                 
                         # Obtener valores de tiempo en horas decimales
                         tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60

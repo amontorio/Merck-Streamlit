@@ -4,6 +4,11 @@ import streamlit as st
 import os
 import base64
 from pathlib import Path
+import auxiliar.prompts 
+from langchain_openai import AzureChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from pydantic import BaseModel, Field
 
 
 FIELD_MAPPINGS = {
@@ -163,7 +168,7 @@ def validar_campos(input_data, parametros_obligatorios, parametros_dependientes)
     todos sus campos rellenos.
 
     Args:
-        input_data (dict): Diccionario con los datos a validar.
+        input_data (dict): Diccionario con los datos a validar. -> diccionario del formulario
         parametros_obligatorios (list): Lista de nombres de parámetros obligatorios.
         parametros_dependientes (dict): Diccionario con la estructura:
             {
@@ -276,6 +281,99 @@ def validar_participantes(participantes):
 
         cnt+=1
     return errores_participantes
+
+# cachear
+def get_model():
+    # esto mal
+    azure_endpoint = "https://merck-test.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview"
+    api_key = ""
+
+    llm = AzureChatOpenAI(
+        azure_endpoint=azure_endpoint,
+        api_key=api_key,
+        azure_deployment="gpt-4o-mini", 
+        api_version="2024-10-01-preview",
+        temperature=0
+    )
+
+    return llm
+
+
+class BooleanValueDescription(BaseModel):
+    value: bool = Field(description="Un valor booleano (true o false)")
+    description: str = Field(description="Una descripción detallada explicando el valor booleano")
+
+
+def validar_hotel(llm, fecha_inicio, fecha_fin, hotel, ciudad):
+    prompt = ChatPromptTemplate([
+        ("system",  '''
+            Tu tarea es indicar si los siguientes campos cumplen con la normativa que te paso a continuación:
+            #campos#
+            fecha inicio: {fecha_inicio}
+            fecha fin: {fecha_fin}
+            hotel: {hotel}
+            ciudad: {ciudad}
+            #campos#
+
+            #normativa#
+            - en invierno no es posible seleccionar un hotel en el que se puedan ahacer deportes de nieve
+            - en verano no es posible seleccionar un hotel que haga referencia a sditios vacacionales de playa
+            #normativa#
+
+            Debes responder con un json que siga el siguiente los siguientes valores:
+            "valor": es un booleano que debe ser True en caso de que se cumpla la normativa, y False en caso contrario
+            "descripcion": explicación breve de las razones por las que no se cumple la normativa
+            '''
+        ),
+        ("user", "{input}")
+    ])
+
+    parser = JsonOutputParser(pydantic_object=BooleanValueDescription)
+
+    chain = prompt | llm | parser 
+
+    result = chain.invoke({
+        "input": "Realiza tu tarea de forma precisa.",
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "hotel": hotel,
+        "ciudad": ciudad
+    })
+
+    return result
+
+    # "fecha_inicio": "15 de enero de 2025",
+    # "fecha_fin": "17 de enero de 2025",
+    # "hotel": "Hotel Esquí Formigal",
+    # "ciudad": "Madrid"
+
+
+def validar_campos_ia(input_data, campos_ia):
+    errores_ia = []
+
+    llm = get_model()
+
+    # Validacion hoteles
+    campos_ia_hoteles = campos_ia.get("validar_hotel")
+    result_hoteles = validar_hotel(llm, fecha_inicio = campos_ia_hoteles[0],  fecha_fin = campos_ia_hoteles[1], 
+                                   hotel = campos_ia_hoteles[2], ciudad = campos_ia_hoteles[3])
+    
+    # Validacion 
+    result_ciudades = validar_hotel(llm, fecha_inicio = campos_ia_hoteles[0],  fecha_fin = campos_ia_hoteles[1], 
+                                   hotel = campos_ia_hoteles[2], ciudad = campos_ia_hoteles[3])
+    
+    result = {
+        "validacion_hoteles": result_hoteles,
+        "validacion_ciudades": result_ciudades
+    }
+
+    for key, res in result.items():
+        if not res["valor"]:
+            errores_ia.append(res["descripcion"])
+
+    return errores_ia
+
+     
 
 def normalize_text(text):
     # Convertir a string y minúsculas

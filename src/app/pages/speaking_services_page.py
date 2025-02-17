@@ -65,7 +65,7 @@ def add_ponente():
         f"centro_trabajo_{id_user}": "",
         f"email_{id_user}": "",
         f"email_correcto_{id_user}": True,
-        f"cobra_sociedad_{id_user}": "",
+        f"cobra_sociedad_{id_user}": "No",
         f"nombre_sociedad_{id_user}": "",
         f"honorarios_{id_user}": 0.0,
         f"preparacion_horas_{id_user}": 0,
@@ -77,7 +77,7 @@ def add_ponente():
     st.session_state["participantes_ss"].append(new_participant)
     #st.session_state["id_participantes_ss"].append(id_user)
 
-    # Inicializar participantes_ab en form_data_advisory_board si no existe
+    # Inicializar participantes_ss en form_data_speaking_services si no existe
     if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
         st.session_state["form_data_speaking_services"]["participantes_ss"] = {}        
 
@@ -223,7 +223,9 @@ def single_ponente(id_user, info_user, index):
                             cobra = st.selectbox(
                                 "¿Cobra a través de sociedad? *", 
                                 ["No", "Sí"], 
-                                key=f"cobra_sociedad_{id_user}"
+                                key=f"cobra_sociedad_{id_user}",
+                                index= ["No", "Sí"].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
+                                on_change= lambda: save_to_session_state("participantes_ss", st.session_state[f"cobra_sociedad_{id_user}"], id_user, f"cobra_sociedad_{id_user}")
                             )
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
@@ -240,6 +242,8 @@ def single_ponente(id_user, info_user, index):
                                     save_to_session_state("participantes_ss", st.session_state[f"nombre_sociedad_{id_user}"], id_user, f"nombre_sociedad_{id_user}"),
                                 disabled= cobra == "No"
                             )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
+
                             
                             st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
                         col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
@@ -260,10 +264,12 @@ def single_ponente(id_user, info_user, index):
                                 label="Minutos",
                                 options=[0,15,30,45],
                                 key=f"preparacion_minutos_{id_user}",
-                                value =st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_minutos_{id_user}"],
+                                index= [0,15,30,45].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_minutos_{id_user}"]) if f"preparacion_minutos_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
                                 on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"preparacion_minutos_{id_user}"], id_user, f"preparacion_minutos_{id_user}")
                             )
-                            
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
+
+
                         with col_ponencia_horas:
                             tiempo_ponencia_horas = st.number_input(
                                 label="Horas",
@@ -280,9 +286,11 @@ def single_ponente(id_user, info_user, index):
                                 label="Minutos",
                                 options=[0,15,30,45],
                                 key=f"ponencia_minutos_{id_user}",
-                                value =st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_minutos_{id_user}"],
+                                index= [0,15,30,45].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_minutos_{id_user}"]) if f"ponencia_minutos_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
                                 on_change = lambda: save_to_session_state("participantes_ss", st.session_state[f"ponencia_minutos_{id_user}"], id_user, f"ponencia_minutos_{id_user}")
                             )
+                            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
+
                             
                                 
                         # Obtener valores de tiempo en horas decimales
@@ -352,6 +360,7 @@ def button_form(tipo):
 
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
+            #errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
             if not errores_general and all(not lista for lista in errores_participantes.values()):
                 if tipo == "Reunión Merck Program":
                     doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
@@ -380,8 +389,13 @@ def button_form(tipo):
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
-                        
                 st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+
+                # msg_ia = "\n**Errores detectados con IA**\n"
+                # for msg in errores_ia:
+                #     msg_ia += f"\n* {msg}\n"
+                # if msg_ia != "":
+                #     st.error(msg_ia)
             # Leer el archivo Word y prepararlo para descarga
         except Exception as e:
             traceback.print_exc()
@@ -544,6 +558,9 @@ if meeting_type == "Reunión Merck Program":
         }
     }
 
+    validar_ia ={
+        "validar_hotel": ["start_date_ss", "end_date_ss", "hotel_ss", "ciudad_ss"]
+    }
 
     st.header("1. Detalles del Evento", divider=True)
     col1, col2 = st.columns(2)
@@ -570,7 +587,7 @@ if meeting_type == "Reunión Merck Program":
     col1, col2 = st.columns(2)
     with col1:
         st.selectbox("Tipo de evento *", ["Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
-                    #value =st.session_state["form_data_speaking_services"]["tipo_evento_ss"],
+                    index= ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
                     on_change=lambda: (
                         save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
                         save_to_session_state("sede_ss", ""),
@@ -582,6 +599,7 @@ if meeting_type == "Reunión Merck Program":
                         min_value=0,
                         step=1,
                         key="num_asistentes_totales_ss",
+                        value = st.session_state["form_data_speaking_services"]["num_asistentes_totales_ss"],
                         help="Ratio obligatorio (5 asistentes por ponente)",
                         on_change=lambda: save_to_session_state("num_asistentes_totales_ss", st.session_state["num_asistentes_totales_ss"]))
         
@@ -694,8 +712,6 @@ if meeting_type == "Reunión Merck Program":
             key="num_ponentes_ss", 
             help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas. El valor del campo debe de ser un número entero.",
             on_change = numero_ponentes_completo()
-            # on_change = lambda: save_to_session_state("num_ponentes_ss", st.session_state["num_ponentes_ss"]) if st.session_state.num_ponentes_ss.isdigit()
-            #                 else save_to_session_state("num_ponentes_ss", "")
         )
         
     with col2:
@@ -776,6 +792,7 @@ else:
                     format = "DD/MM/YYYY")
         
     st.selectbox("Tipo de evento *", ["Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
+                    index= ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
                     on_change=lambda: (
                         save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
                         save_to_session_state("sede_ss", ""),

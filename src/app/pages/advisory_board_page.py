@@ -222,7 +222,9 @@ def single_participante(id_user, info_user, index):
                             cobra = st.selectbox(
                                 "¿Cobra a través de sociedad? *", 
                                 ["No", "Sí"], 
-                                key=f"cobra_sociedad_{id_user}"
+                                key=f"cobra_sociedad_{id_user}",
+                                index= ["No", "Sí"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+                                on_change= lambda: save_to_session_state("participantes_ab", st.session_state[f"cobra_sociedad_{id_user}"], id_user, f"cobra_sociedad_{id_user}")
                             )
                             st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
@@ -258,10 +260,10 @@ def single_participante(id_user, info_user, index):
                                 label="Minutos",
                                 options=[0,15,30,45],
                                 key=f"preparacion_minutos_{id_user}",
-                                value =st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"],
+                                index= [0,15,30,45].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"]) if f"preparacion_minutos_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
                                 on_change = lambda: save_to_session_state("participantes_ab", st.session_state[f"preparacion_minutos_{id_user}"], id_user, f"preparacion_minutos_{id_user}")
-
                             )
+                            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"preparacion_minutos_{id_user}"] = tiempo_prep_minutos
                             
                         with col_ponencia_horas:
                             tiempo_ponencia_horas = st.number_input(
@@ -271,7 +273,6 @@ def single_participante(id_user, info_user, index):
                                 key=f"ponencia_horas_{id_user}",
                                 value =st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_horas_{id_user}"],
                                 on_change = lambda: save_to_session_state("participantes_ab", st.session_state[f"ponencia_horas_{id_user}"], id_user, f"ponencia_horas_{id_user}")
-
                             )
                             
                         with col_ponencia_minutos:
@@ -279,10 +280,11 @@ def single_participante(id_user, info_user, index):
                                 label="Minutos",
                                 options=[0,15,30,45],
                                 key=f"ponencia_minutos_{id_user}",
-                                value =st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"],
+                                index= [0,15,30,45].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"]) if f"ponencia_minutos_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
                                 on_change = lambda: save_to_session_state("participantes_ab", st.session_state[f"ponencia_minutos_{id_user}"], id_user, f"ponencia_minutos_{id_user}")
-
                             )
+                            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"ponencia_minutos_{id_user}"] = tiempo_ponencia_minutos
+
                             
                                 
                         tiempo_ponencia_horas = tiempo_ponencia_horas + tiempo_ponencia_minutos / 60
@@ -368,7 +370,7 @@ if "form_data_advisory_board" not in st.session_state:
         "otra_actividad_otro_departamento_ab": "No lo sé",
         "desplazamiento_ab": "No",
         "alojamiento_ab": "No", 
-        "num_noches_ab": 0,
+        "num_noches_ab": "",
         "hotel_ab": "",
         "tipo_evento_ab": "Virtual",
         "num_participantes_totales_ab": 0,
@@ -429,7 +431,6 @@ with col1:
                  ["Virtual", "Presencial", "Híbrido"],
                  key="tipo_evento_ab",
                  index= ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_advisory_board"]["tipo_evento_ab"]) if "tipo_evento_ab" in st.session_state["form_data_advisory_board"] else 0,
-
                  on_change=lambda: (
                      save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]),
                      save_to_session_state("sede_ab", ""),
@@ -539,7 +540,7 @@ with col2:
                  on_change=lambda: (
                      save_to_session_state("alojamiento_ab", st.session_state["alojamiento_ab"]),
                      save_to_session_state("hotel_ab", ""),
-                     save_to_session_state("num_noches_ab", 0)
+                     save_to_session_state("num_noches_ab", "")
                  ) if st.session_state["alojamiento_ab"] == "No" else 
                      save_to_session_state("alojamiento_ab", st.session_state["alojamiento_ab"]))
 
@@ -553,15 +554,15 @@ with col1:
         on_change=lambda: save_to_session_state("hotel_ab", st.session_state["hotel_ab"])
     )
 with col2:
-    st.number_input(
-        "Nº de noches", 
-        min_value=0, 
-        step=1, 
+    st.text_input("Nº de noches *", 
         key="num_noches_ab", 
         disabled=st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No",
-        value=0 if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("num_noches_ab", 0),
-        on_change=lambda: save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"])
+        value= "" if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("num_noches_ab", ""),
+        on_change=lambda: save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"]) if st.session_state.num_noches_ab.isdigit()
+            else save_to_session_state("num_noches_ab", "")
     )
+    
+                        
     
 
 st.header("4. Participantes del Advisory", divider=True)
