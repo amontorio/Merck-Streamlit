@@ -352,11 +352,13 @@ def button_form(tipo):
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
-            time.sleep(2)
+            time.sleep(1.5)
             st.write("Validando campos obligatorios y dependientes...")
-            time.sleep(2)
+            time.sleep(1.5)
             st.write("Validando información de los ponentes...")
-            time.sleep(2)
+            time.sleep(1.5)
+            st.write("Validando contenido de campos con IA...")
+            time.sleep(1.5)
 
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
@@ -390,13 +392,13 @@ def button_form(tipo):
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
                 st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+            
+            #if len(errores_ia) != 0:
+            #    msg_ia = "\n**Errores detectados con IA**\n"
+            #    for msg in errores_ia:
+            #        msg_ia += f"\n* {msg}\n"
+            #        st.error(msg_ia)
 
-                # msg_ia = "\n**Errores detectados con IA**\n"
-                # for msg in errores_ia:
-                #     msg_ia += f"\n* {msg}\n"
-                # if msg_ia != "":
-                #     st.error(msg_ia)
-            # Leer el archivo Word y prepararlo para descarga
         except Exception as e:
             traceback.print_exc()
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
@@ -466,14 +468,6 @@ def reset_session_participant():
 # if "id_participantes_ss" not in st.session_state:
 #     st.session_state["id_participantes_ss"] = []
 
-
-if "name_ponente_ss" not in st.session_state:
-        st.session_state["name_ponente_ss"] = ""
-
-
-
-
-# Inicializar estado del formulario en session_state
 if "form_data_speaking_services" not in st.session_state:
     field_defaults = {
         "start_date_ss": date.today(),
@@ -498,17 +492,19 @@ if "form_data_speaking_services" not in st.session_state:
 
     st.session_state["form_data_speaking_services"] = {}
     st.session_state["id_participantes_ss"] = []
-
     st.session_state["download_enabled_ss"] = False
     st.session_state["path_doc_ss"] = None
-    
 
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
 
+
+    if "name_ponente_ss" not in st.session_state:
+            st.session_state["name_ponente_ss"] = ""
+
     if "participantes_ss" not in st.session_state:
         st.session_state.participantes_ss = [] 
-
+    
     add_ponente()
 
 
@@ -559,7 +555,14 @@ if meeting_type == "Reunión Merck Program":
     }
 
     validar_ia ={
-        "validar_hotel": ["start_date_ss", "end_date_ss", "hotel_ss", "ciudad_ss"]
+        "validar_hotel": {"start_date": "start_date_ss",
+                          "end_date": "end_date_ss",
+                          "hotel": "hotel_ss"
+                          },
+        "validar_sede_location": {"start_date":"start_date_ss", 
+                                  "end_date": "end_date_ss", 
+                                  "sede": "sede_ss"},
+        "validar_sede_venue": {"sede": "sede_ss"}
     }
 
     st.header("1. Detalles del Evento", divider=True)

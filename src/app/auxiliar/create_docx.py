@@ -199,7 +199,8 @@ def crear_documento_advisory(data):
         for participante in participantes.values():
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            #row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
@@ -306,7 +307,8 @@ def crear_documento_consulting_services(data):
             row_cells = tabla.add_row().cells
             
             # Fill in basic fields
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            #row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
@@ -432,7 +434,7 @@ def crear_documento_speaking(data):
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
             # row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").rsplit('-', 1)[0] 
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
             #row_cells[0].text = "-".join(participante.get(f"nombre_{id_participante}", "").split('-')[:-1])
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
@@ -440,7 +442,7 @@ def crear_documento_speaking(data):
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
             row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
             row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
-            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_ss_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_ss_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_ss_minutos_{id_participante}', '')} minutos"
+            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_minutos_{id_participante}', '')} minutos"
             
             for cell in row_cells:
                 cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
@@ -537,7 +539,7 @@ def crear_documento_speaking_reducido(data):
         for participante in participantes.values():
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")

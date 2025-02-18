@@ -345,7 +345,7 @@ def participantes_section():
                     st.session_state["participantes_cs"] = list(filter(lambda x: x['id'] != id_user, st.session_state["participantes_cs"]))
 
                 st.rerun()
-            
+
 # Inicializar estado del formulario en session_state
 if "form_data_consulting_services" not in st.session_state:
     field_defaults = {
@@ -370,15 +370,14 @@ if "form_data_consulting_services" not in st.session_state:
     
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
-
+         
     if "participantes_cs" not in st.session_state:
         st.session_state.participantes_cs = [] 
-        
+
+    if "name_ponente_cs" not in st.session_state:
+            st.session_state["name_ponente_cs"] = ""
+
     add_participant()
-
-if "name_ponente_cs" not in st.session_state:
-        st.session_state["name_ponente_cs"] = ""
-
 
 
 af.show_main_title(title="Consulting Services", logo_size=200)

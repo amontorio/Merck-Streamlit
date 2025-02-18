@@ -4,11 +4,12 @@ import streamlit as st
 import os
 import base64
 from pathlib import Path
-import auxiliar.prompts 
+import json 
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from pydantic import BaseModel, Field
+import certifi
 
 
 FIELD_MAPPINGS = {
@@ -123,6 +124,7 @@ FIELD_MAPPINGS = {
 }
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 @st.cache_data
 def load_data():
@@ -304,7 +306,7 @@ class BooleanValueDescription(BaseModel):
     description: str = Field(description="Una descripción detallada explicando el valor booleano")
 
 
-def validar_hotel(llm, fecha_inicio, fecha_fin, hotel, ciudad):
+def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
     prompt = ChatPromptTemplate([
         ("system",  '''
             Tu tarea es indicar si los siguientes campos cumplen con la normativa que te paso a continuación:
@@ -312,17 +314,21 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel, ciudad):
             fecha inicio: {fecha_inicio}
             fecha fin: {fecha_fin}
             hotel: {hotel}
-            ciudad: {ciudad}
             #campos#
 
             #normativa#
-            - en invierno no es posible seleccionar un hotel en el que se puedan ahacer deportes de nieve
-            - en verano no es posible seleccionar un hotel que haga referencia a sditios vacacionales de playa
+            - No se pueden reservar hoteles de gran lujo. Por tanto, todos los hoteles en cuya semántica aparezca 'Gran lujo', 'Luxury' o términos del estilo.
+            - La duración del evento se calcula como fecha inicio - fecha fin en días. El número de noches no puede exceder en 2 días a la duración del evento. Por tanto, el número de noches no puede ser\
+              2 unidades superior a la diferencia fecha inicio - fecha fin. 
             #normativa#
+         
+            #importante#
+            Si no se tiene información suficiente para aplicar la normativa (algún input está en blanco), debes asumir que SÍ se aplica bien (True). No hay que ser excesivamente restrictivo.
+            #importante#
 
             Debes responder con un json que siga el siguiente los siguientes valores:
             "valor": es un booleano que debe ser True en caso de que se cumpla la normativa, y False en caso contrario
-            "descripcion": explicación breve de las razones por las que no se cumple la normativa
+            "descripcion": explicación breve de las razones por las que no se cumple la normativa. Quiero que la explicación sea breve y concisa, directamente relacionada con los inputs que recibes. 
             '''
         ),
         ("user", "{input}")
@@ -336,16 +342,99 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel, ciudad):
         "input": "Realiza tu tarea de forma precisa.",
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
-        "hotel": hotel,
-        "ciudad": ciudad
+        "hotel": hotel    
     })
 
     return result
 
-    # "fecha_inicio": "15 de enero de 2025",
-    # "fecha_fin": "17 de enero de 2025",
-    # "hotel": "Hotel Esquí Formigal",
-    # "ciudad": "Madrid"
+def validar_sede_location(llm, fecha_inicio, fecha_fin, sede):
+    prompt = ChatPromptTemplate([
+    ("system", '''
+        Tu tarea es indicar si el campo 'sede' cumple con la normativa que te voy a definir. Vas a recibir una serie de campos necesarios para evaluar el cumplimiento de la normativa.
+            #campos#
+            fecha inicio: {fecha_inicio}
+            fecha fin: {fecha_fin}
+            sede: {sede}
+            #campos#
+
+            #normativa#
+            Fecha inicio y fecha fin se van a utilizar para detectar el periodo / estación en la que se realiza la reserva. Acorde a estos valores, 
+            - Entre diciembre y marzo no es posible seleccionar una sede en cuya semántica aparezca 'Esquí', 'Snow' o deportes de invierno. Tiene que aparecer en el nombre de la sede claramente algo relacionado con esto.
+            - Desde el 15 de junio al 15 de septiembre no es posible seleccionar una sede cuyo nombre incluya los términos 'Playa', 'Mar' (o derivadas, de la misma familia de palabras). **Los términos de 'Spa' o 'Resort' no indican incumplimiento de la normativa.**
+            #normativa#
+     
+            #IMPORTANTE#
+            No debes ser excesivamente riguroso con la aplicación de la normativa. **Solo debes poner False (no cumplimiento), en caso de que claramente no se cumpla con la norma**. 
+            Sin embargo, si no es tan evidente, la normativa SÍ se cumple. No debes ser muy restrictivo, **solo se tienen que descartar casos muy concretos que claramente no cumplan la normativa**.
+            Ten claro el status final de si la normativa se cumple o no se cumple.
+            #IMPORTANTE#
+     
+            #instrucciones#
+            Debes responder con un json que siga el siguiente los siguientes valores:
+            "valor": es un booleano que debe ser True en caso de que se SÍ cumpla la normativa, y False en caso de que NO se cumpla. 
+            "descripcion": explicación breve de las razones por las que NO se cumple la normativa. No mencionar concretamente la palabra que no cumple la normativa, sino el contexto de por qué relacionandolo con la época (verano o invierno).
+            #instrucciones#
+    '''
+    ),
+    ("user", "{input}")
+    ])
+
+    parser = JsonOutputParser(pydantic_object=BooleanValueDescription)
+
+    chain = prompt | llm | parser 
+
+    result = chain.invoke({
+        "input": "Realiza tu tarea de forma precisa.",
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "sede": sede
+    })
+
+    return result
+
+def validar_sede_venue(llm, sede):
+    prompt = ChatPromptTemplate([
+    ("system", '''
+        Tu tarea es indicar si el campo 'sede' cumple con la normativa que te voy a definir. Vas a recibir una serie de campos necesarios apra evaluar el cumplimiento de la normativa.
+            #campos#
+            sede: {sede}
+            #campos#
+
+            #normativa#
+            - El nombre de la sede **no puede incluir** palabras (o derivados de la familia de palabras) relacionadas con los siguentes sedes prohibidas: 
+                1. Complejos deportivos: golf, 
+                2. Parques temáticos
+                3. Bodegas
+                4. Hoteles de Gran Lujo: gran lujo, luxury, spa, resort... 
+            #normativa#
+     
+            #IMPORTANTE#
+            No debes ser excesivamente riguroso con la aplicación de la normativa. **Solo debes poner False (no cumplimiento), en caso de que claramente no se cumpla con la norma**. 
+            Sin embargo, si no es tan evidente, la normativa SÍ se cumple. No debes ser muy restrictivo, **solo se tienen que descartar casos muy concretos que claramente no cumplan la normativa**.
+            Ten claro el status final de si la normativa se cumple o no se cumple.
+            #IMPORTANTE#
+     
+            #instrucciones#
+            Debes responder con un json que siga el siguiente los siguientes valores:
+            "valor": es un booleano que debe ser True en caso de que se SÍ cumpla la normativa, y False en caso de que NO se cumpla. 
+            "descripcion": explicación breve de las razones por las que NO se cumple la normativa. 
+            #instrucciones#
+        '''
+        ),
+            ("user", "{input}")
+        ])
+
+    parser = JsonOutputParser(pydantic_object=BooleanValueDescription)
+
+    chain = prompt | llm | parser 
+
+    result = chain.invoke({
+        "input": "Realiza tu tarea de forma precisa.",
+        "sede": sede
+    })
+
+    return result
+
 
 
 def validar_campos_ia(input_data, campos_ia):
@@ -353,19 +442,39 @@ def validar_campos_ia(input_data, campos_ia):
 
     llm = get_model()
 
-    # Validacion hoteles
-    campos_ia_hoteles = campos_ia.get("validar_hotel")
-    result_hoteles = validar_hotel(llm, fecha_inicio = campos_ia_hoteles[0],  fecha_fin = campos_ia_hoteles[1], 
-                                   hotel = campos_ia_hoteles[2], ciudad = campos_ia_hoteles[3])
+    # Validación de hoteles
+    campos_ia_hoteles = campos_ia.get("validar_hotel", {})
+    if campos_ia_hoteles:
+        fecha_inicio = input_data.get(campos_ia_hoteles.get("start_date"))
+        fecha_fin = input_data.get(campos_ia_hoteles.get("end_date"))
+        hotel = input_data.get(campos_ia_hoteles.get("hotel"))
+
+        result_hoteles = validar_hotel(llm, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, hotel=hotel) 
+        
+    # Validación de sede y ubicación
+    campos_ia_sede_location = campos_ia.get("validar_sede_location", {})
+    if campos_ia_sede_location:
+        fecha_inicio = input_data.get(campos_ia_sede_location.get("start_date"))
+        fecha_fin = input_data.get(campos_ia_sede_location.get("end_date"))
+        sede = input_data.get(campos_ia_sede_location.get("sede"))
+
+        result_location = validar_sede_location(llm, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, sede=sede) 
+
+    # Validación de sede y venue
+    campos_ia_sede_venue = campos_ia.get("validar_sede_venue", {})
+    if campos_ia_sede_venue:
+        sede = input_data.get(campos_ia_sede_venue.get("sede"))
+        result_venue = validar_sede_venue(llm, sede=sede) 
     
-    # Validacion 
-    result_ciudades = validar_hotel(llm, fecha_inicio = campos_ia_hoteles[0],  fecha_fin = campos_ia_hoteles[1], 
-                                   hotel = campos_ia_hoteles[2], ciudad = campos_ia_hoteles[3])
-    
-    result = {
-        "validacion_hoteles": result_hoteles,
-        "validacion_ciudades": result_ciudades
-    }
+    result = {}
+    if result_hoteles:
+        result['hoteles'] = result_hoteles
+    if result_location:
+        result['location'] = result_location
+    if result_venue:
+        result['venue'] = result_venue
+
+    print("RESULT", result)
 
     for key, res in result.items():
         if not res["valor"]:
@@ -437,3 +546,95 @@ def handle_tier_from_name(name, datos = dataset):
     return "0"  # Devuelve 0 si el nombre no está en los datos
 
 
+MERCK_ROOT_CA = """-----BEGIN CERTIFICATE-----
+MIIGOzCCBCOgAwIBAgIQHt22MoeoebZLg1n5IiALWTANBgkqhkiG9w0BAQsFADBT
+MQswCQYDVQQGEwJERTEUMBIGA1UECgwLTWVyY2sgR3JvdXAxEzARBgNVBAsMCk1l
+cmNrIEtHYUExGTAXBgNVBAMMEE1FUkNLIFJPT1QgQ0EgMDEwHhcNMTYxMDI4MDg1
+MjU2WhcNMzYxMDI4MDkwMjUyWjBTMQswCQYDVQQGEwJERTEUMBIGA1UECgwLTWVy
+Y2sgR3JvdXAxEzARBgNVBAsMCk1lcmNrIEtHYUExGTAXBgNVBAMMEE1FUkNLIFJP
+T1QgQ0EgMDEwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDQGa8XIrc9
+Ri5hhJfXHCfzbJY9sueLJXtOuwYdGD/riltHGCOitOxFGCTTwelCDwpvT+9VB0rM
+tbtU5pZMNhWhPm+6xVG0pBOsZW65sL+rgh9o4kvSfAmLE7n8qZmek1jfK/i8tRHI
+D51YM+1+ObBcrCi5KrqROEpJEvGIQjbaKM6kCuhJGGcxr40gQ1hc4mVysRELOv4y
+8YU3bSHiqDpMvwzCD+57xuYSfuZx6YXSfPXM1JU6vjZ1fp3NjbArp9+Ml9b4UC7Q
+FInGmwRhEmd1UMdDm2IshhOlQ8Q4NXoOdecrQCkyHKHKpvvolDmnpucdUa8hVrDq
+Xk94r/AEbIk87OBjl9r/V2ei7lD45pjanam24Xm5uwJDX2RrL+LxD4tNQTDig/f5
+F75hSPHWsFatQrxT2mNtOihfAFWZySTzVTNE+Ez3nei0GZ92QcdX3jn0oTvezGEn
+cnSp9mhGnWlXUXQ5GXEIUsF3Krvkw30xSM1tJt7tpnAR8ZIqBFcfhdVuNnhSZvzS
+qoxBEEf2N76k28rCq/PuxcAd0EwE5x7eDcD7ZNjLev/wgqthUv+zddkKlfhRWop7
+Z7hmvQRYWp9mOqX0t6B6y0/ulAqgn67U7qb/XzpnvVp5Aydv1tQ+qq6Od1JlMScj
+nv0F7KSTrnc5K8KPsSFxOkcNkoCMdVgGzQIDAQABo4IBCTCCAQUwDgYDVR0PAQH/
+BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFNDmVlzqHY/5Kj0GGKWU
+kZwA1VUzMIHCBgNVHSAEgbowgbcwgbQGBFUdIAAwgaswgagGCCsGAQUFBwICMIGb
+HoGYAEMAZQByAHQAaQBmAGkAYwBhAHQAaQBvAG4AIABQAHIAYQBjAHQAaQBjAGUA
+IABTAHQAYQB0AGUAbQBlAG4AdAAgACgAQwBQAFMAKQAgAGEAdgBhAGkAbABhAGIA
+bABlACAAbwBuACAAcgBlAHEAdQBlAHMAdAAgAGYAcgBvAG0AIABJAFQAIABTAGUA
+YwB1AHIAaQB0AHkwDQYJKoZIhvcNAQELBQADggIBADaPFSRRqFU9Uu8xEgk7rxJt
+XHoVnMoDiHhHcTBeG+9U3q1tSA/MohIPZN98isEP6BLlN2tv5xVZRG8VjmIj3bE5
+KUcwSNKRPUYZHIelTkXZnyfjnWLG1aFloLmnysZOQcK/ce/uRTIeivGPIneJgifs
+NTeYZF7b5WYAGtkTC5t+TFdAxVw4ptmwX1NDgAwclUE72JxtDk8xPxYfy/26vA6+
+Rfl3YaRiwB++WxUaG68wYHWV4+uo6enz0NIJwvlg+4sZGCeoQ/zRl1yQM4sBu3DT
+uYVoN15MAnrxbXJ81LSrCYJGLNM1pbA75a3UwTercGoCh0gchLuuCWk8vz3TmkU2
+xZRGVpqFveoO4Y2Gd08QMJBSRmCaCmaDFUqbqPump/euTbjPICTZ0gEn9SfhAVWK
+dotKAz7yqhrjOx08x3fBtbggnLvQrK1NBgsXUz6+c2WcqVh1yR9DCYqLSW656psv
+J42zE5cplnkhc+0XS7itIaBwEEHR6XDq006YZpQeYapSAZ5F+Vc782UGQa+4fFg2
+0rkON71IUxOG6rsVG85Fnt4xPAIHxJxMT4FKKlN0yFxc4aBn8Mj/GRP9up0caUoF
+lmIhWZaOkQFhYXt7TGNzYxf2FUM1OVZetlF8cIX29LoqzSVYIT6kJVoO/+JnKjqv
+1U8Ol3yI5k05mg+n+Tac
+-----END CERTIFICATE-----
+"""
+
+def _create_cacert_bundle_with_merck_additions() -> str:
+    """
+    Takes certifi's cacert bundle, adds Merck Root CA and Merck ssl decryption
+    certificate and returns the path to the combined cacert.pem file.
+
+    Returns: the path to the combined cacert.pem file.
+    """
+    ca_certs = Path(certifi.where()).read_text(encoding="UTF-8")
+    cacert_path = BASE_DIR / "cacert.pem"
+    with cacert_path.open("w") as f:
+        f.write(ca_certs)
+        f.write('\n# Label: "MERCK ROOT CA 01"\n')
+        f.write(MERCK_ROOT_CA)
+    return str(cacert_path.absolute())
+
+
+def app_is_running_on_app_service() -> bool:
+    return True if "APP_SERVICE_TS" in os.environ else False
+
+def setup_environment() -> None:
+    """Sets up the necessary environment variables for the application.
+
+    This function should be called before the application initializes. It configures
+     environment variables for running the application.
+    For local development it ensures that:
+    - The application configuration is loaded from 'config.json'
+    - The requests and httpx libraries are configured to use the Merck SSL certificates
+    When running in the app service in ensures that:
+    - If the user provides a runtime configuration through the app service console, then
+      each configured json entry is exposed as environment variables.
+    """
+    if not app_is_running_on_app_service():
+        path_config = BASE_DIR / "config.json"
+        try:
+            os.environ["APP_SERVICE_CONFIG"] = Path(path_config).read_text()
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                "Missing config.json. Please duplicate the config-template.json file and fill with your own credentials."
+            ) from e
+
+        # local development requires certificate / ssl setup
+        cacert_path = _create_cacert_bundle_with_merck_additions()
+        # The httpx library used by openai uses SSL_CERT_FILE environment variable:
+        # https://www.python-httpx.org/compatibility/#ssl-configuration
+        os.environ["SSL_CERT_FILE"] = cacert_path
+        # The requests library uses the REQUESTS_CA_BUNDLE environment variable:
+        # https://requests.readthedocs.io/en/latest/user/advanced/#ssl-cert-verification
+        os.environ["REQUESTS_CA_BUNDLE"] = cacert_path
+
+    # In appservice, APP_SERVICE_CONFIG is present when the user provides a runtime
+    # configuration through the app service console
+    if "APP_SERVICE_CONFIG" in os.environ:
+        config = json.loads(os.environ["APP_SERVICE_CONFIG"])
+        os.environ.update(config)

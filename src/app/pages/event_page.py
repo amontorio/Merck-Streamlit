@@ -35,29 +35,29 @@ def handle_invoke_chain_event_description():
     st.session_state.res_generate_event_description = res  
     save_to_session_state("short_description", st.session_state.res_generate_event_description)
 
-def validacion_email():
-        st.session_state["email_correcto"] = True
-        if not 'signer_email' in st.session_state:
-            st.session_state['signer_email'] = ""
-        else:
-            mail = st.session_state.get("signer_email", "")
-            st.session_state["email_correcto"] = True
-            if mail =="":
-                st.session_state["email_correcto"] = True
-            else:
-                try: 
-                    #patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-                    tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
-                    tlds_pattern = '|'.join(tlds_validos)
-                    patron = rf'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:{tlds_pattern})$'
+# def validacion_email():
+#         st.session_state["email_correcto"] = True
+#         if not 'signer_email' in st.session_state:
+#             st.session_state['signer_email'] = ""
+#         else:
+#             mail = st.session_state.get("signer_email", "")
+#             st.session_state["email_correcto"] = True
+#             if mail =="":
+#                 st.session_state["email_correcto"] = True
+#             else:
+#                 try: 
+#                     #patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+#                     tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
+#                     tlds_pattern = '|'.join(tlds_validos)
+#                     patron = rf'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:{tlds_pattern})$'
 
-                    matcheo = re.match(patron, mail) 
-                    if matcheo == None:
-                        st.session_state["email_correcto"] = False
+#                     matcheo = re.match(patron, mail) 
+#                     if matcheo == None:
+#                         st.session_state["email_correcto"] = False
 
-                except:
-                    if mail != "":
-                        st.session_state["email_correcto"] = False
+#                 except:
+#                     if mail != "":
+#                         st.session_state["email_correcto"] = False
 
 
 def validacion_completa_email():
@@ -79,7 +79,8 @@ def validacion_completa_email():
             if mail != "":
                 st.session_state["email_correcto"] = False
                 st.session_state["form_data_event"]["signer_email"] = ""
-  
+
+
 
 # Inicializar estado del formulario en session_state
 if "form_data_event" not in st.session_state:
@@ -253,6 +254,7 @@ def save_form_data_event():
     df = pd.DataFrame([data])
     return df
 
+
 # Sección de documentos a adjuntar
 af.show_main_title(title="Sponsorship of Event", logo_size=200)
 
@@ -295,21 +297,21 @@ def crear_nombre_y_tipo():
 def crear_fechas():
     col3, col4 = st.columns(2)
     with col3:
-        date_event = st.date_input("Fecha de inicio del evento *", 
+        st.date_input("Fecha de inicio del evento *", 
                                    value=st.session_state["form_data_event"]["start_date"], 
                                    key="start_date", 
                                    on_change=lambda: save_to_session_state("start_date", st.session_state["start_date"]),
                                    format = "DD/MM/YYYY")
     with col4:
         st.date_input("Fecha de fin del evento *", 
-                      value= date_event if st.session_state["form_data_event"]["end_date"] < date_event else st.session_state["form_data_event"]["end_date"],
-                      min_value = date_event,
+                      value= st.session_state["form_data_event"]["start_date"] if st.session_state["form_data_event"]["end_date"] < st.session_state["form_data_event"]["start_date"] else st.session_state["form_data_event"]["end_date"],
+                      min_value = st.session_state["form_data_event"]["start_date"],
                       key="end_date", 
                       on_change=lambda: save_to_session_state("end_date", st.session_state["end_date"]),
                       format = "DD/MM/YYYY")
 
-    if st.session_state.start_date > st.session_state.end_date:
-        st.error("La fecha de inicio debe ser menor o igual a la fecha de fin.")
+    # if st.session_state.start_date > st.session_state.end_date:
+    #     st.error("La fecha de inicio debe ser menor o igual a la fecha de fin.")
 
 def crear_ubicacion():
     is_virtual = st.session_state.event_type == "Virtual"
@@ -416,9 +418,9 @@ def crear_detalles_firmante():
                           on_change= validacion_completa_email())
         
         if st.session_state["email_correcto"] == True:
-            st.session_state["form_data_event"]["email"] = email
+            st.session_state["form_data_event"]["signer_email"] = email
         else:
-            st.session_state["form_data_event"]["email"] = ""
+            st.session_state["form_data_event"]["signer_email"] = ""
         if not st.session_state["email_correcto"]:
             st.warning("El email introducido no es correcto.", icon="❌")
                 

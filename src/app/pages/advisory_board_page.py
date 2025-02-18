@@ -8,6 +8,8 @@ import auxiliar.create_docx as cd
 import traceback
 import io
 import time
+import re
+
 # Diccionario de tarifas según el tier
 
 tarifas = {
@@ -341,24 +343,6 @@ def participantes_section():
                 st.rerun()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Inicializar estado del formulario en session_state
 if "form_data_advisory_board" not in st.session_state:
 
     field_defaults = {
@@ -377,13 +361,10 @@ if "form_data_advisory_board" not in st.session_state:
         "num_participantes_ab": 0
     }
 
-    st.session_state["form_data_advisory_board"] = {}
-    st.session_state["id_participantes"] = []
-    
+    st.session_state["form_data_advisory_board"] = {}   
+    st.session_state["id_participantes"] = [] 
     st.session_state["download_enabled_ab"] = False
     st.session_state["path_doc_ab"] = None
-    
-    
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
 
