@@ -329,8 +329,11 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
 
             #normativa#
             - No se pueden reservar hoteles de gran lujo. Por tanto, todos los hoteles en cuya semántica aparezca 'Gran lujo', 'Luxury' o términos del estilo.
-            - La duración del evento se calcula como fecha inicio - fecha fin en días. El número de noches no puede exceder en 2 días a la duración del evento. Por tanto, el número de noches no puede ser\
-              2 unidades superior a la diferencia fecha inicio - fecha fin. 
+            - El nombre del hotel **no puede incluir** palabras (o derivados de la familia de palabras) relacionadas con los siguentes alojamientos prohibidos: 
+                1. Complejos deportivos: golf, 
+                2. Parques temáticos (identificando también nombres propios: La Warner, Portaventura, etc.)
+                3. Bodegas
+                4. Hoteles de Gran Lujo: gran lujo, luxury, spa, resort...
             #normativa#
          
             #importante#

@@ -55,6 +55,7 @@ def validacion_completa_email():
 
         if st.session_state["email_correcto"] == True:
             save_to_session_state("signer_email", st.session_state["signer_email"])
+            save_to_session_state("signer_email_copy", st.session_state["signer_email_copy"])
         else:
             st.session_state["form_data_event"]["signer_email"] = ""
 
@@ -86,6 +87,7 @@ if "form_data_event" not in st.session_state:
         "signer_first_name": "",
         "signer_position": "",
         "signer_email": "",
+        "signer_email_copy": "",
         "documentosubido_1_event": None,
         "documentosubido_2_event": None,
         "documentosubido_3_event": None
@@ -101,6 +103,7 @@ if "form_data_event" not in st.session_state:
     st.session_state["path_doc"] = None
     st.session_state["email_correcto"] = True
     st.session_state["signer_email"] = ""
+    st.session_state["signer_email_copy"] = ""
 
 mandatory_fields = [
     "event_name",
@@ -151,6 +154,12 @@ if "signer_email" not in st.session_state:
     else:
         st.session_state["signer_email"] = ""
 
+if "signer_email_copy" not in st.session_state:
+    if "signer_email_copy" in st.session_state["form_data_event"]:
+        st.session_state["signer_email_copy"] = st.session_state["form_data_event"]["signer_email_copy"]
+    else:
+        st.session_state["signer_email_copy"] = ""
+
 if "venue" not in st.session_state:
     if "venue" in st.session_state["form_data_event"]:
         st.session_state["venue"] = st.session_state["form_data_event"]["venue"]
@@ -163,7 +172,14 @@ if "city" not in st.session_state:
     else:
         st.session_state["city"] = ""
 
-    
+
+validar_ia ={
+        "validar_sede_location": {"start_date":"start_date", 
+                                  "end_date": "end_date", 
+                                  "sede": "venue"},
+        "validar_sede_venue": {"sede": "venue"}
+    }
+
 def check_mandatory_fields():
     """Check if all mandatory fields have valid values and return missing fields"""
     fields_to_check = list(mandatory_fields)
@@ -415,24 +431,14 @@ def crear_detalles_firmante():
         with col13_2:
             st.text_input("Cargo del firmante *", value=st.session_state["form_data_event"]["signer_position"], key="signer_position", on_change=lambda: save_to_session_state("signer_position", st.session_state["signer_position"]))
         with col14_2:
-            email = st.text_input("Email del firmante *", value=st.session_state["form_data_event"]["signer_email"] if st.session_state["email_correcto"] == True else "",
+            email = st.text_input("Email del firmante *", 
+                        #value=st.session_state["form_data_event"]["signer_email"] if st.session_state["email_correcto"] == True else "",
+                        value=st.session_state["form_data_event"]["signer_email_copy"] if st.session_state["email_correcto"] == True else "",
                         key="signer_email", 
                         on_change= validacion_completa_email())
             
-            # print("Estado", st.session_state["email_correcto"])
-            # if st.session_state["email_correcto"] == True:
-            #     print("mail", email)
-            #     st.session_state["signer_email"] = email
-            #     st.session_state["form_data_event"]["signer_email"] = email
-            #     #st.session_state["form_data_event"]["signer_email"] = email
-            #     save_to_session_state("signer_email", st.session_state["signer_email"])
-            #     #print("form", st.session_state["form_data_event"]["signer_email"])
-            # else:
-            #     st.session_state["form_data_event"]["signer_email"] = ""
         if not st.session_state["email_correcto"]:
             st.warning("El email introducido no es correcto.", icon="❌")
-                
-
 
 crear_detalles_firmante()
 
@@ -524,7 +530,9 @@ def button_form():
 
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
-            if not errores_general and all(not lista for lista in errores_participantes.values()):
+            errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
+
+            if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
                 df = save_form_data_event()
                 doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
 
@@ -538,9 +546,15 @@ def button_form():
                 for msg in errores_general:
                     msg_general += f"\n* {msg}\n"
                 st.error(msg_general)
-                
-                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
-            # Leer el archivo Word y prepararlo para descarga
+        
+                if len(errores_ia) != 0:
+                    msg_ia = "\n**Errores detectados con IA**\n"
+                    for msg in errores_ia:
+                        msg_ia += f"\n* {msg}\n"
+                    st.error(msg_ia)
+
+                st.toast("Se deben corregir los errores.", icon="❌")
+
         except Exception as e:
             traceback.print_exc()
             st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")

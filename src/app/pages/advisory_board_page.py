@@ -55,6 +55,17 @@ dependendent_fields = {
     }
 }
 
+validar_ia ={
+        "validar_hotel": {"start_date": "start_date_ab",
+                          "end_date": "end_date_ab",
+                          "hotel": "hotel_ab"
+                          },
+        "validar_sede_location": {"start_date":"start_date_ab", 
+                                  "end_date": "end_date_ab", 
+                                  "sede": "sede_ab"},
+        "validar_sede_venue": {"sede": "sede_ab"}
+    }
+
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_ab":
         if key not in ["documentosubido_1"]:
@@ -597,15 +608,17 @@ def button_form():
         
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
-            if not errores_general and all(not lista for lista in errores_participantes.values()):
+            errores_ia = af.validar_campos_ia(st.session_state["form_data_advisory_board"], validar_ia)
+            if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
                 doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
                 st.session_state.download_enabled_ab = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
-                msg_general = "\n**Errores Generales del Formulario**\n"
-                for msg in errores_general:
-                    msg_general += f"\n* {msg}\n"
-                st.error(msg_general)
+                if len(errores_general) != 0:
+                    msg_general = "\n**Errores Generales del Formulario**\n"
+                    for msg in errores_general:
+                        msg_general += f"\n* {msg}\n"
+                    st.error(msg_general)
 
                 print(st.session_state['form_data_advisory_board']['participantes_ab'])
                 for id_user, list_errors in errores_participantes.items():
@@ -622,8 +635,15 @@ def button_form():
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
-                        
-                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+
+                if len(errores_ia) != 0:
+                    msg_ia = "\n**Errores detectados con IA**\n"
+                    for msg in errores_ia:
+                        msg_ia += f"\n* {msg}\n"
+                    st.error(msg_ia)
+
+            st.toast("Se deben corregir los errores.", icon="❌")
+
             # Leer el archivo Word y prepararlo para descarga
         except Exception as e:
             traceback.print_exc()

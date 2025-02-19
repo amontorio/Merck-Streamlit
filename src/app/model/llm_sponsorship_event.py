@@ -1,13 +1,11 @@
 from langchain_core.prompts import ChatPromptTemplate
-
-
 from dotenv import load_dotenv
 from functools import lru_cache
-
 import auxiliar.aux_functions as af
 from langchain_core.output_parsers import StrOutputParser
-
 from langchain_openai import AzureChatOpenAI
+import os
+import streamlit as st
 
 load_dotenv()
 
@@ -19,14 +17,19 @@ def run_query(query):
 def clean_query(query):
     return query.replace("```sql", "").replace("```", "").replace("[SQL:", "").replace("]", "").strip()
 
-#@lru_cache(maxsize=None)
+@st.cache_resource
 def get_llm():
-    #return ChatGroq(model_name="llama3-70b-8192")
+    azure_endpoint = str(os.getenv("APP_SERVICE_NLP_API_URL", "")).rstrip("/")
+    api_key = os.getenv("APP_SERVICE_NLP_API_KEY", "")
+
     return AzureChatOpenAI(
+    azure_endpoint=azure_endpoint,
+    api_key=api_key,
     azure_deployment="gpt-4o-mini",  # or your deployment
     api_version="2024-08-01-preview",  # or your api version
     temperature=0
 )
+
 
 def invoke_chain_event_description(event_name, start_date, end_date, venue, city, organization_name, event_objetive):
     

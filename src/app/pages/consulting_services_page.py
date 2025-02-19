@@ -44,6 +44,7 @@ dependendent_fields = {
     },
 }
 
+
 def render_svg(svg_string):
     """Renders the given svg string."""
     c = st.container()
@@ -72,6 +73,7 @@ def add_participant():
         f"tier_{id_user}": "0",
         f"centro_trabajo_{id_user}": "",
         f"email_{id_user}": "",
+        f"email_copy_{id_user}": "",
         f"email_correcto_{id_user}": True,
         f"cobra_sociedad_{id_user}": "No",
         f"nombre_sociedad_{id_user}": "",
@@ -112,7 +114,10 @@ def validacion_completa_dni(id_user):
 
 def validacion_completa_email(id_user):    
         mail = st.session_state.get(f"email_{id_user}", "")
+        print("EMAIL", mail)
         st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] = True
+        #cambio
+        st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_copy_{id_user}"] = mail
         try:
             tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
             tlds_pattern = '|'.join(tlds_validos)
@@ -125,7 +130,17 @@ def validacion_completa_email(id_user):
         except:
             if mail != "":
                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] = False
+        
+        # st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_copy_{id_user}"] = mail
 
+        # if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == True:
+        #     # save_to_session_state("participantes_cs", st.session_state[f"email_{id_user}"], id_user, st.session_state[f"email_{id_user}"], f"email_{id_user}")
+        #     # save_to_session_state("participantes_cs", st.session_state[f"email_copy_{id_user}"], id_user, st.session_state[f"email_copy_{id_user}"], f"email_copy_{id_user}")
+        #     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = mail
+            
+        # else:
+        #     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = ""
+            
 def on_change_nombre(id_user):
     if st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"] != None:
         if st.session_state.get(f"nombre_{id_user}", "") != "":
@@ -198,9 +213,11 @@ def single_consultant(id_user, info_user, index):
 
                             )
                         with col2:
+                            # print("mail1", info_user.get(f"email_copy_{id_user}", ""))
+                            # print("mail2", info_user.get(f"email_{id_user}", ""))
                             email = st.text_input(
                                 f"Email del participante {index + 1} *", 
-                                value = info_user.get(f"email_{id_user}", "") if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == True else "" ,
+                                value = info_user.get(f"email_{id_user}", "") if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == True else info_user.get(f"email_copy_{id_user}", "") , #en el else iba ""
                                 key=f"email_{id_user}",
                                 on_change= validacion_completa_email(id_user)
                             )
@@ -377,6 +394,7 @@ if "form_data_consulting_services" not in st.session_state:
 
     if "name_ponente_cs" not in st.session_state:
             st.session_state["name_ponente_cs"] = ""
+    
 
     add_participant()
 
@@ -504,10 +522,11 @@ def button_form():
                 st.session_state.download_enabled_cs = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
-                msg_general = "\n**Errores Generales del Formulario**\n"
-                for msg in errores_general:
-                    msg_general += f"\n* {msg}\n"
-                st.error(msg_general)
+                if len(errores_general) != 0:
+                    msg_general = "\n**Errores Generales del Formulario**\n"
+                    for msg in errores_general:
+                        msg_general += f"\n* {msg}\n"
+                    st.error(msg_general)
 
                 #print(st.session_state['form_data_consulting_services']['participantes_cs'])
                 for id_user, list_errors in errores_participantes.items():

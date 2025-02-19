@@ -363,8 +363,10 @@ def button_form(tipo):
 
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
-            #errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
-            if not errores_general and all(not lista for lista in errores_participantes.values()):
+            errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
+            #avisos_ia = af.avisos_ia(st.session_state["form_data_speaking_services"], validar_ia)
+            
+            if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
                 if tipo == "Reunión Merck Program":
                     doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
                 else:
@@ -372,11 +374,12 @@ def button_form(tipo):
                 st.session_state.download_enabled_ss = True
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
-                msg_general = "\n**Errores Generales del Formulario**\n"
-                for msg in errores_general:
-                    msg_general += f"\n* {msg}\n"
-                if msg_general != "":
-                    st.error(msg_general)
+                if len(errores_general) != 0:
+                    msg_general = "\n**Errores Generales del Formulario**\n"
+                    for msg in errores_general:
+                        msg_general += f"\n* {msg}\n"
+                    if msg_general != "":
+                        st.error(msg_general)
 
                 #print(st.session_state['form_data_speaking_services']['participantes_ss'])
                 for id_user, list_errors in errores_participantes.items():
@@ -392,13 +395,14 @@ def button_form(tipo):
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
-                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+                if len(errores_ia) != 0:
+                    msg_ia = "\n**Errores detectados con IA**\n"
+                    for msg in errores_ia:
+                        msg_ia += f"\n* {msg}\n"
+                    st.error(msg_ia)
+
+                st.toast("Se deben corregir los errores.", icon="❌")
             
-            #if len(errores_ia) != 0:
-            #    msg_ia = "\n**Errores detectados con IA**\n"
-            #    for msg in errores_ia:
-            #        msg_ia += f"\n* {msg}\n"
-            #        st.error(msg_ia)
 
         except Exception as e:
             traceback.print_exc()
@@ -608,7 +612,7 @@ if meeting_type == "Reunión Merck Program":
                         on_change=lambda: save_to_session_state("num_asistentes_totales_ss", st.session_state["num_asistentes_totales_ss"]))
         
     if st.session_state["num_asistentes_totales_ss"] >= 20:
-        st.warning("Cuando el número de asistentes es mayor o igual a 20, y si alguno pernocta, se debería haber comunicado y rellenado el **Formulario Industria** con antelación.")
+        st.warning("Cuando el número de asistentes es mayor o igual a 20, y si alguno pernocta, se debería haber comunicado y rellenado el **Formulario Farma Industria** con antelación.")
 
         
     col1, col2 = st.columns(2)
