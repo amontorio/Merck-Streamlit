@@ -3,11 +3,7 @@ import auxiliar.aux_functions as af
 from datetime import date
 
 
-
 #af.setup_environment()
-
-
-
 
 def save_to_session_state_event(key, value):
     if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event"]:
@@ -58,48 +54,17 @@ if "form_data_event" not in st.session_state:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Título de la página
-af.show_main_title(title="Events Compliance Advisor", logo_size=300)
+af.show_main_title(title="Events Compliance Advisor", logo_size=200)
 
 
 # Botones para navegar a otras páginas
-st.markdown("## Accesos rápidos")
+st.markdown("""
+    <h3 style="margin-bottom: 0;">Accesos rápidos</h3>
+    <hr style="margin-top: 0; margin-bottom: 30px;">
+    """, unsafe_allow_html=True)
+
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -124,19 +89,27 @@ with col4:
 # Contenedor con información sobre la app
 with st.container():
     st.markdown("""
-
-## 📄 Plantillas Disponibles  
+    <h6 style="margin-top: 0; margin-bottom: 0px;">
+    <h3 style="margin-bottom: 0;">Instrucciones</h3>
+    <hr style="margin-top: 0; margin-bottom: 50px;">
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+ 
+##### 📄 Plantillas Disponibles  
 **Patrocinio de Eventos:** Para gestionar patrocinios y detalles del evento.  
 **Speaking Services:** Contratación de ponentes y logística del evento.  
 **Consulting Services:** Servicios de consultoría y selección de consultores.  
 **Advisory Board:** Reuniones de consejo asesor y selección de ponentes.  
 
-## 🚀 ¿Cómo Funciona?  
+                
+##### 🚀 ¿Cómo Funciona?  
 1. Completa el formulario de la plantilla que necesites.  
 2. Adjunta los documentos requeridos.  
-3. Genera el documento Word automáticamente.  
+3. Genera la carpeta ZIP automáticamente.  
 
-## 📌 Notas  
+                
+##### 📌 Notas  
 Algunos campos se incluirán automáticamente en el contrato.  
 Adjunta todos los documentos necesarios para evitar retrasos.  
 

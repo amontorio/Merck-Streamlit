@@ -54,7 +54,6 @@ FIELD_MAPPINGS = {
     "tipo_evento_ss": "Tipo Evento",
     "sede_ss": "Sede",
     "ciudad_ss": "Ciudad",
-    "name_ponente_ss": "Nombre Ponente",
     
     # Detalle Consultores
     "nombre_": "Nombre",
@@ -69,6 +68,9 @@ FIELD_MAPPINGS = {
     "preparacion_minutos_": "Preparación Minutos",
     "ponencia_horas_": "Ponencia Horas",
     "ponencia_minutos_": "Ponencia Minutos",
+    "name_ponente_ss": "Nombre del Ponente",
+    "name_ponente_ab": "Nombre del Participante",
+    "name_ponente_cs": "Nombre del Consultor",
 
     # Advisory Board
     "documentosubido_1": "Programa del Evento",
@@ -133,7 +135,11 @@ def load_data():
 dataset = load_data()
 
 def show_main_title(title, logo_size):
-    logo_merck = "merck-logo.png"
+    if title == "Events Compliance Advisor":
+        logo_merck = "Merck_Logo_intro_green.png"
+    else:
+        logo_merck = "MDG_Logo_RPurple_SP.png"
+
     logo_path = BASE_DIR / "images" / logo_merck
 
     # Función para convertir la imagen a base64
@@ -275,11 +281,16 @@ def validar_participantes(participantes):
                     errores_participantes[id_participante].append(f"El campo Nombre de la Sociedad del participante *{cnt}* es obligatorio cuando cobra a través de sociedad.\n")
             # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí" y dni_), verificar que no estén vacíos
             elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
-                print(remove_after_last_underscore(campo))
-                errores_participantes[id_participante].append(
-                    f"El campo *{FIELD_MAPPINGS.get(remove_after_last_underscore(campo) + '_', campo)}* es obligatorio y no tiene valor.\n"
-                    #f"del participante *{cnt}* está vacío.\n"
+                #print(remove_after_last_underscore(campo))
+                #print("hola", remove_after_last_underscore(campo) + '_', campo)
+                if remove_after_last_underscore(campo).startswith("name_ponente"):
+                    errores_participantes[id_participante].append(
+                    f"El campo *{FIELD_MAPPINGS.get(campo)}* es obligatorio y no tiene valor.\n"
                 )
+                else:
+                    errores_participantes[id_participante].append(
+                        f"El campo *{FIELD_MAPPINGS.get(remove_after_last_underscore(campo) + '_', campo)}* es obligatorio y no tiene valor.\n"
+                    )
 
         cnt+=1
     return errores_participantes

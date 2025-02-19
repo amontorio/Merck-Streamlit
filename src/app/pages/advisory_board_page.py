@@ -191,6 +191,7 @@ def single_participante(id_user, info_user, index):
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
                                 ["0", "1", "2", "3", "4"], 
+                                index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
                                 key=f"tier_{id_user}"
                             )
                             st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"] = tier
@@ -539,6 +540,7 @@ with col2:
         key="num_noches_ab", 
         disabled=st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No",
         value= "" if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("num_noches_ab", ""),
+        help = "Se debe introducir un número.",
         on_change=lambda: save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"]) if st.session_state.num_noches_ab.isdigit()
             else save_to_session_state("num_noches_ab", "")
     )

@@ -189,6 +189,7 @@ def single_ponente(id_user, info_user, index):
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
                                 ["0", "1", "2", "3", "4"], 
+                                index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
                                 key=f"tier_{id_user}"
                             )
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"] = tier
@@ -691,6 +692,7 @@ if meeting_type == "Reunión Merck Program":
                         key="num_noches_ss", 
                         disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No",
                         value= "" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", ""),
+                        help = "Se debe introducir un número.",
                         on_change=lambda: save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) if st.session_state.num_noches_ss.isdigit()
                             else save_to_session_state("num_noches_ss", ""))
                         

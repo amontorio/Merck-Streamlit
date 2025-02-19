@@ -183,6 +183,7 @@ def single_consultant(id_user, info_user, index):
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
                                 ["0", "1", "2", "3", "4"], 
+                                index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
                                 key=f"tier_{id_user}"
                             )
                             st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"tier_{id_user}"] = tier

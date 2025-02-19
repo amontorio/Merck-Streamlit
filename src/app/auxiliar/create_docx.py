@@ -45,20 +45,29 @@ def crear_documento_sponsorship_of_event(dataframe):
     agregar_bullet_point("Fecha de inicio", datos.get("start_date", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", datos.get("end_date", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Tipo de evento", datos.get("event_type", ""))
-    agregar_bullet_point("Sede", datos.get("venue", "N/A"))
-    agregar_bullet_point("Ciudad", datos.get("city", "N/A"))
+    if datos.get("venue", "") == "":
+        agregar_bullet_point("Sede", "N/A")
+    else:
+        agregar_bullet_point("Sede", datos.get("venue", "N/A"))
+    if datos.get("city", "") == "":
+        agregar_bullet_point("Ciudad","N/A")
+    else:
+        agregar_bullet_point("Ciudad", datos.get("city", "N/A"))
     agregar_bullet_point("Número de asistentes", datos.get("num_attendees", 0))
     agregar_bullet_point("Perfil de asistentes", datos.get("attendee_profile", ""))
     agregar_bullet_point("Descripción y objetivo del evento", datos.get("event_objetive", ""))
 
     # Detalles del patrocinio
     agregar_encabezado("Detalles del Patrocinio:")
-    agregar_bullet_point("Nombre del evento", datos.get("event_name", ""))
+    agregar_bullet_point("Nombre del evento", f"Sponsorship of Event/Activity {datos.get('event_name', '')}")
     agregar_bullet_point("Importe (€)", datos.get("amount", 0.0))
     agregar_bullet_point("Tipo de pago", datos.get("payment_type", ""))
     if datos.get("payment_type") == "Pago a través de la secretaría técnica (ST)":
         agregar_bullet_point("Nombre ST", datos.get("name_st", ""))
-    agregar_bullet_point("Producto asociado", datos.get("associated_product", "N/A"))
+    if datos.get("associated_product") == "":
+        agregar_bullet_point("Producto asociado", "N/A")
+    else:
+        agregar_bullet_point("Producto asociado", datos.get("associated_product", "N/A"))
     agregar_bullet_point("Descripción del evento", datos.get("short_description", ""))
     agregar_bullet_point("Contraprestaciones", datos.get("benefits", ""))
     agregar_bullet_point("Patrocinador único o mayoritario", datos.get("exclusive_sponsorship", "No"))
@@ -155,7 +164,9 @@ def crear_documento_advisory(data):
 
     # Agregar secciones
     agregar_encabezado("Detalles de la Actividad")
-    agregar_bullet_point("Nombre", f"Advisory Board Participation {data.get('nombre_ab', '')}")
+    #agregar_bullet_point("Nombre", f"Advisory Board Participation {data.get('nombre_evento_ab', '')}")
+    agregar_bullet_point("Nombre",  data.get('nombre_evento_ab', ''))
+    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_ab", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ab", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ab", "").strftime("%d/%m/%Y"))
     if data.get("producto_asociado_ab", "") != "":
@@ -164,7 +175,6 @@ def crear_documento_advisory(data):
         agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Estado de la aprobación", data.get("estado_aprobacion_ab", ""))
     agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ab", ""))
-    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_ab", ""))
 
     agregar_encabezado("Logística de la Actividad")
     agregar_bullet_point("Desplazamiento de participantes", data.get("desplazamiento_ab", ""))
@@ -205,9 +215,12 @@ def crear_documento_advisory(data):
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
-            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
+            if participante.get(f"cobra_sociedad_{id_participante}", "") == "Sí":
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") + ", con sociedad: " + participante.get(f"nombre_sociedad_{id_participante}", "")
+            else:
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
             row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
-            row_cells[7].text = f"Preparación: {participante.get(f'tiempo_preparacion_{id_participante}', '')}, Reunión: {participante.get(f'tiempo_reunion_{id_participante}', '')}"
+            row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_minutos_{id_participante}', '')} minutos"
             
             for cell in row_cells:
                 cell._element.get_or_add_tcPr().append(parse_xml(r'<w:tcBorders %s><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' % nsdecls('w')))
@@ -272,6 +285,7 @@ def crear_documento_consulting_services(data):
     # Agregar secciones
     agregar_encabezado("Declaración de necesidades")
     agregar_bullet_point("Nombre", data.get("nombre_necesidades_cs", ""))
+    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_cs", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_cs", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_cs", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Presupuesto estimado", f"{data.get('presupuesto_estimado_cs', 0)} €")
@@ -281,7 +295,6 @@ def crear_documento_consulting_services(data):
         agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Estado de aprobación", data.get("estado_aprobacion_cs", "N/A"))
     agregar_bullet_point("Necesidad de la reunión", data.get("necesidad_reunion_cs", ""))
-    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_cs", ""))
 
     agregar_encabezado("Criterios del destinatario")
     agregar_bullet_point("Número de consultores", data.get("numero_consultores_cs", ""))
@@ -293,9 +306,10 @@ def crear_documento_consulting_services(data):
     agregar_bullet_point("Criterios del destinatario", criterios)
 
     agregar_encabezado("Detalles de los Consultores")
-    tabla = documento.add_table(rows=1, cols=9)
+    tabla = documento.add_table(rows=1, cols=8)
     tabla.style = 'Table Grid'
-    encabezados = ["Nombre", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Nombre de la sociedad", "Honorarios", "Tiempos"]
+    #encabezados = ["Nombre", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Nombre de la sociedad", "Honorarios", "Tiempos"]
+    encabezados = ["Nombre", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Honorarios", "Tiempos"]
     hdr_cells = tabla.rows[0].cells
     for i, encabezado in enumerate(encabezados):
         hdr_cells[i].text = encabezado
@@ -313,13 +327,15 @@ def crear_documento_consulting_services(data):
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
-            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
-            
-            row_cells[6].text = participante.get(f"nombre_sociedad_{id_participante}", "")
+            if participante.get(f"cobra_sociedad_{id_participante}", "") == "Sí":
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") + ", con sociedad: " + participante.get(f"nombre_sociedad_{id_participante}", "")
+            else:
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") 
+            #row_cells[6].text = participante.get(f"nombre_sociedad_{id_participante}", "")
 
             # Add honorarios with € symbol
             honorarios = participante.get(f"honorarios_{id_participante}", 0)
-            row_cells[7].text = f"{honorarios} €"
+            row_cells[6].text = f"{honorarios} €"
 
             # Add preparation and presentation times
             prep_horas = participante.get(f"preparacion_horas_{id_participante}", 0)
@@ -327,7 +343,7 @@ def crear_documento_consulting_services(data):
             pon_horas = participante.get(f"ponencia_horas_{id_participante}", 0)
             pon_mins = participante.get(f"ponencia_minutos_{id_participante}", 0)
             
-            row_cells[8].text = f"Preparación: {prep_horas}horas y {prep_mins}minutos, Ponencia: {pon_horas}horas y {pon_mins}minutos"
+            row_cells[7].text = f"Preparación: {prep_horas}horas y {prep_mins}minutos, Ponencia: {pon_horas}horas y {pon_mins}minutos"
 
     nombre_zip = 'Consulting_Services.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
@@ -394,10 +410,17 @@ def crear_documento_speaking(data):
     agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Nº Asistentes Totales", data.get("num_asistentes_totales_ss", ""))
     agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
-    agregar_bullet_point("Sede", data.get("sede_ss", "N/A"))
-    agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
+    if data.get("sede_ss") == "":
+        agregar_bullet_point("Sede", "N/A")
+    else:
+        agregar_bullet_point("Sede", data.get("sede_ss", "N/A"))
+
+    if data.get("ciudad_ss") == "":
+        agregar_bullet_point("Ciudad", "N/A")
+    else:
+        agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
+
     agregar_bullet_point("Público objetivo del programa", data.get("publico_objetivo_ss", ""))
-    
     agregar_encabezado("Detalles de la Actividad")
     agregar_bullet_point("Presupuesto total estimado",  f"{data.get('presupuesto_estimado_ss', 0)} €")
     if data.get("producto_asociado_ss", "") != "":
@@ -440,7 +463,10 @@ def crear_documento_speaking(data):
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
-            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
+            if participante.get(f"cobra_sociedad_{id_participante}", "") == "Sí":
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") + ", con sociedad: " + participante.get(f"nombre_sociedad_{id_participante}", "")
+            else:
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") 
             row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
             row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_minutos_{id_participante}', '')} minutos"
             
@@ -522,8 +548,15 @@ def crear_documento_speaking_reducido(data):
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
-    agregar_bullet_point("Sede", data.get("sede_ss", "N/A"))
-    agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
+    if data.get("sede_ss") == "":
+        agregar_bullet_point("Sede", "N/A")
+    else:
+        agregar_bullet_point("Sede", data.get("sede_ss", "N/A"))
+
+    if data.get("ciudad_ss") == "":
+        agregar_bullet_point("Ciudad", "N/A")
+    else:
+        agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
     
     agregar_encabezado("Detalles de los Ponentes")
     def agregar_tabla_participantes(participantes):
@@ -544,7 +577,10 @@ def crear_documento_speaking_reducido(data):
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
             row_cells[4].text = participante.get(f"email_{id_participante}", "")
-            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "")
+            if participante.get(f"cobra_sociedad_{id_participante}", "") == "Sí":
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") + ", con sociedad: " + participante.get(f"nombre_sociedad_{id_participante}", "")
+            else:
+                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") 
             row_cells[6].text = str(participante.get(f"honorarios_{id_participante}", ""))
             row_cells[7].text = f"Preparación: {participante.get(f'preparacion_horas_{id_participante}', '')} horas y {participante.get(f'preparacion_minutos_{id_participante}', '')} minutos, Ponencia: {participante.get(f'ponencia_horas_{id_participante}', '')} horas y {participante.get(f'ponencia_minutos_{id_participante}', '')} minutos"
             
