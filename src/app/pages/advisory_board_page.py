@@ -83,10 +83,12 @@ def add_participant():
         "id": id_user,
         f"nombre_{id_user}": "",
         f"dni_{id_user}": "",
+        f"dni_copy_{id_user}": "",
         f"dni_correcto_{id_user}": True,
         f"tier_{id_user}": "0",
         f"centro_trabajo_{id_user}": "",
         f"email_{id_user}": "",
+        f"email_copy_{id_user}": "",
         f"email_correcto_{id_user}": True,
         f"cobra_sociedad_{id_user}": "No",
         f"nombre_sociedad_{id_user}": "",
@@ -105,7 +107,10 @@ def add_participant():
         st.session_state["form_data_advisory_board"]["participantes_ab"] = {}
         
     st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] = new_participant
-
+    if f"dni_{id_user}" not in st.session_state:
+        st.session_state[f"dni_{id_user}"] = ""
+    if f"email_{id_user}" not in st.session_state:
+        st.session_state[f"email_{id_user}"] = ""
 
 ########## validaciones especiales
 def validacion_completa_dni(id_user):
@@ -120,7 +125,6 @@ def validacion_completa_dni(id_user):
 
         if letra != letra_correcta:
             st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = False
-            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = ""
 
     except:
         if dni != "":
@@ -163,6 +167,43 @@ def asignacion_nombre(id_user):
     else:
         st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"]["name_ponente_ab"] = ""
 
+def handle_fecha_inicio():
+    save_to_session_state("start_date_ab", st.session_state["start_date_ab"])
+    if st.session_state["start_date_ab"] >= st.session_state["end_date_ab"]:
+        save_to_session_state("end_date_ab", st.session_state["start_date_ab"]) 
+
+def handle_dni(id_user):
+    save_to_session_state("participantes_ab", st.session_state[f"dni_{id_user}"], id_user, f"dni_copy_{id_user}")
+    val = validacion_completa_dni(id_user)
+    
+    if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == False:
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] ==""
+    else:
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_copy_{id_user}"]
+    
+    return None
+
+def handle_email(id_user):
+    save_to_session_state("participantes_ab", st.session_state[f"email_{id_user}"], id_user, f"email_copy_{id_user}")
+    val = validacion_completa_email(id_user)
+    
+    if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == False:
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] ==""
+    else:
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] = st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_copy_{id_user}"]
+
+    return None
+
+
+if "clicked_ab" not in st.session_state:
+    st.session_state.clicked_ab = False
+
+def generar_toast():
+    if st.session_state.clicked_ab == True:
+        texto_toast = "Cambios guardados correctamente!"
+        st.toast(texto_toast, icon = "✔️")
+        st.session_state.clicked_ab = False
+
 @st.dialog("Rellena los campos", width="large")
 def single_participante(id_user, info_user, index):
                         nombre = st_searchbox(
@@ -188,13 +229,9 @@ def single_participante(id_user, info_user, index):
                                 f"DNI del participante {index + 1}", 
                                 value = info_user.get(f"dni_{id_user}", "") if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == True else "" ,
                                 key=f"dni_{id_user}",
-                                on_change = validacion_completa_dni(id_user)
+                                on_change = lambda: handle_dni(id_user)
                             )
-
-                            if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == True:
-                                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = dni
-                            else:
-                                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = ""
+                        
                         if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == False:
                             st.warning("El DNI introducido no es correcto.", icon="❌")
 
@@ -221,13 +258,9 @@ def single_participante(id_user, info_user, index):
                                 f"Email del participante {index + 1} *", 
                                 value = info_user.get(f"email_{id_user}", "") if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == True else "" ,
                                 key=f"email_{id_user}",
-                                on_change= validacion_completa_email(id_user)
+                                on_change= lambda: handle_email(id_user)
                             )
                             
-                            if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == True:
-                                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] = email
-                            else:
-                                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] = ""
                         if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == False:
                             st.warning("El email introducido no es correcto.", icon="❌")
 
@@ -321,7 +354,14 @@ def single_participante(id_user, info_user, index):
                         st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"honorarios_{id_user}"] = honorarios     
 
                         if st.button("Guardar cambios", type="primary", use_container_width=True):
-                            st.rerun()
+                            validacion_completa_email(id_user)
+                            validacion_completa_dni(id_user)
+                            if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == False or \
+                                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == False :
+                                st.rerun(scope="fragment")
+                            else:
+                                st.session_state.clicked_ab = True
+                                st.rerun()
 
 def participantes_section():
     st.header("5. Detalles de los Participantes", divider=True)
@@ -343,8 +383,12 @@ def participantes_section():
                 aux = ": "
             else:
                 aux = ""
+
+            generar_toast()
+
             if st.button(label=f"Participante {index + 1}{aux}{nombre_expander_ab}", use_container_width=True, icon="👩‍⚕️"):
                     single_participante(id_user, info_user, index)
+
         index +=1
         with col_remove_participant_individual:
             if st.button("🗑️", key=f"remove_participant_{id_user}", use_container_width=True, type="secondary"):
@@ -402,11 +446,14 @@ st.text_area("Descripción y objetivo *",
              on_change=lambda: save_to_session_state("descripcion_objetivo_ab", st.session_state["descripcion_objetivo_ab"]))
 
 col1, col2 = st.columns(2)
+
+
+
 with col1:
     start_ab = st.date_input("Fecha de inicio del evento *",
                   value=st.session_state["form_data_advisory_board"]["start_date_ab"],
                   key="start_date_ab",
-                  on_change=lambda: save_to_session_state("start_date_ab", st.session_state["start_date_ab"]),
+                  on_change= handle_fecha_inicio,
                   format = "DD/MM/YYYY")
 
 with col2:
@@ -600,11 +647,13 @@ def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
-            time.sleep(2)
+            time.sleep(1.5)
             st.write("Validando campos obligatorios y dependientes...")
-            time.sleep(2)
-            st.write("Validando información de los participantes...")
-            time.sleep(2)
+            time.sleep(1.5)
+            st.write("Validando información de los ponentes...")
+            time.sleep(1.5)
+            st.write("Validando contenido de campos con IA...")
+            time.sleep(1.5)
         
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)

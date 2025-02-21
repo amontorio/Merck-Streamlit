@@ -43,8 +43,32 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
         st.session_state["form_data_speaking_services"][key][key_participante][field_participante] = value
 
 
+def handle_fecha_inicio():
+    save_to_session_state("start_date_ss", st.session_state["start_date_ss"])
+    if st.session_state["start_date_ss"] >= st.session_state["end_date_ss"]:
+        save_to_session_state("end_date_ss", st.session_state["start_date_ss"]) 
 
+def handle_dni(id_user):
+    save_to_session_state("participantes_ss", st.session_state[f"dni_{id_user}"], id_user, f"dni_copy_{id_user}")
+    val = validacion_completa_dni(id_user)
+    
+    if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == False:
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] ==""
+    else:
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_copy_{id_user}"]
+    
+    return None
 
+def handle_email(id_user):
+    save_to_session_state("participantes_ss", st.session_state[f"email_{id_user}"], id_user, f"email_copy_{id_user}")
+    val = validacion_completa_email(id_user)
+    
+    if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == False:
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] ==""
+    else:
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_copy_{id_user}"]
+
+    return None
 def normalize_text(text):
     # Convertir a string y minúsculas
     text = str(text).lower()
@@ -82,6 +106,10 @@ def add_ponente():
         st.session_state["form_data_speaking_services"]["participantes_ss"] = {}        
 
     st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] = new_participant
+    if f"dni_{id_user}" not in st.session_state:
+        st.session_state[f"dni_{id_user}"] = ""
+    if f"email_{id_user}" not in st.session_state:
+        st.session_state[f"email_{id_user}"] = ""
 
 def remove_last_participant():
     # Eliminar el último participante
@@ -105,7 +133,6 @@ def validacion_completa_dni(id_user):
 
         if letra != letra_correcta:
             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
-            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = ""
 
     except:
         if dni != "":
@@ -129,6 +156,7 @@ def validacion_completa_email(id_user):
                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = False
 
 
+
 def on_change_nombre(id_user):
     if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] != None:
         if st.session_state.get(f"nombre_{id_user}", "") != "":
@@ -148,6 +176,15 @@ def asignacion_nombre(id_user):
     else:
         st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = ""
 
+
+if "clicked_ss" not in st.session_state:
+    st.session_state.clicked_ss = False
+
+def generar_toast():
+    if st.session_state.clicked_ss == True:
+        texto_toast = "Cambios guardados correctamente!"
+        st.toast(texto_toast, icon = "✔️")
+        st.session_state.clicked_ss = False
 
 
 @st.dialog("Rellena los campos", width="large")
@@ -315,7 +352,15 @@ def single_ponente(id_user, info_user, index):
                         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"honorarios_{id_user}"] = honorarios     
 
                         if st.button("Guardar cambios", type="primary", use_container_width=True):
-                            st.rerun()
+                            validacion_completa_email(id_user)
+                            validacion_completa_dni(id_user)
+                            if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == False or \
+                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == False :
+                                st.rerun(scope="fragment")
+                            else:
+                                st.session_state.clicked_ss = True
+                                st.rerun()
+                        
 
         
 def ponentes_section():
@@ -335,6 +380,9 @@ def ponentes_section():
                     aux = ": "
                 else:
                     aux = ""
+                
+                generar_toast()
+
                 if st.button(label=f"Ponente {index + 1}{aux}{nombre_expander_ss}", use_container_width=True, icon="👩‍⚕️"):
                     single_ponente(id_user, info_user, index)
             index +=1
@@ -364,7 +412,6 @@ def button_form(tipo):
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
             errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
-            #avisos_ia = af.avisos_ia(st.session_state["form_data_speaking_services"], validar_ia)
             
             if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
                 if tipo == "Reunión Merck Program":
@@ -581,7 +628,7 @@ if meeting_type == "Reunión Merck Program":
         start_date_ss = st.date_input("Fecha de inicio del evento *", 
                     value=st.session_state["form_data_speaking_services"]["start_date_ss"],
                     key="start_date_ss", 
-                    on_change=lambda: save_to_session_state("start_date_ss", st.session_state["start_date_ss"]),
+                    on_change=handle_fecha_inicio,
                     format = "DD/MM/YYYY")
     with col2:
         st.date_input("Fecha de fin del evento *", 
@@ -790,7 +837,7 @@ else:
         start_date_ss = st.date_input("Fecha de inicio del evento *", 
                     value=st.session_state["form_data_speaking_services"]["start_date_ss"],
                     key="start_date_ss", 
-                    on_change=lambda: save_to_session_state("start_date_ss", st.session_state["start_date_ss"]),
+                    on_change=handle_fecha_inicio,
                     format = "DD/MM/YYYY")
     with col2:
         st.date_input("Fecha de fin del evento *", 

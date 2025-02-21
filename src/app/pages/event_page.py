@@ -60,6 +60,10 @@ def validacion_completa_email():
             st.session_state["form_data_event"]["signer_email"] = ""
 
 
+def handle_fecha_inicio():
+    save_to_session_state("start_date", st.session_state["start_date"])
+    if st.session_state["start_date"] >= st.session_state["end_date"]:
+        save_to_session_state("end_date", st.session_state["start_date"]) 
 
 # Inicializar estado del formulario en session_state
 if "form_data_event" not in st.session_state:
@@ -156,9 +160,10 @@ if "signer_email" not in st.session_state:
 
 if "signer_email_copy" not in st.session_state:
     if "signer_email_copy" in st.session_state["form_data_event"]:
-        st.session_state["signer_email_copy"] = st.session_state["form_data_event"]["signer_email_copy"]
+        st.session_state["signer_email_copy"] = st.session_state["form_data_event"]["signer_email_copy"] 
     else:
         st.session_state["signer_email_copy"] = ""
+        st.session_state["form_data_event"]["signer_email_copy"] = ""
 
 if "venue" not in st.session_state:
     if "venue" in st.session_state["form_data_event"]:
@@ -178,6 +183,10 @@ validar_ia ={
                                   "end_date": "end_date", 
                                   "sede": "venue"},
         "validar_sede_venue": {"sede": "venue"}
+    }
+
+campos_avisos_ia ={
+        "validar_contraprestaciones": {"contraprestaciones":"benefits"}
     }
 
 def check_mandatory_fields():
@@ -317,7 +326,7 @@ def crear_fechas():
         st.date_input("Fecha de inicio del evento *", 
                                    value=st.session_state["form_data_event"]["start_date"], 
                                    key="start_date", 
-                                   on_change=lambda: save_to_session_state("start_date", st.session_state["start_date"]),
+                                   on_change= handle_fecha_inicio, 
                                    format = "DD/MM/YYYY")
     with col4:
         st.date_input("Fecha de fin del evento *", 
@@ -524,13 +533,16 @@ def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
-            time.sleep(2)
+            time.sleep(1.5)
             st.write("Validando campos obligatorios y dependientes...")
-            time.sleep(2)
+            time.sleep(1.5)
+            st.write("Validando contenido de campos con IA...")
+            time.sleep(1.5)
 
         try:
             errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
             errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
+            avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
 
             if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
                 df = save_form_data_event()
@@ -542,10 +554,11 @@ def button_form():
                 #st.success("Formulario generado correctamente correctamente.")
                 st.toast("Formulario generado correctamente", icon="✔️")
             else:
-                msg_general = "\n**Errores Generales del Formulario**\n"
-                for msg in errores_general:
-                    msg_general += f"\n* {msg}\n"
-                st.error(msg_general)
+                if len(errores_general) >0 :
+                    msg_general = "\n**Errores Generales del Formulario**\n"
+                    for msg in errores_general:
+                        msg_general += f"\n* {msg}\n"
+                    st.error(msg_general)
         
                 if len(errores_ia) != 0:
                     msg_ia = "\n**Errores detectados con IA**\n"
@@ -554,6 +567,12 @@ def button_form():
                     st.error(msg_ia)
 
                 st.toast("Se deben corregir los errores.", icon="❌")
+            
+            if len(avisos) > 0:
+                msg_aviso = "\n**Warnings detectados con IA**\n"
+                for msg in avisos:
+                    msg_aviso += f"\n* {msg}\n"
+                st.warning(msg_aviso)
 
         except Exception as e:
             traceback.print_exc()

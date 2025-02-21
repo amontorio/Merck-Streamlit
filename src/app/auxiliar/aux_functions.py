@@ -136,7 +136,7 @@ dataset = load_data()
 
 def show_main_title(title, logo_size):
     if title == "Events Compliance Advisor":
-        logo_merck = "Merck_Logo_intro_green.png"
+        logo_merck = "MDG_Logo_RGreen_SP.png"
     else:
         logo_merck = "MDG_Logo_RPurple_SP.png"
 
@@ -280,7 +280,7 @@ def validar_participantes(participantes):
                     #errores_participantes[id_participante].append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
                     errores_participantes[id_participante].append(f"El campo Nombre de la Sociedad del participante *{cnt}* es obligatorio cuando cobra a través de sociedad.\n")
             # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí" y dni_), verificar que no estén vacíos
-            elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")):
+            elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")) and not campo.startswith("email_copy_"):
                 #print(remove_after_last_underscore(campo))
                 #print("hola", remove_after_last_underscore(campo) + '_', campo)
                 if remove_after_last_underscore(campo).startswith("name_ponente"):
@@ -313,14 +313,14 @@ def get_model():
 
 
 class BooleanValueDescription(BaseModel):
-    value: bool = Field(description="Un valor booleano (true o false)")
-    description: str = Field(description="Una descripción detallada explicando el valor booleano")
+    valor: bool = Field(description="Un valor booleano (true o false)")
+    descripcion: str = Field(description="Una descripción detallada explicando el valor booleano")
 
 
 def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
     prompt = ChatPromptTemplate([
         ("system",  '''
-            Tu tarea es indicar si los siguientes campos cumplen con la normativa que te paso a continuación:
+            Tu tarea es indicar si el campo 'hotel' cumple con la normativa que te voy a definir. Vas a recibir una serie de campos necesarios para evaluar el cumplimiento de la normativa.
             #campos#
             fecha inicio: {fecha_inicio}
             fecha fin: {fecha_fin}
@@ -330,8 +330,8 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
             #normativa#
             - No se pueden reservar hoteles de gran lujo. Por tanto, todos los hoteles en cuya semántica aparezca 'Gran lujo', 'Luxury' o términos del estilo.
             - El nombre del hotel **no puede incluir** palabras (o derivados de la familia de palabras) relacionadas con los siguentes alojamientos prohibidos: 
-                1. Complejos deportivos: golf, 
-                2. Parques temáticos (identificando también nombres propios: La Warner, Portaventura, etc.)
+                1. Complejos deportivos: golf, etc.
+                2. Parques temáticos (y nombres propios de parques temáticos)
                 3. Bodegas
                 4. Hoteles de Gran Lujo: gran lujo, luxury, spa, resort...
             #normativa#
@@ -341,16 +341,17 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
             #importante#
 
             Debes responder con un json que siga el siguiente los siguientes valores:
-            "valor": es un booleano que debe ser True en caso de que se cumpla la normativa, y False en caso contrario
-            "descripcion": explicación breve de las razones por las que no se cumple la normativa. Quiero que la explicación sea breve y concisa, directamente relacionada con los inputs que recibes. 
-            '''
+            'valor': es un booleano que debe ser True en caso de que se cumpla la normativa, y False en caso contrario
+            'descripcion': explicación breve de las razones por las que no se cumple la normativa. Quiero que la explicación sea breve y concisa, directamente relacionada con los inputs que recibes. 
+            Debes responder con unica y exclusivamente un json con estos campos. No incluyas informacion adicional.
+         '''
         ),
         ("user", "{input}")
     ])
 
     parser = JsonOutputParser(pydantic_object=BooleanValueDescription)
 
-    chain = prompt | llm | parser 
+    chain = prompt | llm | json_correccion | parser 
 
     result = chain.invoke({
         "input": "Realiza tu tarea de forma precisa.",
@@ -364,7 +365,8 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
 def validar_sede_location(llm, fecha_inicio, fecha_fin, sede):
     prompt = ChatPromptTemplate([
     ("system", '''
-        Tu tarea es indicar si el campo 'sede' cumple con la normativa que te voy a definir. Vas a recibir una serie de campos necesarios para evaluar el cumplimiento de la normativa.
+        Tu tarea es indicar si el campo 'sede' cumple con la normativa que te voy a definir. La sede suelen ser hoteles, recintos, restaurantes... en los que tienen lugar los eventos.
+        Vas a recibir una serie de campos necesarios para evaluar el cumplimiento de la normativa.
             #campos#
             fecha inicio: {fecha_inicio}
             fecha fin: {fecha_fin}
@@ -385,8 +387,9 @@ def validar_sede_location(llm, fecha_inicio, fecha_fin, sede):
      
             #instrucciones#
             Debes responder con un json que siga el siguiente los siguientes valores:
-            "valor": es un booleano que debe ser True en caso de que se SÍ cumpla la normativa, y False en caso de que NO se cumpla. 
-            "descripcion": explicación breve de las razones por las que NO se cumple la normativa. No mencionar concretamente la palabra que no cumple la normativa, sino el contexto de por qué relacionandolo con la época (verano o invierno).
+            'valor': es un booleano que debe ser True en caso de que se SÍ cumpla la normativa, y False en caso de que NO se cumpla. 
+            'descripcion': explicación breve de las razones por las que NO se cumple la normativa. No mencionar concretamente la palabra que no cumple la normativa, sino el contexto de por qué relacionandolo con la época (verano o invierno).
+            Debes responder con unica y exclusivamente un json con estos campos. No incluyas informacion adicional.
             #instrucciones#
     '''
     ),
@@ -395,7 +398,7 @@ def validar_sede_location(llm, fecha_inicio, fecha_fin, sede):
 
     parser = JsonOutputParser(pydantic_object=BooleanValueDescription)
 
-    chain = prompt | llm | parser 
+    chain = prompt | llm |json_correccion | parser 
 
     result = chain.invoke({
         "input": "Realiza tu tarea de forma precisa.",
@@ -409,7 +412,8 @@ def validar_sede_location(llm, fecha_inicio, fecha_fin, sede):
 def validar_sede_venue(llm, sede):
     prompt = ChatPromptTemplate([
     ("system", '''
-        Tu tarea es indicar si el campo 'sede' cumple con la normativa que te voy a definir. Vas a recibir una serie de campos necesarios apra evaluar el cumplimiento de la normativa.
+        Tu tarea es indicar si el campo 'sede' cumple con la normativa que te voy a definir. La sede suelen ser hoteles, recintos, restaurantes... en los que tienen lugar los eventos.
+        Vas a recibir una serie de campos necesarios para evaluar el cumplimiento de la normativa.            
             #campos#
             sede: {sede}
             #campos#
@@ -417,9 +421,9 @@ def validar_sede_venue(llm, sede):
             #normativa#
             - El nombre de la sede **no puede incluir** palabras (o derivados de la familia de palabras) relacionadas con los siguentes sedes prohibidas: 
                 1. Complejos deportivos: golf, 
-                2. Parques temáticos
+                2. Parques temáticos (y nombres propios de parques temáticos)
                 3. Bodegas
-                4. Hoteles de Gran Lujo: gran lujo, luxury, spa, resort... 
+                4. Lugares de Gran Lujo: gran lujo, luxury, spa, resort... 
             #normativa#
      
             #IMPORTANTE#
@@ -430,8 +434,9 @@ def validar_sede_venue(llm, sede):
      
             #instrucciones#
             Debes responder con un json que siga el siguiente los siguientes valores:
-            "valor": es un booleano que debe ser True en caso de que se SÍ cumpla la normativa, y False en caso de que NO se cumpla. 
-            "descripcion": explicación breve de las razones por las que NO se cumple la normativa. 
+            'valor': es un booleano que debe ser True en caso de que se SÍ cumpla la normativa, y False en caso de que NO se cumpla. 
+            'descripcion': explicación breve de las razones por las que NO se cumple la normativa. 
+            Debes responder con unica y exclusivamente un json con estos campos. No incluyas informacion adicional.
             #instrucciones#
         '''
         ),
@@ -440,7 +445,7 @@ def validar_sede_venue(llm, sede):
 
     parser = JsonOutputParser(pydantic_object=BooleanValueDescription)
 
-    chain = prompt | llm | parser 
+    chain = prompt | llm | json_correccion | parser 
 
     result = chain.invoke({
         "input": "Realiza tu tarea de forma precisa.",
@@ -453,6 +458,7 @@ def validar_sede_venue(llm, sede):
 
 def validar_campos_ia(input_data, campos_ia):
     errores_ia = []
+    result = {}
 
     llm = get_model()
 
@@ -462,9 +468,14 @@ def validar_campos_ia(input_data, campos_ia):
         fecha_inicio = input_data.get(campos_ia_hoteles.get("start_date"))
         fecha_fin = input_data.get(campos_ia_hoteles.get("end_date"))
         hotel = input_data.get(campos_ia_hoteles.get("hotel"))
+        if hotel != "":
+            try:
+                result_hoteles = validar_hotel(llm, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, hotel=hotel) 
+                if result_hoteles:  
+                    result['hoteles'] = result_hoteles
+            except:
+                print("")
 
-        result_hoteles = validar_hotel(llm, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, hotel=hotel) 
-        
     # Validación de sede y ubicación
     campos_ia_sede_location = campos_ia.get("validar_sede_location", {})
     if campos_ia_sede_location:
@@ -472,29 +483,104 @@ def validar_campos_ia(input_data, campos_ia):
         fecha_fin = input_data.get(campos_ia_sede_location.get("end_date"))
         sede = input_data.get(campos_ia_sede_location.get("sede"))
 
-        result_location = validar_sede_location(llm, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, sede=sede) 
+        if sede != "":
+            try:
+                result_location = validar_sede_location(llm, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, sede=sede) 
+                if result_location:
+                    result['location'] = result_location
+            except:
+                print("")
 
     # Validación de sede y venue
     campos_ia_sede_venue = campos_ia.get("validar_sede_venue", {})
     if campos_ia_sede_venue:
         sede = input_data.get(campos_ia_sede_venue.get("sede"))
-        result_venue = validar_sede_venue(llm, sede=sede) 
-    
-    result = {}
-    if result_hoteles:
-        result['hoteles'] = result_hoteles
-    if result_location:
-        result['location'] = result_location
-    if result_venue:
-        result['venue'] = result_venue
-
-    print("RESULT", result)
-
+        if sede != "":
+            try:
+                result_venue = validar_sede_venue(llm, sede=sede) 
+                if result_venue:
+                    result['venue'] = result_venue
+            except:
+                print("")
     for key, res in result.items():
         if not res["valor"]:
             errores_ia.append(res["descripcion"])
 
     return errores_ia
+
+def json_correccion(ai_message):
+    json_str = ai_message.content.replace("```json", "").replace("```", "")#.replace('"', "'")
+
+    return json_str
+
+
+def aviso_correspondencias(llm, contraprestaciones):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", '''
+            Tu tarea es indicar si el campo 'contraprestacion' cumple con la normativa.
+            #campos#
+            contraprestacion: {contraprestaciones}
+            #campos#
+            
+            #normativa#
+            Indica si el campo 'contraprestacion' se trata de una contraprestación válida o no. Una contraprestacion es valida si incluye \
+            alguno de la siguiente información o conceptos similares.
+            - logo del programa científico
+            - pantalla en la sala plenaria
+            - distribución de material científico
+            #normativa#
+            
+            #IMPORTANTE#
+            Tienes que determinar si la contraprestacion indicada es válida o no. 
+            Si la contraprestación no es válida, el mensaje de aviso mencionará que el contenido introducido no se parece a las contraprestaciones habituales. 
+            #IMPORTANTE#
+            
+            #instrucciones#
+            Devuelve un JSON con los siguientes valores:
+            {{
+                'valor': True si la contraprestación es valida, False si NO es válida.
+                'descripcion': 'Aviso breve de que la contraprestación no se parece al estilo habitual. Y mencionar qué campos se suelen introducir.'
+            }}
+            No devuelvas nada más que el JSON.
+            #instrucciones#
+        '''),
+        ("user", """
+            Realiza tu tarea de forma precisa. A continuación te paso los datos:
+            - Contraprestacion: {contraprestaciones}
+        """),
+    ])
+
+
+    parser = JsonOutputParser(pydantic_object=BooleanValueDescription)  
+
+    chain = prompt | llm | json_correccion | parser
+    result = chain.invoke({"contraprestaciones": contraprestaciones})
+    
+    return result
+
+def avisos_campos_ia(input_data, campos_avisos_ia):
+    avisos = []
+    result = {}
+    llm = get_model()
+
+    # Contraprestaciones
+    avisos_contraprestaciones = campos_avisos_ia.get("validar_contraprestaciones", {})
+    if avisos_contraprestaciones:
+        contra = input_data.get(avisos_contraprestaciones.get("contraprestaciones"))
+        if contra != "":
+            try:
+                result_correspondencias = aviso_correspondencias(llm, contraprestaciones = contra) 
+
+                if result_correspondencias:
+                    result['correspondencias'] = result_correspondencias
+            except:
+                print("")
+
+    for key, res in result.items():
+        if not res["valor"]:
+            avisos.append(res["descripcion"])
+
+    return avisos
 
      
 
