@@ -173,7 +173,7 @@ def handle_dni(id_user):
     val = validacion_completa_dni(id_user)
     
     if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_correcto_{id_user}"] == False:
-        st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_{id_user}"] ==""
+        st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_{id_user}"] = ""
     else:
         st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_{id_user}"] = st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_copy_{id_user}"]
     
@@ -184,7 +184,7 @@ def handle_email(id_user):
     val = validacion_completa_email(id_user)
     
     if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == False:
-        st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] ==""
+        st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = ""
     else:
         st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_copy_{id_user}"]
 
@@ -210,8 +210,6 @@ def single_consultant(id_user, info_user, index):
 
                         col1, col2 = st.columns(2)
                         
-                        from functools import partial
-
                        
                         with col1:              
                             dni = st.text_input(
@@ -248,7 +246,6 @@ def single_consultant(id_user, info_user, index):
                                 value = info_user.get(f"email_copy_{id_user}", ""),
                                 key=f"email_{id_user}",
                                 on_change= lambda: handle_email(id_user))
-
 
                         if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == False:
                             st.warning("El email introducido no es correcto.", icon="❌")
@@ -352,10 +349,6 @@ def single_consultant(id_user, info_user, index):
                             validacion_completa_dni(id_user)
                             if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_correcto_{id_user}"] == False or \
                                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == False:
-                                # and \
-                                # st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"nombre_{id_user}"] != "" and \
-                                # st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"centro_trabajo_{id_user}"] != "" and \
-                                # st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"] != "":
                                 
                                 st.rerun(scope="fragment")
                             else:
@@ -391,8 +384,14 @@ def participantes_section():
             if st.button(label=f"Consultor {index + 1}{aux}{nombre_expander_cs}", use_container_width=True, icon="👩‍⚕️"):
                     
                 single_consultant(id_user, info_user, index)
-                handle_dni(id_user)
-                handle_email(id_user)
+                # handle_email(id_user)
+                # print("FORM", st.session_state["form_data_consulting_services"]["participantes_cs"][id_user])
+
+                if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_correcto_{id_user}"] == False:
+                    st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_{id_user}"] = ""
+                if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] == False:
+                    st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_{id_user}"] = ""
+               
     
             
         index +=1
@@ -423,6 +422,7 @@ if "form_data_consulting_services" not in st.session_state:
     st.session_state["form_data_consulting_services"] = {}
     
     st.session_state["download_enabled_cs"] = False
+    st.session_state["download_enabled_aux_cs"] = False
     st.session_state["path_doc_cs"] = None
 
     
@@ -546,23 +546,31 @@ st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "
 
 st.session_state.download_enabled_cs = False
 
-
 def generacion_errores():
     try:
+        st.session_state.download_enabled_cs = False
         errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
         if not errores_general and all(not lista for lista in errores_participantes.values()):
             doc, st.session_state.path_doc_cs = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
             st.session_state.download_enabled_cs = True
-            st.toast("Formulario generado correctamente", icon="✔️")
+    except Exception as e:
+        traceback.print_exc()
+        st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+
+def mostrar_errores():
+    try:
+        st.session_state.download_enabled_cs = False
+        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
+        if not errores_general and all(not lista for lista in errores_participantes.values()):
+            doc, st.session_state.path_doc_cs = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
+            
         else:
-            st.session_state.errores == True
             if len(errores_general) != 0:
                 msg_general = "\n**Errores Generales del Formulario**\n"
                 for msg in errores_general:
                     msg_general += f"\n* {msg}\n"
                 st.error(msg_general)
 
-            #print(st.session_state['form_data_consulting_services']['participantes_cs'])
             for id_user, list_errors in errores_participantes.items():
                 if len(list_errors) > 0:
                     # Obtener el diccionario de participantes
@@ -587,6 +595,9 @@ def generacion_errores():
 # Botón para enviar
 def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        #st.session_state.download_enabled_cs = False
+        st.session_state.errores = True
+            
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
             time.sleep(1.5)
@@ -597,23 +608,32 @@ def button_form():
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
 
-        # Actualizo el estado
-        if st.session_state.download_enabled_cs == True:
-            status.update(
-                label="Validación completada!", state="complete", expanded=False
-            )
-            st.session_state.errores = False
-        else:
-            status.update(
-                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
-            )
-            st.session_state.errores = True
-            st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
-        
-        
+            generacion_errores()
+
+            # Actualizo el estado
+            if st.session_state.download_enabled_cs == True:
+                status.update(
+                    label="Validación completada!", state="complete", expanded=False
+                )
+                st.session_state.errores = False
+            else:
+                status.update(
+                    label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+                )
+                st.session_state.errores = True
+                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
+            
+            if st.session_state.download_enabled_cs == True:
+                #st.session_state.download_enabled_cs = True
+                st.toast("Formulario generado correctamente", icon="✔️")
+
+    if st.session_state.errores == True:
+        mostrar_errores()     
+
+
 button_form()
-if st.session_state.errores == True:
-    generacion_errores()
+
+
 
 def download_document(disabled):
     nombre = "Consulting_Services.zip"
@@ -643,5 +663,5 @@ disabled = not st.session_state.download_enabled_cs
 download_document(disabled)
 
 
-#st.write(st.session_state["form_data_consulting_services"])
+st.write(st.session_state["form_data_consulting_services"])
 #st.write(st.session_state)
