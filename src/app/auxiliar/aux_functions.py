@@ -337,6 +337,8 @@ def validar_hotel(llm, fecha_inicio, fecha_fin, hotel):
             #normativa#
          
             #importante#
+            No debes ser excesivamente riguroso con la aplicación de la normativa. **Solo debes poner False (no cumplimiento), en caso de que claramente no se cumpla con la norma**. 
+            Sin embargo, si no es tan evidente, la normativa SÍ se cumple. No debes ser muy restrictivo, **solo se tienen que descartar casos muy concretos que claramente no cumplan la normativa**.
             Si no se tiene información suficiente para aplicar la normativa (algún input está en blanco), debes asumir que SÍ se aplica bien (True). No hay que ser excesivamente restrictivo.
             #importante#
 
@@ -420,7 +422,7 @@ def validar_sede_venue(llm, sede):
 
             #normativa#
             - El nombre de la sede **no puede incluir** palabras (o derivados de la familia de palabras) relacionadas con los siguentes sedes prohibidas: 
-                1. Complejos deportivos: golf, 
+                1. Complejos deportivos: golf, etc.
                 2. Parques temáticos (y nombres propios de parques temáticos)
                 3. Bodegas
                 4. Lugares de Gran Lujo: gran lujo, luxury, spa, resort... 
@@ -523,11 +525,13 @@ def aviso_correspondencias(llm, contraprestaciones):
             #campos#
             
             #normativa#
-            Indica si el campo 'contraprestacion' se trata de una contraprestación válida o no. Una contraprestacion es valida si incluye \
-            alguno de la siguiente información o conceptos similares.
-            - logo del programa científico
-            - pantalla en la sala plenaria
-            - distribución de material científico
+            Indica si el campo 'contraprestacion' se trata de una contraprestación válida o no. Una contraprestacion es valida si incluye alguno de la siguiente información o conceptos similares.
+            - Inclusión del Logo de Merck: en el programa, presentaciones, sala, web, cartel, pantalla de la sala plenaria, email de agradecimiento, photocall y demás medios de difusión
+            - Espacio expositivo, enaras, roll up de Merck
+            - Inscripciones para profesionales sanitarios o staff
+            - Espacio de tiempo para una ponencia en nombre de Merck.
+            - Banner
+            - Distribución tarjetones en la cartera de los congresistas
             #normativa#
             
             #IMPORTANTE#

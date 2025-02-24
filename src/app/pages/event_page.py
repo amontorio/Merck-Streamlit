@@ -177,6 +177,17 @@ if "city" not in st.session_state:
     else:
         st.session_state["city"] = ""
 
+if "errores_event" not in st.session_state:
+    st.session_state.errores_event = False
+
+if "errores_generales_event" not in st.session_state:
+    st.session_state.errores_generales_event = []
+
+if "avisos_ia_event" not in st.session_state:
+    st.session_state.avisos_ia_event = {}
+
+if "errores_ia_event" not in st.session_state:
+    st.session_state.errores_ia_event = []
 
 validar_ia ={
         "validar_sede_location": {"start_date":"start_date", 
@@ -316,8 +327,6 @@ def crear_nombre_y_tipo():
                     ) if st.session_state["event_type"] == "Virtual" else 
                         save_to_session_state("event_type", st.session_state["event_type"]))
         
-        st.session_state["form_data_event"]["event_type"] = event
-
         
 
 def crear_fechas():
@@ -340,9 +349,9 @@ def crear_fechas():
     #     st.error("La fecha de inicio debe ser menor o igual a la fecha de fin.")
 
 def crear_ubicacion():
-    is_virtual = st.session_state.event_type == "Virtual"
-    venue_value = "" if is_virtual else st.session_state.venue
-    city_value = "" if is_virtual else st.session_state.city
+    is_virtual = st.session_state["form_data_event"]["event_type"] == "Virtual"
+    venue_value = "" if is_virtual else st.session_state["form_data_event"]["venue"]
+    city_value = "" if is_virtual else st.session_state["form_data_event"]["city"]
     
     st.text_input(
         "Sede",
@@ -455,6 +464,7 @@ crear_detalles_firmante()
 def crear_descripción_ia():
     st.markdown("**Pulsa para generar:**")  # Texto encima del botón
     st.button("Generar", help="Genera una breve descripción con IA en base al resto de campos", icon="📄", use_container_width=True, type="primary", on_click=handle_invoke_chain_event_description)
+
 @st.fragment
 def crear_detalles_patrocinio():
     st.header("3. Detalles del Patrocinio", divider=True)
@@ -474,7 +484,6 @@ def crear_detalles_patrocinio():
                          key="payment_type", 
                          on_change=lambda: save_to_session_state("payment_type", st.session_state["payment_type"]))
             
-            st.session_state["form_data_event"]["payment_type"] = payment
 
         
         st.text_input("Nombre de la secretaría técnica (ST)", value=st.session_state["form_data_event"]["name_st"] if st.session_state["form_data_event"]["payment_type"] != "Pago directo" else "", max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state["form_data_event"]["payment_type"] != "Pago a través de la secretaría técnica (ST)", key="name_st", on_change=lambda: save_to_session_state("name_st", st.session_state["name_st"]))
@@ -496,7 +505,6 @@ def crear_detalles_patrocinio():
                                     save_to_session_state("documentosubido_3_event", ""),
                                 ) if st.session_state["form_data_event"]["exclusive_sponsorship"] == "Sí" else 
                                     save_to_session_state("exclusive_sponsorship", st.session_state["exclusive_sponsorship"]))
-        st.session_state["form_data_event"]["exclusive_sponsorship"] = patrocinador
 
         if st.session_state["form_data_event"]["exclusive_sponsorship"] == "Sí":
             st.warning("Debes enviar el dossier comercial o presupuesto del organizador.")
@@ -509,7 +517,6 @@ def crear_detalles_patrocinio():
             recurr = st.selectbox("Patrocinio recurrente *", options=["No lo sé","Sí", "No"], 
                          index = ["No lo sé","Sí", "No"].index(st.session_state["form_data_event"]["recurrent_sponsorship"]) if "recurrent_sponsorship" in st.session_state["form_data_event"] else 0,
                          key="recurrent_sponsorship", help="¿Merck ha colaborado en ediciones anteriores de este evento?", on_change=lambda: save_to_session_state("recurrent_sponsorship", st.session_state["recurrent_sponsorship"]))
-            st.session_state["form_data_event"]["recurrent_sponsorship"] = recurr
         with col12:
             #if st.session_state.recurrent_sponsorship == "Sí":
             st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
@@ -528,6 +535,49 @@ with st.expander("Ver documentos necesarios"):
 # Estado inicial para el botón de descargar
 st.session_state.download_enabled = False
 
+def generacion_errores():
+    try:
+        st.session_state.download_enabled = False
+        errores_general, _ = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
+        errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
+        avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
+
+        if not errores_general and not errores_ia:
+            st.session_state.download_enabled = True
+    except Exception as e:
+        traceback.print_exc()
+        st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+
+    return errores_general, errores_ia, avisos
+
+def mostrar_errores(errores_general, errores_ia, avisos):
+    if not errores_general and not errores_ia:
+        df = save_form_data_event()
+        doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
+        st.session_state.download_enabled = True
+        st.toast("Formulario generado correctamente", icon="✔️")
+    else:
+        if len(errores_general) > 0 :
+            msg_general = "\n**Errores Generales del Formulario**\n"
+            for msg in errores_general:
+                msg_general += f"\n* {msg}\n"
+            st.error(msg_general)
+
+        if len(errores_ia) != 0:
+            msg_ia = "\n**Errores detectados con IA**\n"
+            for msg in errores_ia:
+                msg_ia += f"\n* {msg}\n"
+            st.error(msg_ia)
+
+    
+    if len(avisos) > 0:
+        msg_aviso = "\n**Warnings detectados con IA**\n"
+        for msg in avisos:
+            msg_aviso += f"\n* {msg}\n"
+        st.warning(msg_aviso)
+    
+
+
 # Botón para enviar
 def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
@@ -539,45 +589,29 @@ def button_form():
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
 
-        try:
-            errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
-            errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
-            avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
+        errores_general, errores_ia, avisos = generacion_errores()
+        st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event = errores_general, errores_ia, avisos
 
-            if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
-                df = save_form_data_event()
-                doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
-
-                # Cambiar el estado del botón de descarga
-                st.session_state.download_enabled = True
-                
-                #st.success("Formulario generado correctamente correctamente.")
-                st.toast("Formulario generado correctamente", icon="✔️")
-            else:
-                if len(errores_general) >0 :
-                    msg_general = "\n**Errores Generales del Formulario**\n"
-                    for msg in errores_general:
-                        msg_general += f"\n* {msg}\n"
-                    st.error(msg_general)
+        # Actualizo el estado
+        if st.session_state.download_enabled == True:
+            status.update(
+                label="Validación completada!", state="complete", expanded=False
+            )
+            st.session_state.errores_event = False
+        else:
+            status.update(
+                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+            )
+            st.session_state.errores_event = True
+            st.toast("Se deben corregir los errores", icon="❌")
         
-                if len(errores_ia) != 0:
-                    msg_ia = "\n**Errores detectados con IA**\n"
-                    for msg in errores_ia:
-                        msg_ia += f"\n* {msg}\n"
-                    st.error(msg_ia)
+        if st.session_state.download_enabled == True:
+            st.toast("Formulario generado correctamente", icon="✔️")
 
-                st.toast("Se deben corregir los errores.", icon="❌")
-            
-            if len(avisos) > 0:
-                msg_aviso = "\n**Warnings detectados con IA**\n"
-                for msg in avisos:
-                    msg_aviso += f"\n* {msg}\n"
-                st.warning(msg_aviso)
+    if st.session_state.errores_event == True:
+        mostrar_errores(st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event)     
 
-        except Exception as e:
-            traceback.print_exc()
-            st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
-    
+        
 
 def download_document():
     if st.session_state.path_doc:
@@ -604,7 +638,7 @@ def download_document():
         
 button_form()
 # Botón de descarga
-disabled = not st.session_state.download_enabled
+disabled =  not st.session_state.download_enabled
 download_document()
 
 #st.write(st.session_state["form_data_event"])

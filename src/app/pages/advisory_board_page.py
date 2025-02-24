@@ -66,6 +66,12 @@ validar_ia ={
         "validar_sede_venue": {"sede": "sede_ab"}
     }
 
+if "errores_ab" not in st.session_state:
+    st.session_state.errores_ab = False
+
+if "num_noches_copy_ab" not in st.session_state:
+    st.session_state.num_noches_copy_ab = ""
+
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_ab":
         if key not in ["documentosubido_1"]:
@@ -177,7 +183,7 @@ def handle_dni(id_user):
     val = validacion_completa_dni(id_user)
     
     if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == False:
-        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] ==""
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] =""
     else:
         st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_copy_{id_user}"]
     
@@ -188,15 +194,46 @@ def handle_email(id_user):
     val = validacion_completa_email(id_user)
     
     if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == False:
-        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] ==""
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] =""
     else:
         st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] = st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_copy_{id_user}"]
 
     return None
 
+def validacion_num_noches():
+    save_to_session_state("num_noches_copy_ab", st.session_state["num_noches_ab"])
+    st.session_state.num_noches_correcto_ab = True
+
+    if st.session_state.num_noches_ab.isdigit():
+        duracion = (st.session_state["end_date_ab"] - st.session_state["start_date_ab"]).days
+        if int(st.session_state.num_noches_ab) <= duracion + 1: 
+            save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"]) 
+        else:
+            st.session_state["form_data_advisory_board"]["num_noches_ab"] = ""
+            st.session_state.num_noches_correcto_ab = False
+    else:
+        st.session_state["form_data_advisory_board"]["num_noches_ab"] = ""
+        st.session_state.num_noches_correcto_ab = False
+    
+    
 
 if "clicked_ab" not in st.session_state:
     st.session_state.clicked_ab = False
+
+if "errores_generales_ab" not in st.session_state:
+    st.session_state.errores_generales_ab = []
+
+if "errores_participantes_ab" not in st.session_state:
+    st.session_state.errores_participantes_ab = {}
+
+if "errores_ia_ab" not in st.session_state:
+    st.session_state.errores_ia_ab = []
+
+if "errores_ia_ab" not in st.session_state:
+    st.session_state.errores_ia_ab = []
+
+if "num_noches_correcto_ab" not in st.session_state:
+    st.session_state.num_noches_correcto_ab = True
 
 def generar_toast():
     if st.session_state.clicked_ab == True:
@@ -227,7 +264,7 @@ def single_participante(id_user, info_user, index):
                             
                             dni = st.text_input(
                                 f"DNI del participante {index + 1}", 
-                                value = info_user.get(f"dni_{id_user}", "") if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == True else "" ,
+                                value = info_user.get(f"dni_copy_{id_user}", ""),
                                 key=f"dni_{id_user}",
                                 on_change = lambda: handle_dni(id_user)
                             )
@@ -256,7 +293,7 @@ def single_participante(id_user, info_user, index):
                         with col2:                        
                             email = st.text_input(
                                 f"Email del participante {index + 1} *", 
-                                value = info_user.get(f"email_{id_user}", "") if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == True else "" ,
+                                value = info_user.get(f"email_copy_{id_user}", ""),
                                 key=f"email_{id_user}",
                                 on_change= lambda: handle_email(id_user)
                             )
@@ -387,7 +424,11 @@ def participantes_section():
             generar_toast()
 
             if st.button(label=f"Participante {index + 1}{aux}{nombre_expander_ab}", use_container_width=True, icon="👩‍⚕️"):
-                    single_participante(id_user, info_user, index)
+                single_participante(id_user, info_user, index)
+                if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] == False:
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_{id_user}"] = ""
+                if st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] == False:
+                    st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_{id_user}"] = ""
 
         index +=1
         with col_remove_participant_individual:
@@ -421,6 +462,8 @@ if "form_data_advisory_board" not in st.session_state:
     st.session_state["id_participantes"] = [] 
     st.session_state["download_enabled_ab"] = False
     st.session_state["path_doc_ab"] = None
+    st.session_state["tipo_evento_ab"] = "Virtual"
+
     for key, value in field_defaults.items():
         save_to_session_state(key, value)
 
@@ -584,26 +627,29 @@ with col2:
                  ) if st.session_state["alojamiento_ab"] == "No" else 
                      save_to_session_state("alojamiento_ab", st.session_state["alojamiento_ab"]))
 
+
 with col1:
+    alojam = st.text_input("Nº de noches *", 
+        key="num_noches_ab", 
+        disabled=st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No",
+        value= "" if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("num_noches_copy_ab"),
+        help = "Se debe introducir un número.",
+        on_change = lambda: validacion_num_noches()
+    )
+
+noches = (st.session_state["end_date_ab"] - st.session_state["start_date_ab"]).days + 1
+if st.session_state.num_noches_correcto_ab == False:
+    st.error(f"El número de noches no puede exceder la duración de {noches} días.")
+    
+with col2:
     st.text_input(
-        "Hotel",
+        "Hotel *",
         max_chars=255,
         key="hotel_ab",
         disabled=st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No",
         value="" if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("hotel_ab", ""),
         on_change=lambda: save_to_session_state("hotel_ab", st.session_state["hotel_ab"])
-    )
-with col2:
-    st.text_input("Nº de noches *", 
-        key="num_noches_ab", 
-        disabled=st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No",
-        value= "" if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("num_noches_ab", ""),
-        help = "Se debe introducir un número.",
-        on_change=lambda: save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"]) if st.session_state.num_noches_ab.isdigit()
-            else save_to_session_state("num_noches_ab", "")
-    )
-    
-                        
+    )                      
     
 
 st.header("4. Participantes del Advisory", divider=True)
@@ -642,9 +688,58 @@ st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], k
 
 # Estado inicial para el botón de descargar
 st.session_state.download_enabled_ab = False
+
+def generacion_errores():
+    try:
+        st.session_state.download_enabled_ab = False
+        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
+        errores_ia = af.validar_campos_ia(st.session_state["form_data_advisory_board"], validar_ia)
+        if not errores_general and all(not lista for lista in errores_participantes.values()):
+            doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
+            st.session_state.download_enabled_ab = True
+    except Exception as e:
+        traceback.print_exc()
+        st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+
+    return errores_general, errores_participantes, errores_ia
+
+def mostrar_errores(errores_general, errores_participantes, errores_ia):
+    if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
+        st.session_state.download_enabled_ab = True
+    else:
+        if len(errores_general) != 0:
+            msg_general = "\n**Errores Generales del Formulario**\n"
+            for msg in errores_general:
+                msg_general += f"\n* {msg}\n"
+            st.error(msg_general)
+
+        if len(errores_participantes)>0:
+            for id_user, list_errors in errores_participantes.items():
+                if len(list_errors) > 0:
+                    # Obtener el diccionario de participantes
+                    participantes = st.session_state['form_data_advisory_board']['participantes_ab']
+
+                    # Obtener la posición del ID en las claves del diccionario
+                    keys_list = list(participantes.keys())  # Convertir las claves en una lista
+                    posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
+                    if posicion != None:
+                        name_ponente = st.session_state['form_data_advisory_board']['participantes_ab'][f'{keys_list[posicion-1]}']['name_ponente_ab'].strip()
+                        msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
+                        for msg in list_errors:
+                            msg_participantes += f"\n* {msg}\n"
+                        st.error(msg_participantes)
+
+        if len(errores_ia) > 0:
+            msg_aviso = "\n**Errores detectados con IA**\n"
+            for msg in errores_ia:
+                msg_aviso += f"\n* {msg}\n"
+            st.warning(msg_aviso)
+                    
+
 # Botón para enviar
 def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        st.session_state.errores_ab = True
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
             time.sleep(1.5)
@@ -655,58 +750,28 @@ def button_form():
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
         
-        try:
-            errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
-            errores_ia = af.validar_campos_ia(st.session_state["form_data_advisory_board"], validar_ia)
-            if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
-                doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
-                st.session_state.download_enabled_ab = True
-                st.toast("Formulario generado correctamente", icon="✔️")
-            else:
-                if len(errores_general) != 0:
-                    msg_general = "\n**Errores Generales del Formulario**\n"
-                    for msg in errores_general:
-                        msg_general += f"\n* {msg}\n"
-                    st.error(msg_general)
+        errores_general_ab, errores_participantes_ab, errores_ia_ab = generacion_errores()
+        st.session_state.errores_general_ab, st.session_state.errores_participantes_ab, st.session_state.errores_ia_ab = errores_general_ab, errores_participantes_ab, errores_ia_ab
 
-                print(st.session_state['form_data_advisory_board']['participantes_ab'])
-                for id_user, list_errors in errores_participantes.items():
-                    if len(list_errors) > 0:
-                        # Obtener el diccionario de participantes
-                        participantes = st.session_state['form_data_advisory_board']['participantes_ab']
-
-                        # Obtener la posición del ID en las claves del diccionario
-                        keys_list = list(participantes.keys())  # Convertir las claves en una lista
-                        posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
-                        #msg_participantes = f"\n**Errores del Participante {posicion}**\n"
-                        name_ponente = st.session_state['form_data_advisory_board']['participantes_ab'][f'{keys_list[posicion-1]}']['name_ponente_ab'].strip()
-                        msg_participantes = f"\n**Errores del Participante {posicion}:{name_ponente}**\n"
-                        for msg in list_errors:
-                            msg_participantes += f"\n* {msg}\n"
-                        st.error(msg_participantes)
-
-                if len(errores_ia) != 0:
-                    msg_ia = "\n**Errores detectados con IA**\n"
-                    for msg in errores_ia:
-                        msg_ia += f"\n* {msg}\n"
-                    st.error(msg_ia)
-
-            st.toast("Se deben corregir los errores.", icon="❌")
-
-            # Leer el archivo Word y prepararlo para descarga
-        except Exception as e:
-            traceback.print_exc()
-            st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
-        
         # Actualizo el estado
         if st.session_state.download_enabled_ab == True:
             status.update(
                 label="Validación completada!", state="complete", expanded=False
             )
+            st.session_state.errores_ab = False
         else:
             status.update(
                 label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
             )
+            st.session_state.errores_ab = True
+            st.toast("Se deben corregir los errores.", icon="❌")
+
+        if st.session_state.download_enabled_ab == True:
+            st.toast("Formulario generado correctamente", icon="✔️")
+
+    if st.session_state.errores_ab == True:
+        mostrar_errores(st.session_state.errores_general_ab, st.session_state.errores_participantes_ab, st.session_state.errores_ia_ab)     
+
         
 def download_document():
     if st.session_state.path_doc_ab:

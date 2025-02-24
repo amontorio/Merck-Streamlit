@@ -53,7 +53,7 @@ def handle_dni(id_user):
     val = validacion_completa_dni(id_user)
     
     if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == False:
-        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] ==""
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = ""
     else:
         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_copy_{id_user}"]
     
@@ -64,7 +64,7 @@ def handle_email(id_user):
     val = validacion_completa_email(id_user)
     
     if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == False:
-        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] ==""
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = ""
     else:
         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_copy_{id_user}"]
 
@@ -84,10 +84,12 @@ def add_ponente():
         "id": id_user,
         f"nombre_{id_user}": "",
         f"dni_{id_user}": "",
+        f"dni_copy_{id_user}": "",
         f"dni_correcto_{id_user}": True,
         f"tier_{id_user}": "0",
         f"centro_trabajo_{id_user}": "",
         f"email_{id_user}": "",
+        f"email_copy_{id_user}": "",
         f"email_correcto_{id_user}": True,
         f"cobra_sociedad_{id_user}": "No",
         f"nombre_sociedad_{id_user}": "",
@@ -156,6 +158,21 @@ def validacion_completa_email(id_user):
                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = False
 
 
+def validacion_num_noches():
+    save_to_session_state("num_noches_copy_ss", st.session_state["num_noches_ss"])
+    st.session_state.num_noches_correcto_ss = True
+    if st.session_state.num_noches_ss.isdigit():
+        duracion = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days
+        if int(st.session_state.num_noches_ss) <= duracion + 2: 
+            save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) 
+            
+        else:
+            st.session_state["form_data_speaking_services"]["num_noches_ss"] = ""
+            st.session_state.num_noches_correcto_ss = False
+    else:
+        st.session_state["form_data_speaking_services"]["num_noches_ss"] = ""
+        st.session_state.num_noches_correcto_ss = False
+    
 
 def on_change_nombre(id_user):
     if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] != None:
@@ -179,6 +196,24 @@ def asignacion_nombre(id_user):
 
 if "clicked_ss" not in st.session_state:
     st.session_state.clicked_ss = False
+
+if "errores_ss" not in st.session_state:
+    st.session_state.errores_ss = False
+
+if "errores_generales_ss" not in st.session_state:
+    st.session_state.errores_generales_ss = []
+
+if "errores_participantes_ss" not in st.session_state:
+    st.session_state.errores_participantes_ss = {}
+
+if "errores_ia_ss" not in st.session_state:
+    st.session_state.errores_ia_ss = []
+
+if "num_noches_copy_ss" not in st.session_state:
+    st.session_state.num_noches_copy_ss = ""
+
+if "num_noches_correcto_ss" not in st.session_state:
+    st.session_state.num_noches_correcto_ss = True
 
 def generar_toast():
     if st.session_state.clicked_ss == True:
@@ -209,16 +244,11 @@ def single_ponente(id_user, info_user, index):
                         with col1:
                             dni = st.text_input(
                                 f"DNI del participante {index + 1}", 
-                                value = info_user.get(f"dni_{id_user}", "") if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True else "" ,
+                                value = info_user.get(f"dni_copy_{id_user}", ""),
                                 key=f"dni_{id_user}",
-                                on_change = validacion_completa_dni(id_user)
+                                on_change = lambda: handle_dni(id_user)
                             )
 
-                            if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == True:
-                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = dni
-                            else:
-                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = ""
-                                #st.warning("El DNI introducido no es correcto.", icon="❌")
                         if not st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"]:
                             st.warning("El DNI introducido no es correcto.", icon="❌")
                         
@@ -244,15 +274,11 @@ def single_ponente(id_user, info_user, index):
                         with col2:       
                             email = st.text_input(
                                 f"Email del participante {index + 1} *", 
-                                value = info_user.get(f"email_{id_user}", "") if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == True else "" ,
+                                value = info_user.get(f"email_copy_{id_user}", ""),
                                 key=f"email_{id_user}",
-                                on_change= validacion_completa_email(id_user)
+                                on_change= lambda: handle_email(id_user)
                             )
                             
-                            if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == True:
-                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = email
-                            else:
-                                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = ""
                         if not st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"]:
                             st.warning("El email introducido no es correcto.", icon="❌")
 
@@ -385,8 +411,11 @@ def ponentes_section():
 
                 if st.button(label=f"Ponente {index + 1}{aux}{nombre_expander_ss}", use_container_width=True, icon="👩‍⚕️"):
                     single_ponente(id_user, info_user, index)
+                    if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] == False:
+                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_{id_user}"] = ""
+                    if st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] == False:
+                        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = ""
             index +=1
-
             with col_remove_participant_individual:
                 if st.button("🗑️", key=f"remove_participant_ss_{id_user}", use_container_width=True, type="secondary"):
                     if id_user in st.session_state["form_data_speaking_services"]["participantes_ss"].keys():
@@ -396,9 +425,59 @@ def ponentes_section():
 
 
 
+def generacion_errores(tipo):
+    try:
+        st.session_state.download_enabled_ss = False
+        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
+        errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
 
+        if not errores_general and all(not lista for lista in errores_participantes.values()):
+            if tipo == "Reunión Merck Program":
+                doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
+            else:
+                doc, st.session_state.path_doc_ss = cd.crear_documento_speaking_reducido(st.session_state["form_data_speaking_services"])
+            st.session_state.download_enabled_ss = True
+    except Exception as e:
+        traceback.print_exc()
+        st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
+
+    return errores_general, errores_participantes, errores_ia
+
+def mostrar_errores(errores_general, errores_participantes, errores_ia):
+    if not errores_general and all(not lista for lista in errores_participantes.values()):
+        st.session_state.download_enabled_ss = True
+    else:
+        if len(errores_general) != 0:
+            msg_general = "\n**Errores Generales del Formulario**\n"
+            for msg in errores_general:
+                msg_general += f"\n* {msg}\n"
+            st.error(msg_general)
+        
+        if len(errores_participantes)>0:
+            for id_user, list_errors in errores_participantes.items():
+                if len(list_errors) > 0:
+                    # Obtener el diccionario de participantes
+                    participantes = st.session_state['form_data_speaking_services']['participantes_ss']
+
+                    # Obtener la posición del ID en las claves del diccionario
+                    keys_list = list(participantes.keys())  # Convertir las claves en una lista
+                    posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
+                    if posicion != None:
+                        name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}']['name_ponente_ss'].strip()
+                        msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
+                        for msg in list_errors:
+                            msg_participantes += f"\n* {msg}\n"
+                        st.error(msg_participantes)
+
+        if len(errores_ia) > 0:
+            msg_aviso = "\n**Errores detectados con IA**\n"
+            for msg in errores_ia:
+                msg_aviso += f"\n* {msg}\n"
+            st.warning(msg_aviso)
+                    
 def button_form(tipo):
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        st.session_state.errores_ss = True
         with st.status("Validando campos...", expanded=True, state = "running") as status:
             st.write("Validando información general del formulario...")
             time.sleep(1.5)
@@ -409,62 +488,30 @@ def button_form(tipo):
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
 
-        try:
-            errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
-            errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
-            
-            if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
-                if tipo == "Reunión Merck Program":
-                    doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
-                else:
-                    doc, st.session_state.path_doc_ss = cd.crear_documento_speaking_reducido(st.session_state["form_data_speaking_services"])
-                st.session_state.download_enabled_ss = True
-                st.toast("Formulario generado correctamente", icon="✔️")
+            errores_general_ss, errores_participantes_ss, errores_ia_ss = generacion_errores(tipo)
+
+            st.session_state.errores_general_ss, st.session_state.errores_participantes_ss, st.session_state.errores_ia_ss = errores_general_ss, errores_participantes_ss, errores_ia_ss
+
+            # Actualizo el estado
+            if st.session_state.download_enabled_ss == True:
+                status.update(
+                    label="Validación completada!", state="complete", expanded=False
+                )
+                st.session_state.errores_ss = False
             else:
-                if len(errores_general) != 0:
-                    msg_general = "\n**Errores Generales del Formulario**\n"
-                    for msg in errores_general:
-                        msg_general += f"\n* {msg}\n"
-                    if msg_general != "":
-                        st.error(msg_general)
-
-                #print(st.session_state['form_data_speaking_services']['participantes_ss'])
-                for id_user, list_errors in errores_participantes.items():
-                    if len(list_errors) > 0:
-                        # Obtener el diccionario de participantes
-                        participantes = st.session_state['form_data_speaking_services']['participantes_ss']
-
-                        # Obtener la posición del ID en las claves del diccionario
-                        keys_list = list(participantes.keys())  # Convertir las claves en una lista
-                        posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
-                        name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}']['name_ponente_ss'].strip()
-                        msg_participantes = f"\n**Errores del Ponente {posicion}:{name_ponente}**\n"
-                        for msg in list_errors:
-                            msg_participantes += f"\n* {msg}\n"
-                        st.error(msg_participantes)
-                if len(errores_ia) != 0:
-                    msg_ia = "\n**Errores detectados con IA**\n"
-                    for msg in errores_ia:
-                        msg_ia += f"\n* {msg}\n"
-                    st.error(msg_ia)
-
+                status.update(
+                    label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+                )
+                st.session_state.errores_ss = True
                 st.toast("Se deben corregir los errores.", icon="❌")
-            
 
-        except Exception as e:
-            traceback.print_exc()
-            st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
-            
-        # Actualizo el estado
-        if st.session_state.download_enabled_ss == True:
-            status.update(
-                label="Validación completada!", state="complete", expanded=False
-            )
-        else:
-            status.update(
-                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
-            )
+            if st.session_state.download_enabled_ss == True:
+                st.toast("Formulario generado correctamente", icon="✔️")
 
+    if st.session_state.errores_ss == True:
+        mostrar_errores(st.session_state.errores_general_ss, st.session_state.errores_participantes_ss, st.session_state.errores_ia_ss)     
+
+            
 
 def download_document(disabled, tipo):
     if tipo == "Reunión Merck Program":
@@ -512,13 +559,6 @@ def reset_session_participant():
         # quiero reiniciar el search
         if key.startswith("nombre_") and isinstance(st.session_state[key], dict) and "search" in st.session_state[key]:
             st.session_state[key]["search"] = ""  
-################################################################################################################################
-### ver si quitar o no
-# if "participantes_ss" not in st.session_state:
-#     st.session_state["participantes_ss"] = []
-
-# if "id_participantes_ss" not in st.session_state:
-#     st.session_state["id_participantes_ss"] = []
 
 if "form_data_speaking_services" not in st.session_state:
     field_defaults = {
@@ -594,7 +634,7 @@ if meeting_type == "Reunión Merck Program":
     "documentosubido_2_ss"
     ]
 
-    # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
+    # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ss' y 'hotel_ab' tengan valor.
     dependendent_fields = {
         "alojamiento_ponentes_ss": {
             "condicion": lambda x: x == "Sí",
@@ -742,10 +782,15 @@ if meeting_type == "Reunión Merck Program":
         st.text_input("Nº de noches *", 
                         key="num_noches_ss", 
                         disabled=st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No",
-                        value= "" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_ss", ""),
+                        value= "" if st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"] == "No" else st.session_state["form_data_speaking_services"].get("num_noches_copy_ss"),
                         help = "Se debe introducir un número.",
-                        on_change=lambda: save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) if st.session_state.num_noches_ss.isdigit()
-                            else save_to_session_state("num_noches_ss", ""))
+                        on_change=lambda: validacion_num_noches()
+        )
+
+    noches = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days + 1
+    if st.session_state.num_noches_correcto_ss == False:
+        st.error(f"El número de noches no puede exceder la duración de {noches} días.")
+
                         
     with col2:
         st.text_input("Hotel *", 
@@ -815,7 +860,7 @@ else:
         "tipo_evento_ss",
     ]
 
-    # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ab' y 'hotel_ab' tengan valor.
+    # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ss' y 'hotel_ab' tengan valor.
     dependendent_fields = {
         "tipo_evento_ss": {
             "condicion": lambda x: x != "Virtual",

@@ -107,6 +107,12 @@ def add_participant():
 if "errores" not in st.session_state:
     st.session_state["errores"] = False
 
+if "errores_generales_cs" not in st.session_state:
+    st.session_state.errores_generales_ss = []
+
+if "errores_participantes_cs" not in st.session_state:
+    st.session_state.errores_participantes_ss = []
+
 ########## validaciones especiales
 def validacion_completa_dni(id_user):
     dni = st.session_state.get(f"dni_{id_user}", "")
@@ -557,20 +563,19 @@ def generacion_errores():
         traceback.print_exc()
         st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
-def mostrar_errores():
-    try:
-        st.session_state.download_enabled_cs = False
-        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
-        if not errores_general and all(not lista for lista in errores_participantes.values()):
-            doc, st.session_state.path_doc_cs = cd.crear_documento_consulting_services(st.session_state["form_data_consulting_services"])
-            
-        else:
-            if len(errores_general) != 0:
-                msg_general = "\n**Errores Generales del Formulario**\n"
-                for msg in errores_general:
-                    msg_general += f"\n* {msg}\n"
-                st.error(msg_general)
+    return errores_general, errores_participantes
 
+def mostrar_errores(errores_general, errores_participantes):
+    if not errores_general and all(not lista for lista in errores_participantes.values()):
+        st.session_state.download_enabled_cs = True
+    else:
+        if len(errores_general) != 0:
+            msg_general = "\n**Errores Generales del Formulario**\n"
+            for msg in errores_general:
+                msg_general += f"\n* {msg}\n"
+            st.error(msg_general)
+
+        if len(errores_participantes)>0:
             for id_user, list_errors in errores_participantes.items():
                 if len(list_errors) > 0:
                     # Obtener el diccionario de participantes
@@ -579,18 +584,13 @@ def mostrar_errores():
                     # Obtener la posición del ID en las claves del diccionario
                     keys_list = list(participantes.keys())  # Convertir las claves en una lista
                     posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
-                    name_ponente = st.session_state['form_data_consulting_services']['participantes_cs'][f'{keys_list[posicion-1]}']['name_ponente_cs'].strip()
-                    msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
-                    for msg in list_errors:
-                        msg_participantes += f"\n* {msg}\n"
-                    st.error(msg_participantes)
+                    if posicion != None:
+                        name_ponente = st.session_state['form_data_consulting_services']['participantes_cs'][f'{keys_list[posicion-1]}']['name_ponente_cs'].strip()
+                        msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
+                        for msg in list_errors:
+                            msg_participantes += f"\n* {msg}\n"
+                        st.error(msg_participantes)
                     
-            #st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
-        # Leer el archivo Word y prepararlo para descarga
-    except Exception as e:
-        traceback.print_exc()
-        st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
-
 
 # Botón para enviar
 def button_form():
@@ -608,7 +608,10 @@ def button_form():
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
 
-            generacion_errores()
+            errores_general_cs, errores_participantes_cs = generacion_errores()
+
+            st.session_state.errores_general_cs, st.session_state.errores_participantes_cs = errores_general_cs, errores_participantes_cs
+
 
             # Actualizo el estado
             if st.session_state.download_enabled_cs == True:
@@ -621,14 +624,14 @@ def button_form():
                     label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
                 )
                 st.session_state.errores = True
-                st.toast("Debes rellenar todos los campos obligatorios.", icon="❌")
-            
+                st.toast("Se deben corregir los errores.", icon="❌")
+
             if st.session_state.download_enabled_cs == True:
                 #st.session_state.download_enabled_cs = True
                 st.toast("Formulario generado correctamente", icon="✔️")
 
     if st.session_state.errores == True:
-        mostrar_errores()     
+        mostrar_errores(st.session_state.errores_general_cs, st.session_state.errores_participantes_cs)     
 
 
 button_form()
@@ -663,5 +666,5 @@ disabled = not st.session_state.download_enabled_cs
 download_document(disabled)
 
 
-st.write(st.session_state["form_data_consulting_services"])
+#st.write(st.session_state["form_data_consulting_services"])
 #st.write(st.session_state)
