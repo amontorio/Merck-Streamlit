@@ -40,7 +40,7 @@ def crear_documento_sponsorship_of_event(dataframe):
     datos = dataframe.iloc[0].to_dict()
 
     # Detalles del evento
-    agregar_encabezado("Detalles del Evento:")
+    agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre del evento", f"Sponsorship of Event/Activity {datos.get('event_name', '')}")
     agregar_bullet_point("Fecha de inicio", datos.get("start_date", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", datos.get("end_date", "").strftime("%d/%m/%Y"))
@@ -57,10 +57,18 @@ def crear_documento_sponsorship_of_event(dataframe):
     agregar_bullet_point("Perfil de asistentes", datos.get("attendee_profile", ""))
     agregar_bullet_point("Descripción y objetivo del evento", datos.get("event_objetive", ""))
 
+    # Detalles del firmante
+    agregar_encabezado("Detalles del Organizador")
+    agregar_bullet_point("Nombre de la organización", datos.get("organization_name", ""))
+    agregar_bullet_point("CIF", datos.get("organization_cif", ""))
+    agregar_bullet_point("Nombre", f"{datos.get('signer_first_name', '')}")
+    agregar_bullet_point("Cargo del firmante", datos.get("signer_position", ""))
+    agregar_bullet_point("Email del firmante", datos.get("signer_email", ""))
+
     # Detalles del patrocinio
-    agregar_encabezado("Detalles del Patrocinio:")
+    agregar_encabezado("Detalles del Patrocinio")
     agregar_bullet_point("Nombre del evento", f"Sponsorship of Event/Activity {datos.get('event_name', '')}")
-    agregar_bullet_point("Importe (€)", datos.get("amount", 0.0))
+    agregar_bullet_point("Importe", f"{datos.get('amount', 0.0)} €")
     agregar_bullet_point("Tipo de pago", datos.get("payment_type", ""))
     if datos.get("payment_type") == "Pago a través de la secretaría técnica (ST)":
         agregar_bullet_point("Nombre ST", datos.get("name_st", ""))
@@ -75,13 +83,6 @@ def crear_documento_sponsorship_of_event(dataframe):
     if datos.get("recurrent_sponsorship", "No") == "Sí":
         agregar_bullet_point("Detalles del patrocinio recurrente", datos.get("recurrent_text", ""))
 
-    # Detalles del firmante
-    agregar_encabezado("Detalles del Organizador:")
-    agregar_bullet_point("Nombre de la organización", datos.get("organization_name", ""))
-    agregar_bullet_point("CIF", datos.get("organization_cif", ""))
-    agregar_bullet_point("Nombre", f"{datos.get('signer_first_name', '')}")
-    agregar_bullet_point("Cargo", datos.get("signer_position", ""))
-    agregar_bullet_point("Email", datos.get("signer_email", ""))
 
     nombre_zip = 'Sponshorship_Event.zip'
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
@@ -94,13 +95,12 @@ def crear_documento_sponsorship_of_event(dataframe):
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
 
-        print(datos)
         doc1 = datos.get("documentosubido_1_event", None)
         doc2 = datos.get("documentosubido_2_event", None)
         doc3 = datos.get("documentosubido_3_event", None)
 
         if doc1 is not None:
-            print(str(doc1.type))
+            #print(str(doc1.type))
             file_type = str(doc1.name).split(".")[-1]
             doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
@@ -109,7 +109,7 @@ def crear_documento_sponsorship_of_event(dataframe):
 
         if doc2 is not None:
             file_type = str(doc2.name).split(".")[-1]
-            doc2_path = os.path.join(output_dir, f"Contratos.{file_type}")  
+            doc2_path = os.path.join(output_dir, f"SolicitudPatrocinio.{file_type}")  
             with open(doc2_path, "wb") as f:
                 f.write(doc2.getbuffer()) 
             zipf.write(doc2_path, os.path.basename(doc2_path))  
@@ -163,18 +163,34 @@ def crear_documento_advisory(data):
         run_valor.font.size = Pt(11)
 
     # Agregar secciones
-    agregar_encabezado("Detalles de la Actividad")
+    agregar_encabezado("Detalles del Evento")
     #agregar_bullet_point("Nombre", f"Advisory Board Participation {data.get('nombre_evento_ab', '')}")
     agregar_bullet_point("Nombre",  data.get('nombre_evento_ab', ''))
-    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_ab", ""))
+    agregar_bullet_point("Descripción y objetivo", data.get("descripcion_objetivo_ab", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ab", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ab", "").strftime("%d/%m/%Y"))
+    agregar_bullet_point("Número de participantes totales", data.get("num_participantes_totales_ab", ""))
+    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ab", ""))
+    if data.get("sede_ab", "") == "":
+        agregar_bullet_point("Sede", "N/A")
+    else:
+        agregar_bullet_point("Sede", data.get("sede_ab", "N/A"))
+    if data.get("ciudad_ab", "") == "":
+        agregar_bullet_point("Ciudad", "N/A")
+    else:
+        agregar_bullet_point("Ciudad", data.get("ciudad_ab", "N/A"))
+    agregar_bullet_point("Público objetivo", data.get("publico_objetivo_ab", ""))
+    
+    agregar_encabezado("Detalles de la Actividad")
     if data.get("producto_asociado_ab", "") != "":
         agregar_bullet_point("Producto asociado", data.get("producto_asociado_ab", ""))
     else:
         agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Estado de la aprobación", data.get("estado_aprobacion_ab", ""))
+    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_ab", ""))
     agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ab", ""))
+    agregar_bullet_point("Actividad en el departamento en los últimos 12 meses", data.get("otra_actividad_departamento_ab", ""))
+    agregar_bullet_point("Actividad en otro departamento en los últimos 12 meses", data.get("otra_actividad_otro_departamento_ab", ""))
 
     agregar_encabezado("Logística de la Actividad")
     agregar_bullet_point("Desplazamiento de participantes", data.get("desplazamiento_ab", ""))
@@ -183,13 +199,7 @@ def crear_documento_advisory(data):
         agregar_bullet_point("Nº de noches", data.get("num_noches_ab", ""))
         agregar_bullet_point("Hotel", data.get("hotel_ab", ""))
 
-    agregar_encabezado("Información del Evento")
-    agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ab", ""))
-    agregar_bullet_point("Sede", data.get("sede_ab", "N/A"))
-    agregar_bullet_point("Ciudad", data.get("ciudad_ab", "N/A"))
-    agregar_bullet_point("Número de participantes totales", data.get("num_participantes_totales_ab", ""))
-    
-    agregar_encabezado("Criterios de Selección")
+    agregar_encabezado("Participantes del Advisory")
     agregar_bullet_point("Nº de participantes", data.get("num_participantes_ab", ""))
     agregar_bullet_point("Justificación de número de participantes", data.get("justificacion_participantes_ab", ""))
     criterios = ", ".join(data.get("criterios_seleccion_ab", []))
@@ -298,13 +308,13 @@ def crear_documento_consulting_services(data):
 
     agregar_encabezado("Criterios del destinatario")
     agregar_bullet_point("Número de consultores", data.get("numero_consultores_cs", ""))
+    criterios = ", ".join(data.get("criterios_seleccion_cs", []))
+    agregar_bullet_point("Criterios del destinatario", criterios)
     if data.get("justificacion_numero_participantes_cs", "") != "":
         agregar_bullet_point("Justificación", data.get("justificacion_numero_participantes_cs", ""))
     else:
         agregar_bullet_point("Justificación", "N/A")
-    criterios = ", ".join(data.get("criterios_seleccion_cs", []))
-    agregar_bullet_point("Criterios del destinatario", criterios)
-
+    
     agregar_encabezado("Detalles de los Consultores")
     tabla = documento.add_table(rows=1, cols=8)
     tabla.style = 'Table Grid'
@@ -408,7 +418,7 @@ def crear_documento_speaking(data):
     agregar_bullet_point("Descripción", data.get("descripcion_objetivo_ss", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ss", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ss", "").strftime("%d/%m/%Y"))
-    agregar_bullet_point("Nº Asistentes Totales", data.get("num_asistentes_totales_ss", ""))
+    agregar_bullet_point("Nº asistentes totales", data.get("num_asistentes_totales_ss", ""))
     agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ss", ""))
     if data.get("sede_ss") == "":
         agregar_bullet_point("Sede", "N/A")
@@ -421,6 +431,7 @@ def crear_documento_speaking(data):
         agregar_bullet_point("Ciudad", data.get("ciudad_ss", "N/A"))
 
     agregar_bullet_point("Público objetivo del programa", data.get("publico_objetivo_ss", ""))
+
     agregar_encabezado("Detalles de la Actividad")
     agregar_bullet_point("Presupuesto total estimado",  f"{data.get('presupuesto_estimado_ss', 0)} €")
     if data.get("producto_asociado_ss", "") != "":
@@ -440,7 +451,8 @@ def crear_documento_speaking(data):
     
     agregar_encabezado("Criterios de Selección")
     agregar_bullet_point("Nº de ponentes", data.get("num_ponentes_ss", ""))
-    agregar_bullet_point("Criterios de selección", data.get("criterios_seleccion_ss", ""))
+    criterios = ", ".join(data.get("criterios_seleccion_ss", []))
+    agregar_bullet_point("Criterios de selección", criterios)
 
     agregar_encabezado("Detalles de los Ponentes")
     def agregar_tabla_participantes(participantes):

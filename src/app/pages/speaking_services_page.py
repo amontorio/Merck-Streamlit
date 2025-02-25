@@ -200,6 +200,9 @@ if "clicked_ss" not in st.session_state:
 if "errores_ss" not in st.session_state:
     st.session_state.errores_ss = False
 
+if "errores_ss_reducido" not in st.session_state:
+    st.session_state.errores_ss_reducido = False
+
 if "errores_generales_ss" not in st.session_state:
     st.session_state.errores_generales_ss = []
 
@@ -209,11 +212,26 @@ if "errores_participantes_ss" not in st.session_state:
 if "errores_ia_ss" not in st.session_state:
     st.session_state.errores_ia_ss = []
 
+if "errores_generales_ss_red" not in st.session_state:
+    st.session_state.errores_generales_ss_red = []
+
+if "errores_participantes_ss_red" not in st.session_state:
+    st.session_state.errores_participantes_ss_red = {}
+
+if "errores_ia_ss_red" not in st.session_state:
+    st.session_state.errores_ia_ss_red = []
+
 if "num_noches_copy_ss" not in st.session_state:
     st.session_state.num_noches_copy_ss = ""
 
 if "num_noches_correcto_ss" not in st.session_state:
     st.session_state.num_noches_correcto_ss = True
+
+if "num_ponentes_copy_ss" not in st.session_state:
+    st.session_state.num_ponentes_copy_ss = ""
+
+if "num_ponentes_correcto_ss" not in st.session_state:
+    st.session_state.num_ponentes_correcto_ss = True
 
 def generar_toast():
     if st.session_state.clicked_ss == True:
@@ -431,7 +449,7 @@ def generacion_errores(tipo):
         errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
         errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
 
-        if not errores_general and all(not lista for lista in errores_participantes.values()):
+        if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
             if tipo == "Reunión Merck Program":
                 doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
             else:
@@ -443,8 +461,9 @@ def generacion_errores(tipo):
 
     return errores_general, errores_participantes, errores_ia
 
+
 def mostrar_errores(errores_general, errores_participantes, errores_ia):
-    if not errores_general and all(not lista for lista in errores_participantes.values()):
+    if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
         st.session_state.download_enabled_ss = True
     else:
         if len(errores_general) != 0:
@@ -464,7 +483,7 @@ def mostrar_errores(errores_general, errores_participantes, errores_ia):
                     posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                     if posicion != None:
                         name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}']['name_ponente_ss'].strip()
-                        msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
+                        msg_participantes = f"\n**Errores del Ponente {posicion}:{name_ponente}**\n"
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
@@ -473,7 +492,7 @@ def mostrar_errores(errores_general, errores_participantes, errores_ia):
             msg_aviso = "\n**Errores detectados con IA**\n"
             for msg in errores_ia:
                 msg_aviso += f"\n* {msg}\n"
-            st.warning(msg_aviso)
+            st.error(msg_aviso)
                     
 def button_form(tipo):
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
@@ -511,6 +530,41 @@ def button_form(tipo):
     if st.session_state.errores_ss == True:
         mostrar_errores(st.session_state.errores_general_ss, st.session_state.errores_participantes_ss, st.session_state.errores_ia_ss)     
 
+def button_form_reducido(tipo):
+    if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
+        st.session_state.errores_ss_reducido = True
+        with st.status("Validando campos...", expanded=True, state = "running") as status:
+            st.write("Validando información general del formulario...")
+            time.sleep(1.5)
+            st.write("Validando campos obligatorios y dependientes...")
+            time.sleep(1.5)
+            st.write("Validando información de los ponentes...")
+            time.sleep(1.5)
+            st.write("Validando contenido de campos con IA...")
+            time.sleep(1.5)
+
+            errores_general_ss, errores_participantes_ss, errores_ia_ss = generacion_errores(tipo)
+
+            st.session_state.errores_general_ss_red, st.session_state.errores_participantes_ss_red, st.session_state.errores_ia_ss_red = errores_general_ss, errores_participantes_ss, errores_ia_ss
+
+            # Actualizo el estado
+            if st.session_state.download_enabled_ss == True:
+                status.update(
+                    label="Validación completada!", state="complete", expanded=False
+                )
+                st.session_state.errores_ss = False
+            else:
+                status.update(
+                    label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+                )
+                st.session_state.errores_ss = True
+                st.toast("Se deben corregir los errores.", icon="❌")
+
+            if st.session_state.download_enabled_ss == True:
+                st.toast("Formulario generado correctamente", icon="✔️")
+
+    if st.session_state.errores_ss_reducido == True:
+        mostrar_errores(st.session_state.errores_general_ss_red, st.session_state.errores_participantes_ss_red, st.session_state.errores_ia_ss_red)     
             
 
 def download_document(disabled, tipo):
@@ -541,15 +595,17 @@ def download_document(disabled, tipo):
         )
 
 def numero_ponentes_completo():
+        save_to_session_state("num_ponentes_copy_ss", st.session_state["num_ponentes_ss"])
+        st.session_state.num_ponentes_correcto_ss = True
         try:    
             if st.session_state.num_ponentes_ss.isdigit():
                 save_to_session_state("num_ponentes_ss", st.session_state["num_ponentes_ss"]) 
             else:
-                if st.session_state.num_ponentes_ss != "":
-                    st.warning("Se debe introducir un valor numérico.", icon="❌")
-                save_to_session_state("num_ponentes_ss", "")
+                st.session_state["form_data_speaking_services"]["num_ponentes_ss"] = ""
+                st.session_state.num_ponentes_correcto_ss = False
         except:
-            st.session_state["num_ponente_ss"] = ""
+            st.session_state["form_data_speaking_services"]["num_ponentes_ss"] = ""
+            st.session_state.num_ponentes_correcto_ss = False
 
 def reset_session_participant():
     for key in list(st.session_state.keys()):
@@ -571,7 +627,7 @@ if "form_data_speaking_services" not in st.session_state:
         "documentosubido_2_ss": None,
         "desplazamiento_ponentes_ss": "No",
         "alojamiento_ponentes_ss": "No",
-        "presupuesto_estimado_ss": 0,
+        "presupuesto_estimado_ss": 0.00,
         "publico_objetivo_ss": "",
         "nombre_evento_ss": "",
         "descripcion_objetivo_ss": "",
@@ -735,9 +791,9 @@ if meeting_type == "Reunión Merck Program":
     col1, col2 = st.columns(2)
 
     with col1:
-        st.number_input("Presupuesto total estimado (€)*", min_value=0, 
-                        value= st.session_state["form_data_speaking_services"]["presupuesto_estimado_ss"] if "presupuesto_estimado_ss" in st.session_state["form_data_speaking_services"] else "",
-                        step=1, key="presupuesto_estimado_ss", on_change=lambda: save_to_session_state("presupuesto_estimado_ss", st.session_state["presupuesto_estimado_ss"]))
+        st.number_input("Presupuesto total estimado (€)*", min_value=0.0, 
+                        value= st.session_state["form_data_speaking_services"]["presupuesto_estimado_ss"] if "presupuesto_estimado_ss" in st.session_state["form_data_speaking_services"] else 0.0,
+                        step=100.00, key="presupuesto_estimado_ss", on_change=lambda: save_to_session_state("presupuesto_estimado_ss", st.session_state["presupuesto_estimado_ss"]))
     with col2:
         st.text_input("Producto asociado", max_chars=255, 
                       value =st.session_state["form_data_speaking_services"]["producto_asociado_ss"],
@@ -809,11 +865,16 @@ if meeting_type == "Reunión Merck Program":
     with col1:
         num_ponentes = st.text_input(
             "Nº de ponentes *", 
-            value=st.session_state["form_data_speaking_services"]["num_ponentes_ss"], 
+            value=st.session_state["form_data_speaking_services"].get("num_ponentes_copy_ss"), 
             key="num_ponentes_ss", 
             help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas. El valor del campo debe de ser un número entero.",
-            on_change = numero_ponentes_completo()
+            on_change = lambda: numero_ponentes_completo()
         )
+
+    if st.session_state.num_ponentes_correcto_ss == False:
+        st.warning("Se debe introducir un valor numérico.", icon="❌")
+    
+        
         
     with col2:
         st.multiselect(
@@ -868,6 +929,12 @@ else:
         }
     }
 
+    validar_ia ={
+        "validar_sede_location": {"start_date":"start_date_ss", 
+                                  "end_date": "end_date_ss", 
+                                  "sede": "sede_ss"},
+        "validar_sede_venue": {"sede": "sede_ss"}
+    }
     #st.header("Caso Paragüas", divider=True)
     st.header("1. Detalles del Evento", divider=True)
     col1, col2 = st.columns(2)
@@ -926,7 +993,7 @@ else:
     st.header("2. Detalles de los Ponentes", divider=True)
     ponentes_section()
     st.session_state.download_enabled_ss = False
-    button_form(meeting_type)
+    button_form_reducido(meeting_type)
     disabled = not st.session_state.download_enabled_ss
     download_document(disabled, meeting_type)
 

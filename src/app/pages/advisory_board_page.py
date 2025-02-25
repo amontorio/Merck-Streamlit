@@ -694,7 +694,7 @@ def generacion_errores():
         st.session_state.download_enabled_ab = False
         errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
         errores_ia = af.validar_campos_ia(st.session_state["form_data_advisory_board"], validar_ia)
-        if not errores_general and all(not lista for lista in errores_participantes.values()):
+        if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
             doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
             st.session_state.download_enabled_ab = True
     except Exception as e:
@@ -724,7 +724,7 @@ def mostrar_errores(errores_general, errores_participantes, errores_ia):
                     posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                     if posicion != None:
                         name_ponente = st.session_state['form_data_advisory_board']['participantes_ab'][f'{keys_list[posicion-1]}']['name_ponente_ab'].strip()
-                        msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
+                        msg_participantes = f"\n**Errores del Participante {posicion}:{name_ponente}**\n"
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
                         st.error(msg_participantes)
@@ -733,7 +733,7 @@ def mostrar_errores(errores_general, errores_participantes, errores_ia):
             msg_aviso = "\n**Errores detectados con IA**\n"
             for msg in errores_ia:
                 msg_aviso += f"\n* {msg}\n"
-            st.warning(msg_aviso)
+            st.error(msg_aviso)
                     
 
 # Botón para enviar

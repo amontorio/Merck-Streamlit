@@ -37,6 +37,7 @@ def handle_invoke_chain_event_description():
 
 
 def validacion_completa_email():
+        save_to_session_state("signer_email_copy", st.session_state["signer_email"])
         mail = st.session_state.get("signer_email", "")
         st.session_state["email_correcto"] = True
         try: 
@@ -55,7 +56,6 @@ def validacion_completa_email():
 
         if st.session_state["email_correcto"] == True:
             save_to_session_state("signer_email", st.session_state["signer_email"])
-            save_to_session_state("signer_email_copy", st.session_state["signer_email_copy"])
         else:
             st.session_state["form_data_event"]["signer_email"] = ""
 
@@ -207,7 +207,7 @@ def check_mandatory_fields():
     error_messages = []
 
     # If virtual event, venue and city are not mandatory
-    if st.session_state["form_data_event"]["event_type"] == "Virtual":
+    if st.session_state["form_data_event"].get("event_type", "") == "Virtual":
         fields_to_check.remove("venue") 
         fields_to_check.remove("city")
     else:
@@ -451,9 +451,9 @@ def crear_detalles_firmante():
         with col14_2:
             email = st.text_input("Email del firmante *", 
                         #value=st.session_state["form_data_event"]["signer_email"] if st.session_state["email_correcto"] == True else "",
-                        value=st.session_state["form_data_event"]["signer_email_copy"] if st.session_state["email_correcto"] == True else "",
+                        value=st.session_state["form_data_event"]["signer_email_copy"], # if st.session_state["email_correcto"] == True else "",
                         key="signer_email", 
-                        on_change= validacion_completa_email())
+                        on_change= lambda: validacion_completa_email())
             
         if not st.session_state["email_correcto"]:
             st.warning("El email introducido no es correcto.", icon="❌")
@@ -538,11 +538,13 @@ st.session_state.download_enabled = False
 def generacion_errores():
     try:
         st.session_state.download_enabled = False
-        errores_general, _ = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
+        errores_general, err = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
         errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
         avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
 
         if not errores_general and not errores_ia:
+            df = save_form_data_event()
+            doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
             st.session_state.download_enabled = True
     except Exception as e:
         traceback.print_exc()
@@ -552,10 +554,7 @@ def generacion_errores():
 
 def mostrar_errores(errores_general, errores_ia, avisos):
     if not errores_general and not errores_ia:
-        df = save_form_data_event()
-        doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
         st.session_state.download_enabled = True
-        st.toast("Formulario generado correctamente", icon="✔️")
     else:
         if len(errores_general) > 0 :
             msg_general = "\n**Errores Generales del Formulario**\n"
@@ -597,12 +596,12 @@ def button_form():
             status.update(
                 label="Validación completada!", state="complete", expanded=False
             )
-            st.session_state.errores_event = False
+            #st.session_state.errores_event = False
         else:
             status.update(
                 label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
             )
-            st.session_state.errores_event = True
+            #st.session_state.errores_event = True
             st.toast("Se deben corregir los errores", icon="❌")
         
         if st.session_state.download_enabled == True:

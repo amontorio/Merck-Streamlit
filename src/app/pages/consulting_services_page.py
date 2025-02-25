@@ -28,7 +28,6 @@ mandatory_fields = [
         "start_date_cs",
         "end_date_cs",
         "presupuesto_estimado_cs",
-        "producto_asociado_cs",
         "estado_aprobacion_cs",
         "necesidad_reunion_cs",
         #"descripcion_servicio_cs",
@@ -463,7 +462,7 @@ with col1:
                   on_change=handle_fecha_inicio,
                   format = "DD/MM/YYYY")
     
-    st.text_input("Producto asociado *",
+    st.text_input("Producto asociado",
                   max_chars=255,
                   key="producto_asociado_cs",
                   value= st.session_state["form_data_consulting_services"]["producto_asociado_cs"] if "producto_asociado_cs" in st.session_state["form_data_consulting_services"] else "",
@@ -485,7 +484,7 @@ with col2:
                   on_change=lambda: save_to_session_state("end_date_cs", st.session_state["end_date_cs"]),
                   format = "DD/MM/YYYY")
     
-    st.selectbox("Estado de la aprobación",
+    st.selectbox("Estado de la aprobación del producto",
                  ["N/A", "Aprobado", "No Aprobado"],
                  key="estado_aprobacion_cs",
                  index= ["N/A", "Aprobado", "No Aprobado"].index(st.session_state["form_data_consulting_services"]["estado_aprobacion_cs"]) if "estado_aprobacion_cs" in st.session_state["form_data_consulting_services"] else 0,
@@ -533,7 +532,7 @@ with col4:
         default=st.session_state["form_data_consulting_services"]["criterios_seleccion_cs"] if "criterios_seleccion_cs" in st.session_state["form_data_consulting_services"] else [],
         on_change=lambda: save_to_session_state("criterios_seleccion_cs", st.session_state["criterios_seleccion_cs"]))
 
-st.text_area("Justificación de número de participantes", 
+st.text_area("Justificación de número de participantes *", 
              max_chars=4000, 
              key="justificacion_numero_participantes_cs", 
              value="" if st.session_state["form_data_consulting_services"]["numero_consultores_cs"] <=1 else st.session_state["form_data_consulting_services"].get("justificacion_numero_participantes_cs", ""), 
