@@ -639,7 +639,7 @@ with col1:
 
 noches = (st.session_state["end_date_ab"] - st.session_state["start_date_ab"]).days + 1
 if st.session_state.num_noches_correcto_ab == False:
-    st.error(f"El número de noches no puede exceder la duración de {noches} días.")
+    st.error(f"El número de noches no puede exceder la duración del evento ({noches} días).")
     
 with col2:
     st.text_input(

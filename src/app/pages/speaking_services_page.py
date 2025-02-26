@@ -845,7 +845,7 @@ if meeting_type == "Reunión Merck Program":
 
     noches = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days + 1
     if st.session_state.num_noches_correcto_ss == False:
-        st.error(f"El número de noches no puede exceder la duración de {noches} días.")
+        st.error(f"El número de noches no puede exceder la duración del evento ({noches} días).")
 
                         
     with col2:

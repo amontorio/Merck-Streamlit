@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from pydantic import BaseModel, Field
 import certifi
+import traceback
 
 
 FIELD_MAPPINGS = {
@@ -281,8 +282,6 @@ def validar_participantes(participantes):
                     errores_participantes[id_participante].append(f"El campo Nombre de la Sociedad del participante *{cnt}* es obligatorio cuando cobra a través de sociedad.\n")
             # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí" y dni_), verificar que no estén vacíos
             elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")) and not campo.startswith("email_copy_"):
-                #print(remove_after_last_underscore(campo))
-                #print("hola", remove_after_last_underscore(campo) + '_', campo)
                 if remove_after_last_underscore(campo).startswith("name_ponente"):
                     errores_participantes[id_participante].append(
                     f"El campo *{FIELD_MAPPINGS.get(campo)}* es obligatorio y no tiene valor.\n"
@@ -295,9 +294,8 @@ def validar_participantes(participantes):
         cnt+=1
     return errores_participantes
 
-# cachear
+
 def get_model():
-    # esto mal
     azure_endpoint = "https://merck-test.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview"
     api_key = ""
 
@@ -574,10 +572,10 @@ def avisos_campos_ia(input_data, campos_avisos_ia):
         if contra != "":
             try:
                 result_correspondencias = aviso_correspondencias(llm, contraprestaciones = contra) 
-
                 if result_correspondencias:
                     result['correspondencias'] = result_correspondencias
             except:
+                traceback.print_exc()
                 print("")
 
     for key, res in result.items():

@@ -590,18 +590,17 @@ def button_form():
 
         errores_general, errores_ia, avisos = generacion_errores()
         st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event = errores_general, errores_ia, avisos
-
         # Actualizo el estado
         if st.session_state.download_enabled == True:
             status.update(
                 label="Validación completada!", state="complete", expanded=False
             )
-            #st.session_state.errores_event = False
+            st.session_state.errores_event = False
         else:
             status.update(
                 label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
             )
-            #st.session_state.errores_event = True
+            st.session_state.errores_event = True
             st.toast("Se deben corregir los errores", icon="❌")
         
         if st.session_state.download_enabled == True:
