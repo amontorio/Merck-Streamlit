@@ -24,19 +24,15 @@ tarifas = {
 mandatory_fields = [
 "start_date_ab",
 "end_date_ab",
-#"estado_aprobacion_ab",
+"owner_ab",
 "otra_actividad_departamento_ab",
 "otra_actividad_otro_departamento_ab",
 "desplazamiento_ab",
 "alojamiento_ab",
 "tipo_evento_ab",
 "participantes_ab",
-"producto_asociado_ab",
 #"descripcion_servicio_ab",
 "necesidad_reunion_ab",
-"descripcion_objetivo_ab",
-"num_participantes_totales_ab",
-"publico_objetivo_ab",
 "num_participantes_ab",
 "criterios_seleccion_ab",
 "justificacion_participantes_ab",
@@ -72,9 +68,13 @@ if "errores_ab" not in st.session_state:
 if "num_noches_copy_ab" not in st.session_state:
     st.session_state.num_noches_copy_ab = ""
 
+
+black_list = ["captar", "otorgar", "premio", "regalo", "ventaja", "beneficio", "precio", "Fidelizar", "excluir", "influir", "defensor", "relación", "intercambio", "pago", "retorno de la inversión", "contra ataque", "prescriptor principal", "agradecer", "generoso", "favor", "entretenimiento", "espectáculo", "reemplazar", "expulsar", "forzar", "agresivo", "ilegal", "descuento", "contratar", "Abuso", "Mal uso", "Demandar", "Investigación", "Monopolio", "Antitrust", "Anticompetitivo", "Cartel", "Manipular", "Libre mercado", "Colusión", "Ilegal", "Privilegio", "Concesión", "Agresivo"]  
+
+
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_ab":
-        if key not in ["documentosubido_1"]:
+        if key not in ["documentosubido_1", "documentosubido_2"]:
             st.session_state[key] = value
         st.session_state["form_data_advisory_board"][key] = value
     else:
@@ -206,11 +206,10 @@ def validacion_num_noches():
 
     if st.session_state.num_noches_ab.isdigit():
         duracion = (st.session_state["end_date_ab"] - st.session_state["start_date_ab"]).days
-        if int(st.session_state.num_noches_ab) <= duracion + 1: 
-            save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"]) 
-        else:
-            st.session_state["form_data_advisory_board"]["num_noches_ab"] = ""
+        if int(st.session_state.num_noches_ab) > duracion + 1: 
             st.session_state.num_noches_correcto_ab = False
+        save_to_session_state("num_noches_ab", st.session_state["num_noches_ab"]) 
+            
     else:
         st.session_state["form_data_advisory_board"]["num_noches_ab"] = ""
         st.session_state.num_noches_correcto_ab = False
@@ -305,9 +304,9 @@ def single_participante(id_user, info_user, index):
                         with col1:
                             cobra = st.selectbox(
                                 "¿Cobra a través de sociedad? *", 
-                                ["No", "Sí"], 
+                                ["", "No", "Sí"], 
                                 key=f"cobra_sociedad_{id_user}",
-                                index= ["No", "Sí"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+                                index= ["No", "Sí", ""].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
                                 on_change= lambda: save_to_session_state("participantes_ab", st.session_state[f"cobra_sociedad_{id_user}"], id_user, f"cobra_sociedad_{id_user}")
                             )
                             st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"] = cobra
@@ -401,7 +400,7 @@ def single_participante(id_user, info_user, index):
                                 st.rerun()
 
 def participantes_section():
-    st.header("5. Detalles de los Participantes", divider=True)
+    st.header("5. Agregar datos de participantes", divider=True)
 
     if st.button("Agregar participante", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()
@@ -444,17 +443,18 @@ if "form_data_advisory_board" not in st.session_state:
 
     field_defaults = {
         "nombre_evento_ab": "",
+        "owner_ab": "",
+        "delegate_ab": "",
         "start_date_ab": date.today(),
         "end_date_ab": date.today(),
-        "estado_aprobacion_ab": "N/A",
-        "otra_actividad_departamento_ab": "No lo sé", 
-        "otra_actividad_otro_departamento_ab": "No lo sé",
-        "desplazamiento_ab": "No",
-        "alojamiento_ab": "No", 
+        "estado_aprobacion_ab": "",
+        "otra_actividad_departamento_ab": "", #
+        "otra_actividad_otro_departamento_ab": "", #
+        "desplazamiento_ab": "", #
+        "alojamiento_ab": "",  #
         "num_noches_ab": "",
         "hotel_ab": "",
-        "tipo_evento_ab": "Virtual",
-        "num_participantes_totales_ab": 0,
+        "tipo_evento_ab": "", #
         "num_participantes_ab": 0
     }
 
@@ -476,21 +476,42 @@ af.show_main_title(title="Advisory Board", logo_size=200)
 
 
 st.header("1. Detalles del Evento", divider=True)
+col1, col2 = st.columns(2)
+with col1:
+    st.text_input(
+        "Owner *",
+        value=st.session_state["form_data_advisory_board"]["owner_ab"],
+        key="owner_ab",
+        on_change=lambda: save_to_session_state("owner_ab", st.session_state["owner_ab"])
+    )
+with col2:
+    st.text_input(
+        "Delegate",
+        value=st.session_state["form_data_advisory_board"]["delegate_ab"],
+        key="delegate_ab",
+        on_change=lambda: save_to_session_state("delegate_ab", st.session_state["delegate_ab"])
+    )
 st.text_input("Nombre *", 
               max_chars=255, 
               key="nombre_evento_ab",
               value= st.session_state["form_data_advisory_board"]["nombre_evento_ab"] if "nombre_evento_ab" in st.session_state["form_data_advisory_board"] else "",
               on_change=lambda: save_to_session_state("nombre_evento_ab", st.session_state["nombre_evento_ab"]))
 
-st.text_area("Descripción y objetivo *",
-             max_chars=4000,
-             key="descripcion_objetivo_ab",
-             value= st.session_state["form_data_advisory_board"]["descripcion_objetivo_ab"] if "descripcion_objetivo_ab" in st.session_state["form_data_advisory_board"] else "",
-             on_change=lambda: save_to_session_state("descripcion_objetivo_ab", st.session_state["descripcion_objetivo_ab"]))
 
 col1, col2 = st.columns(2)
 
 
+def valor_fecha(start_ab):
+    if start_ab != None:
+        if st.session_state["form_data_advisory_board"]["end_date_ab"] == None:
+            st.session_state["form_data_advisory_board"]["end_date_ab"] = start_ab
+        if st.session_state["form_data_advisory_board"]["end_date_ab"] < start_ab:
+            value = start_ab
+        else:
+            value = st.session_state["form_data_advisory_board"]["end_date_ab"]
+    else:
+        value = None
+    return value
 
 with col1:
     start_ab = st.date_input("Fecha de inicio del evento *",
@@ -500,7 +521,9 @@ with col1:
                   format = "DD/MM/YYYY")
 
 with col2:
+    #end_date_value = valor_fecha(start_ab)
     st.date_input("Fecha de fin del evento *",
+                  #value = end_date_value,
                   value= start_ab if st.session_state["form_data_advisory_board"]["end_date_ab"] < start_ab else st.session_state["form_data_advisory_board"]["end_date_ab"],
                   min_value = start_ab,
                   key="end_date_ab",
@@ -508,26 +531,18 @@ with col2:
                   format = "DD/MM/YYYY")
 
 
-col1, col2 = st.columns(2)
-with col1:
-    st.selectbox("Tipo de evento *",
-                 ["Virtual", "Presencial", "Híbrido"],
-                 key="tipo_evento_ab",
-                 index= ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_advisory_board"]["tipo_evento_ab"]) if "tipo_evento_ab" in st.session_state["form_data_advisory_board"] else 0,
-                 on_change=lambda: (
-                     save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]),
-                     save_to_session_state("sede_ab", ""),
-                     save_to_session_state("ciudad_ab", "")
-                 ) if st.session_state["tipo_evento_ab"] == "Virtual" else 
-                     save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]))
-with col2:
-    st.number_input("Nº de participantes totales *",
-                    min_value=0,
-                    step=1,
-                    key="num_participantes_totales_ab",
-                    help="Ratio obligatorio (5 asistentes por ponente)",
-                    value= st.session_state["form_data_advisory_board"]["num_participantes_totales_ab"] if "num_participantes_totales_ab" in st.session_state["form_data_advisory_board"] else "",
-                    on_change=lambda: save_to_session_state("num_participantes_totales_ab", st.session_state["num_participantes_totales_ab"]))
+# col1, col2 = st.columns(2)
+# with col1:
+st.selectbox("Tipo de evento *",
+                ["", "Virtual", "Presencial", "Híbrido"],
+                key="tipo_evento_ab",
+                index= ["Virtual", "Presencial", "Híbrido", ""].index(st.session_state["form_data_advisory_board"]["tipo_evento_ab"]) if "tipo_evento_ab" in st.session_state["form_data_advisory_board"] else 0,
+                on_change=lambda: (
+                    save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]),
+                    save_to_session_state("sede_ab", ""),
+                    save_to_session_state("ciudad_ab", "")
+                ) if st.session_state["tipo_evento_ab"] == "Virtual" else 
+                    save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]))
 
 col1, col2 = st.columns(2)
 with col1:
@@ -549,13 +564,6 @@ with col2:
         on_change=lambda: save_to_session_state("ciudad_ab", st.session_state["ciudad_ab"])
     )
 
-st.text_input(
-        "Público objetivo del programa *",
-        max_chars=255,
-        key="publico_objetivo_ab",
-        value= st.session_state["form_data_advisory_board"]["publico_objetivo_ab"] if "publico_objetivo_ab" in st.session_state["form_data_advisory_board"] else "",
-        on_change=lambda: save_to_session_state("publico_objetivo_ab", st.session_state["publico_objetivo_ab"])
-    )
 
 
 
@@ -563,7 +571,7 @@ st.header("2. Detalles de la Actividad", divider=True)
 col1, col2 = st.columns(2)
 
 with col1:
-    st.text_input("Producto asociado *",
+    st.text_input("Producto asociado",
                   max_chars=255,
                   key="producto_asociado_ab",
                   value= st.session_state["form_data_advisory_board"]["producto_asociado_ab"] if "producto_asociado_ab" in st.session_state["form_data_advisory_board"] else "",
@@ -571,9 +579,9 @@ with col1:
 
 with col2:
     st.selectbox("Estado de la aprobación", 
-                 ["N/A", "Aprobado", "No Aprobado"], 
+                 ["", "Aprobado", "No Aprobado"], 
                  key="estado_aprobacion_ab", 
-                 index= ["N/A", "Aprobado", "No Aprobado"].index(st.session_state["form_data_advisory_board"]["estado_aprobacion_ab"]) if "estado_aprobacion_ab" in st.session_state["form_data_advisory_board"] else 0,
+                 index= ["", "Aprobado", "No Aprobado"].index(st.session_state["form_data_advisory_board"]["estado_aprobacion_ab"]) if "estado_aprobacion_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: save_to_session_state("estado_aprobacion_ab", st.session_state["estado_aprobacion_ab"]))
 
 
@@ -585,41 +593,74 @@ servicio = st.text_area("Descripción del servicio *",
                  disabled = True)
 st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] = servicio
 
-st.text_area("Necesidad de la reunión y resultados esperados *",
+necesidad = st.text_area("Necesidad de la reunión y resultados esperados *",
                  max_chars=4000,
                  key="necesidad_reunion_ab",
+                 help = "Describa la necesidad de obtener imput de los participantes y el propósito para el cual se utilizará.",
                  value= st.session_state["form_data_advisory_board"]["necesidad_reunion_ab"] if "necesidad_reunion_ab" in st.session_state["form_data_advisory_board"] else "",
                  on_change=lambda: save_to_session_state("necesidad_reunion_ab", st.session_state["necesidad_reunion_ab"]))
 
+for word in black_list:  
+    if word.lower() in necesidad.lower():  
+        st.warning(f"La descripción contiene una palabra de la Black List: '{word}'")  
+        break
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.selectbox("¿Otra actividad en el departamento en últimos 12 meses? *", 
-                 ["No lo sé", "Sí", "No"], 
+                 ["", "No lo sé", "Sí", "No"], 
                  key="otra_actividad_departamento_ab", 
-                 index= ["No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_departamento_ab"]) if "otra_actividad_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
+                 index= ["", "No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_departamento_ab"]) if "otra_actividad_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: save_to_session_state("otra_actividad_departamento_ab", st.session_state["otra_actividad_departamento_ab"]))
 with col2:
     st.selectbox("¿Y en otro departamento? *",
-                 ["No lo sé", "Sí", "No"],
+                 ["", "No lo sé", "Sí", "No"],
                  key="otra_actividad_otro_departamento_ab",
-                 index= ["No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_otro_departamento_ab"]) if "otra_actividad_otro_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
+                 index= ["", "No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_otro_departamento_ab"]) if "otra_actividad_otro_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: save_to_session_state("otra_actividad_otro_departamento_ab", st.session_state["otra_actividad_otro_departamento_ab"]))
 
-st.header("3. Logística de la Actividad", divider=True)
+st.header("3. Detalle nº participantes", divider=True)
+col1, col2 = st.columns(2)
+with col1:
+    st.number_input("Nº de participantes *",
+                    min_value=0,
+                    step=1,
+                    key="num_participantes_ab",
+                    help="Asegúrese de que se contrate la cantidad necesaria de participantes_ab para brindar los servicios que satisfacen las necesidades legítimas.",
+                    value= st.session_state["form_data_advisory_board"]["num_participantes_ab"] if "num_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
+                    on_change=lambda: save_to_session_state("num_participantes_ab", st.session_state["num_participantes_ab"]))
+with col2:
+    st.multiselect(
+        "Criterios de selección *",
+        [
+            "Experiencia como ponente", "Experiencia como Participante de Advisory",
+            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
+        ],
+        key="criterios_seleccion_ab",
+        default=st.session_state["form_data_advisory_board"]["criterios_seleccion_ab"] if "criterios_seleccion_ab" in st.session_state["form_data_advisory_board"] else [],
+        on_change=lambda: save_to_session_state("criterios_seleccion_ab", st.session_state["criterios_seleccion_ab"])
+    )
+st.text_area("Justificación de número de participantes *",
+             max_chars=4000,
+             key="justificacion_participantes_ab",
+             value= st.session_state["form_data_advisory_board"]["justificacion_participantes_ab"] if "justificacion_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
+             on_change=lambda: save_to_session_state("justificacion_participantes_ab", st.session_state["justificacion_participantes_ab"]))
+    
+
+st.header("4. Logística de los participantes", divider=True)
 col1, col2 = st.columns(2)
 with col1:
     st.selectbox("¿Desplazamiento de participantes? *", 
-                 ["No", "Sí"], 
+                 ["", "No", "Sí"], 
                  key="desplazamiento_ab",
-                 index= ["No", "Sí"].index(st.session_state["form_data_advisory_board"]["desplazamiento_ab"]) if "desplazamiento_ab" in st.session_state["form_data_advisory_board"] else 0,
+                 index= ["", "No", "Sí"].index(st.session_state["form_data_advisory_board"]["desplazamiento_ab"]) if "desplazamiento_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: save_to_session_state("desplazamiento_ab", st.session_state["desplazamiento_ab"]))
 with col2:
     st.selectbox("¿Alojamiento de participantes? *",
-                 ["No", "Sí"],
+                 ["", "No", "Sí"],
                  key="alojamiento_ab",
-                 index= ["No", "Sí"].index(st.session_state["form_data_advisory_board"]["alojamiento_ab"]) if "alojamiento_ab" in st.session_state["form_data_advisory_board"] else 0,
+                 index= ["", "No", "Sí"].index(st.session_state["form_data_advisory_board"]["alojamiento_ab"]) if "alojamiento_ab" in st.session_state["form_data_advisory_board"] else 0,
                  on_change=lambda: (
                      save_to_session_state("alojamiento_ab", st.session_state["alojamiento_ab"]),
                      save_to_session_state("hotel_ab", ""),
@@ -639,7 +680,7 @@ with col1:
 
 noches = (st.session_state["end_date_ab"] - st.session_state["start_date_ab"]).days + 1
 if st.session_state.num_noches_correcto_ab == False:
-    st.error(f"El número de noches no puede exceder la duración del evento ({noches} días).")
+    st.warning(f"El número de noches no puede exceder la duración del evento ({noches} días).")
     
 with col2:
     st.text_input(
@@ -650,40 +691,13 @@ with col2:
         value="" if st.session_state["form_data_advisory_board"]["alojamiento_ab"] == "No" else st.session_state["form_data_advisory_board"].get("hotel_ab", ""),
         on_change=lambda: save_to_session_state("hotel_ab", st.session_state["hotel_ab"])
     )                      
-    
-
-st.header("4. Participantes del Advisory", divider=True)
-col1, col2 = st.columns(2)
-with col1:
-    st.number_input("Nº de participantes *",
-                    min_value=0,
-                    step=1,
-                    key="num_participantes_ab",
-                    help="Asegúrese de que se contrate la cantidad necesaria de participantes_ab para brindar los servicios que satisfacen las necesidades legítimas.",
-                    value= st.session_state["form_data_advisory_board"]["num_participantes_ab"] if "num_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
-                    on_change=lambda: save_to_session_state("num_participantes_ab", st.session_state["num_participantes_ab"]))
-with col2:
-    st.multiselect(
-        "Criterios de selección *",
-        [
-            "Kol Global", "Experiencia como ponente", "Experiencia como Participante de Advisory",
-            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
-        ],
-        key="criterios_seleccion_ab",
-        default=st.session_state["form_data_advisory_board"]["criterios_seleccion_ab"] if "criterios_seleccion_ab" in st.session_state["form_data_advisory_board"] else [],
-        on_change=lambda: save_to_session_state("criterios_seleccion_ab", st.session_state["criterios_seleccion_ab"])
-    )
-st.text_area("Justificación de número de participantes *",
-             max_chars=4000,
-             key="justificacion_participantes_ab",
-             value= st.session_state["form_data_advisory_board"]["justificacion_participantes_ab"] if "justificacion_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
-             on_change=lambda: save_to_session_state("justificacion_participantes_ab", st.session_state["justificacion_participantes_ab"]))
 
 
 participantes_section()
 
 st.header("6. Documentos", divider=True)
 st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
+st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2", on_change=lambda: save_to_session_state("documentosubido_2", st.session_state["documentosubido_2"]))
 
 
 # Estado inicial para el botón de descargar
@@ -704,6 +718,10 @@ def generacion_errores():
     return errores_general, errores_participantes, errores_ia
 
 def mostrar_errores(errores_general, errores_participantes, errores_ia):
+    try:
+        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_advisory_board"], mandatory_fields, dependendent_fields)
+    except Exception as e:
+        traceback.print_exc()
     if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
         st.session_state.download_enabled_ab = True
     else:
@@ -779,7 +797,7 @@ def download_document():
             st.download_button(
                 label="Descargar ZIP",
                 data=file,
-                file_name="Advisory_Board.zip",
+                file_name= f"Advisory_Board - {st.session_state['form_data_advisory_board']['nombre_evento_ab']}.zip",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True,
                 icon="📥",

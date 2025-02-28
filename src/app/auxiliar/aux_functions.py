@@ -28,11 +28,13 @@ FIELD_MAPPINGS = {
     "justificacion_numero_participantes_cs": "Justificación Número Participantes",
     "criterios_seleccion_cs": "Criterios Selección",
     "documentosubido_1_cs": "Agenda/Guión del Evento",
+    "documentosubido_2_cs": "Documentación Adicional",
 
 
     # Speaking Services
     "documentosubido_1_ss": "Agenda del Evento",
     "documentosubido_2_ss": "Contratos inferiores a 1000€",
+    "documentosubido_3_ss": "Documentación Adicional",
     "start_date_ss": "Start Date",
     "end_date_ss": "End Date",
     "presupuesto_estimado_ss": "Presupuesto Estimado",
@@ -75,6 +77,7 @@ FIELD_MAPPINGS = {
 
     # Advisory Board
     "documentosubido_1": "Programa del Evento",
+    "documentosubido_2": "Documentación Adicional",
     "start_date_ab": "Start Date",
     "end_date_ab": "End Date",
     "estado_aprobacion_ab": "Estado Aprobación",
@@ -100,6 +103,7 @@ FIELD_MAPPINGS = {
 
     "documentosubido_1_event": "Agenda del Evento",
     "documentosubido_2_event": "Solicitud de Patrocinio",
+    "documentosubido_4_event": "Documentación Adicional",
     "documentosubido_3_event": "Presupuesto Desglosado/Dossier Comercial",
     "event_name": "Nombre del Evento",
     "event_type": "Tipo de Evento",
@@ -123,7 +127,16 @@ FIELD_MAPPINGS = {
     "name_st": "Nombre ST",
     "recurrent_text": "Texto Recurrente",
     "city": "Ciudad",
-    "venue": "Sede"
+    "venue": "Sede",
+
+    "owner": "Owner",
+    "owner_ss": "Owner",
+    "owner_cs": "Owner",
+    "owner_ab": "Owner",
+    "delegate": "Delegate",
+    "delegate_ss": "Delegate",
+    "delegate_cs": "Delegate",
+    "delegate_ab": "Delegate"
 }
 
 BASE_DIR = Path(__file__).resolve().parent.parent

@@ -18,7 +18,7 @@ LARGE_MAX_CHARS = 4000
 MEDIUM_MAX_CHARS = 255
 
 def save_to_session_state(key, value):
-    if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event"]:
+    if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event", "documentosubido_4_event"]:
         st.session_state[key] = value
     st.session_state["form_data_event"][key] = value
     
@@ -69,6 +69,8 @@ def handle_fecha_inicio():
 if "form_data_event" not in st.session_state:
     field_defaults = {
         "event_name": "",
+        "owner": "",
+        "delegate": "",
         "event_type": "Virtual",
         "start_date": date.today(),
         "end_date": date.today(),
@@ -94,7 +96,8 @@ if "form_data_event" not in st.session_state:
         "signer_email_copy": "",
         "documentosubido_1_event": None,
         "documentosubido_2_event": None,
-        "documentosubido_3_event": None
+        "documentosubido_3_event": None,
+        "documentosubido_4_event": None
     }
     
     st.session_state["form_data_event"] = {}
@@ -108,6 +111,7 @@ if "form_data_event" not in st.session_state:
     st.session_state["email_correcto"] = True
     st.session_state["signer_email"] = ""
     st.session_state["signer_email_copy"] = ""
+
 
 mandatory_fields = [
     "event_name",
@@ -130,7 +134,8 @@ mandatory_fields = [
     "signer_email",
     "documentosubido_1_event",
     "documentosubido_2_event",
-    "event_objetive"
+    "event_objetive",
+    "owner"
 ]
 
 dependendent_fields = {
@@ -281,7 +286,10 @@ def save_form_data_event():
         "submission_date": datetime.now(),
         "documentosubido_1_event": st.session_state["form_data_event"].get("documentosubido_1_event", None),
         "documentosubido_2_event": st.session_state["form_data_event"].get("documentosubido_2_event", None),
-        "documentosubido_3_event": st.session_state["form_data_event"].get("documentosubido_3_event", None)
+        "documentosubido_3_event": st.session_state["form_data_event"].get("documentosubido_3_event", None),
+        "documentosubido_4_event": st.session_state["form_data_event"].get("documentosubido_4_event", None),
+        "owner": st.session_state["form_data_event"].get("owner", ""),
+        "delegate": st.session_state["form_data_event"].get("delegate", "")
     }
     
     df = pd.DataFrame([data])
@@ -293,6 +301,7 @@ af.show_main_title(title="Sponsorship of Event", logo_size=200)
 
 # Sección Detalles del Evento
 def crear_detalles_evento():
+    crear_owner_delegate()
     crear_nombre_y_tipo()
     crear_fechas()
     crear_ubicacion()
@@ -313,6 +322,7 @@ def crear_nombre_y_tipo():
     with col2:
         event = st.selectbox(
             "Tipo de evento *",
+            placeholder = "Elegir una opción",
             options=["Virtual", "Presencial", "Híbrido"],
             help="""Selecciona el tipo de evento que deseas realizar. 
                 \n- **Virtual**: Evento realizado completamente en línea.
@@ -345,16 +355,32 @@ def crear_fechas():
                       on_change=lambda: save_to_session_state("end_date", st.session_state["end_date"]),
                       format = "DD/MM/YYYY")
 
-    # if st.session_state.start_date > st.session_state.end_date:
-    #     st.error("La fecha de inicio debe ser menor o igual a la fecha de fin.")
+def crear_owner_delegate():
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input(
+            "Owner *",
+            value=st.session_state["form_data_event"]["owner"],
+            key="owner",
+            on_change=lambda: save_to_session_state("owner", st.session_state["owner"])
+        )
+    with col2:
+        st.text_input(
+            "Delegate",
+            value=st.session_state["form_data_event"]["delegate"],
+            key="delegate",
+            on_change=lambda: save_to_session_state("delegate", st.session_state["delegate"])
+    )
+
 
 def crear_ubicacion():
     is_virtual = st.session_state["form_data_event"]["event_type"] == "Virtual"
     venue_value = "" if is_virtual else st.session_state["form_data_event"]["venue"]
     city_value = "" if is_virtual else st.session_state["form_data_event"]["city"]
-    
+    extra = "" if is_virtual else "*"
+
     st.text_input(
-        "Sede",
+        f"Sede {extra}",
         disabled=is_virtual,
         value=venue_value,
         help="Indica el nombre de la sede",
@@ -363,7 +389,7 @@ def crear_ubicacion():
         on_change=lambda: save_to_session_state("venue", st.session_state["venue"])
     )
     st.text_input(
-        "Ciudad", 
+        f"Ciudad  {extra}", 
         disabled=is_virtual,
         value=city_value,
         help="Indica la ciudad en la que se encuentra la sede",
@@ -392,8 +418,7 @@ def crear_asistentes():
             on_change=lambda: save_to_session_state("attendee_profile", st.session_state["attendee_profile"])
         )
 
-     
-@st.fragment()
+#@st.fragment()
 def validate_event_objetive(objective_text):
     """Validate the event objective text."""
     if not objective_text:
@@ -405,14 +430,14 @@ def validate_event_objetive(objective_text):
     message = "El texto es correcto." if has_event_name else "El objetivo debe incluir el nombre del evento."
     return f'<p style="color:{color};">{message}</p>'
 
-@st.fragment()
+#@st.fragment()
 def display_objective_field():
     """Display and handle the event objective text area."""
     if 'prev_event_objetive' not in st.session_state:
         st.session_state.prev_event_objetive = ""
     
     st.text_area(
-        "Descripción y objetivo del evento *", 
+        "Objetivo del evento *", 
         max_chars=LARGE_MAX_CHARS,
         value=st.session_state["form_data_event"]["event_objetive"],
         key="event_objetive",
@@ -431,9 +456,8 @@ with st.container(border=True):
     crear_detalles_evento()
     display_objective_field()
 
-
 # Sección Información del Firmante
-@st.fragment()
+#@st.fragment()
 def crear_detalles_firmante():
     st.header("2. Detalles del Organizador", divider=True)
     with st.container(border=True):
@@ -450,7 +474,6 @@ def crear_detalles_firmante():
             st.text_input("Cargo del firmante *", value=st.session_state["form_data_event"]["signer_position"], key="signer_position", on_change=lambda: save_to_session_state("signer_position", st.session_state["signer_position"]))
         with col14_2:
             email = st.text_input("Email del firmante *", 
-                        #value=st.session_state["form_data_event"]["signer_email"] if st.session_state["email_correcto"] == True else "",
                         value=st.session_state["form_data_event"]["signer_email_copy"], # if st.session_state["email_correcto"] == True else "",
                         key="signer_email", 
                         on_change= lambda: validacion_completa_email())
@@ -461,11 +484,17 @@ def crear_detalles_firmante():
 crear_detalles_firmante()
 
 # Sección Detalles del Patrocinio
-def crear_descripción_ia():
+def crear_descripción_ia(estado):
     st.markdown("**Pulsa para generar:**")  # Texto encima del botón
-    st.button("Generar", help="Genera una breve descripción con IA en base al resto de campos", icon="📄", use_container_width=True, type="primary", on_click=handle_invoke_chain_event_description)
+    st.button("Generar", 
+              help="Genera una breve descripción con IA en base al resto de campos. Se deben rellenar todos los campos para poder generar la descripción.", 
+              icon="📄", 
+              use_container_width=True, 
+              type="primary", 
+              disabled = estado,
+              on_click=handle_invoke_chain_event_description)
 
-@st.fragment
+#@st.fragment
 def crear_detalles_patrocinio():
     st.header("3. Detalles del Patrocinio", divider=True)
     st.text_input(
@@ -485,8 +514,15 @@ def crear_detalles_patrocinio():
                          on_change=lambda: save_to_session_state("payment_type", st.session_state["payment_type"]))
             
 
-        
-        st.text_input("Nombre de la secretaría técnica (ST)", value=st.session_state["form_data_event"]["name_st"] if st.session_state["form_data_event"]["payment_type"] != "Pago directo" else "", max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state["form_data_event"]["payment_type"] != "Pago a través de la secretaría técnica (ST)", key="name_st", on_change=lambda: save_to_session_state("name_st", st.session_state["name_st"]))
+        if payment == "Pago directo":
+            extra = ""
+        else:
+            extra = "*"
+
+        st.text_input(f"Nombre de la secretaría técnica (ST) {extra}", 
+                      value=st.session_state["form_data_event"]["name_st"] if st.session_state["form_data_event"]["payment_type"] != "Pago directo" else "", 
+                      max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state["form_data_event"]["payment_type"] != "Pago a través de la secretaría técnica (ST)", 
+                      key="name_st", on_change=lambda: save_to_session_state("name_st", st.session_state["name_st"]))
         
 
         st.text_input("Producto asociado", value=st.session_state["form_data_event"]["associated_product"], max_chars=MEDIUM_MAX_CHARS, key="associated_product", on_change=lambda: save_to_session_state("associated_product", st.session_state["associated_product"]))
@@ -494,7 +530,16 @@ def crear_detalles_patrocinio():
         with col20:
             st.text_area("Descripción del evento *", placeholder="Incluye nombre, fecha, sede, ciudad, descripción, objetivos y organizador", value=st.session_state["form_data_event"]["short_description"], max_chars=LARGE_MAX_CHARS, key="short_description", on_change=lambda: save_to_session_state("short_description", st.session_state["short_description"]))
         with col21:
-            crear_descripción_ia()
+            if  st.session_state["form_data_event"]["event_name"] == "" or st.session_state["form_data_event"]["start_date"] == "" or \
+                st.session_state["form_data_event"]["end_date"]  == "" or st.session_state["form_data_event"]["organization_name"] == "" or \
+                st.session_state["form_data_event"]["event_objetive"] == "":
+                if st.session_state["form_data_event"]["event_type"] != "Virtual" and (st.session_state["form_data_event"]["city"]=="" or st.session_state["form_data_event"]["venue"]==""):
+                    estado = True
+                else:
+                    estado = False
+            else:
+                estado = False
+            crear_descripción_ia(estado)
             
         st.text_area("Contraprestaciones *", value=st.session_state["form_data_event"]["benefits"], key="benefits", on_change=lambda: save_to_session_state("benefits", st.session_state["benefits"]))
 
@@ -530,6 +575,8 @@ with st.expander("Ver documentos necesarios"):
                      on_change=lambda: save_to_session_state("documentosubido_1_event", st.session_state["documentosubido_1_event"] if st.session_state["documentosubido_1_event"] else "")) 
     st.file_uploader("Adjuntar solicitud de patrocinio *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_event", accept_multiple_files=False,
                     on_change=lambda: save_to_session_state("documentosubido_2_event", st.session_state["documentosubido_2_event"] if st.session_state["documentosubido_2_event"] else "")) 
+    st.file_uploader("Adjuntar documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_4_event", accept_multiple_files=False,
+                    on_change=lambda: save_to_session_state("documentosubido_4_event", st.session_state["documentosubido_4_event"] if st.session_state["documentosubido_4_event"] else "")) 
 
 
 # Estado inicial para el botón de descargar
@@ -553,6 +600,13 @@ def generacion_errores():
     return errores_general, errores_ia, avisos
 
 def mostrar_errores(errores_general, errores_ia, avisos):
+    try:
+        errores_general, err = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
+        # errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
+        # avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
+    except Exception as e:
+        traceback.print_exc()
+
     if not errores_general and not errores_ia:
         st.session_state.download_enabled = True
     else:
@@ -617,7 +671,7 @@ def download_document():
             st.download_button(
                 label="Descargar ZIP",
                 data=file,
-                file_name="Sponshorship_Event.zip",
+                file_name= f"Sponshorship_Event - {st.session_state['form_data_event']['event_name']}.zip",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True,
                 icon="📥",

@@ -5,54 +5,11 @@ from datetime import date
 
 #af.setup_environment()
 
-def save_to_session_state_event(key, value):
-    if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event"]:
-        st.session_state[key] = value
-    st.session_state["form_data_event"][key] = value
+# def save_to_session_state_event(key, value):
+#     if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event"]:
+#         st.session_state[key] = value
+#     st.session_state["form_data_event"][key] = value
     
-# Inicializar estado del formulario en session_state
-if "form_data_event" not in st.session_state:
-    field_defaults = {
-        "event_name": "",
-        "event_type": "Virtual",
-        "start_date": date.today(),
-        "end_date": date.today(),
-        "venue": "",
-        "city": "",
-        "num_attendees": 0,
-        "attendee_profile": "",
-        "event_objetive": "",
-        "amount": 0.0,
-        "payment_type": "Pago directo",
-        "name_st": "",
-        "associated_product": "",
-        "short_description": "",
-        "benefits": "",
-        "exclusive_sponsorship": "No",
-        "recurrent_sponsorship": "No",
-        "recurrent_text": "",
-        "organization_name": "",
-        "organization_cif": "",
-        "signer_first_name": "",
-        "signer_position": "",
-        "signer_email": "",
-        "documentosubido_1_event": None,
-        "documentosubido_2_event": None,
-        "documentosubido_3_event": None
-    }
-    
-    st.session_state["form_data_event"] = {}
-    
-    for key, value in field_defaults.items():
-        save_to_session_state_event(key, value)
-        
-    st.session_state["res_generate_event_description"] = ""
-    st.session_state["download_enabled"] = False
-    st.session_state["path_doc"] = None
-    st.session_state["email_correcto"] = True
-    st.session_state["signer_email"] = ""
-
-
 
 # Título de la página
 af.show_main_title(title="Events Compliance Advisor", logo_size=200)
@@ -97,16 +54,17 @@ with st.container():
     st.markdown("""
  
 ##### 📄 Plantillas Disponibles  
-**Patrocinio de Eventos:** Para gestionar patrocinios y detalles del evento.  
-**Speaking Services:** Contratación de ponentes y logística del evento.  
-**Consulting Services:** Servicios de consultoría y selección de consultores.  
-**Advisory Board:** Reuniones de consejo asesor y selección de ponentes.  
+**Sponsorship of event:** Colaboración en la que Merck apoya un evento/actividad organizado por una Organización Sanitaria o de Pacientes por la cual se recibe una contraprestación. 
+**Speaking Services:** Contratación de uno o más proveedores de servicios de oratoria (HCPs) para hablar (o moderar) en nombre de Merck en una reunión. 
+**Advisory Board:** Contratación de uno o varios proveedores de servicios (HCPs) para obtener información y orientación en relación a temas o actividades específicos.
+**Consulting Services:** Contratación de uno o más Proveedores de Servicios (HCPs) para proporcionar conocimiento experto sobre un tema específico, desarrollo de contenido, servicios de traducción, servicios de autoría, brindar asesoramiento científico/médico, etc, con el fin de obtener aportes y orientación de expertos relacionados con temas  o actividades específicos.
 
                 
 ##### 🚀 ¿Cómo Funciona?  
 1. Completa el formulario de la plantilla que necesites.  
 2. Adjunta los documentos requeridos.  
 3. Genera la carpeta ZIP automáticamente.  
+4. ¡Tu carpeta zip se ha descargago! Envíala por correo electrónico a quien corresponda.
 
                 
 ##### 📌 Notas  

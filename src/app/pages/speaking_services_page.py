@@ -21,6 +21,8 @@ tarifas = {
 }
 
 
+black_list = ["captar", "otorgar", "premio", "regalo", "ventaja", "beneficio", "precio", "Fidelizar", "excluir", "influir", "defensor", "relación", "intercambio", "pago", "retorno de la inversión", "contra ataque", "prescriptor principal", "agradecer", "generoso", "favor", "entretenimiento", "espectáculo", "reemplazar", "expulsar", "forzar", "agresivo", "ilegal", "descuento", "contratar", "Abuso", "Mal uso", "Demandar", "Investigación", "Monopolio", "Antitrust", "Anticompetitivo", "Cartel", "Manipular", "Libre mercado", "Colusión", "Ilegal", "Privilegio", "Concesión", "Agresivo"]  
+
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     """
     Saves a value to the Streamlit session state.
@@ -35,7 +37,7 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
         None
     """
     if key != "participantes_ss":
-        if key not in ["documentosubido_1_ss", "documentosubido_2_ss"]:
+        if key not in ["documentosubido_1_ss", "documentosubido_2_ss", "documentosubido_3_ss"]:
             st.session_state[key] = value
         st.session_state["form_data_speaking_services"][key] = value
     else:
@@ -163,12 +165,10 @@ def validacion_num_noches():
     st.session_state.num_noches_correcto_ss = True
     if st.session_state.num_noches_ss.isdigit():
         duracion = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days
-        if int(st.session_state.num_noches_ss) <= duracion + 2: 
-            save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) 
-            
-        else:
-            st.session_state["form_data_speaking_services"]["num_noches_ss"] = ""
+        if int(st.session_state.num_noches_ss) > duracion + 1: 
             st.session_state.num_noches_correcto_ss = False
+        save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) 
+                    
     else:
         st.session_state["form_data_speaking_services"]["num_noches_ss"] = ""
         st.session_state.num_noches_correcto_ss = False
@@ -463,6 +463,10 @@ def generacion_errores(tipo):
 
 
 def mostrar_errores(errores_general, errores_participantes, errores_ia):
+    try:
+        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_speaking_services"], mandatory_fields, dependendent_fields)
+    except Exception as e:
+        traceback.print_exc()
     if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
         st.session_state.download_enabled_ss = True
     else:
@@ -569,9 +573,9 @@ def button_form_reducido(tipo):
 
 def download_document(disabled, tipo):
     if tipo == "Reunión Merck Program":
-        nombre = "Speaking_Service_Merck_Program.zip"
+        nombre = f"Speaking_Service_Merck_Program - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
     else:
-        nombre = "Speaking_Service_Paragüas.zip"
+        nombre = f"Speaking_Service_Paragüas.zip - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}"
     if st.session_state.path_doc_ss:
         with open(st.session_state.path_doc_ss, "rb") as file:
             st.download_button(
@@ -625,6 +629,7 @@ if "form_data_speaking_services" not in st.session_state:
         "hotel_ss": "",
         "documentosubido_1_ss": None,
         "documentosubido_2_ss": None,
+        "documentosubido_3_ss": None,
         "desplazamiento_ponentes_ss": "No",
         "alojamiento_ponentes_ss": "No",
         "presupuesto_estimado_ss": 0.00,
@@ -635,7 +640,9 @@ if "form_data_speaking_services" not in st.session_state:
         "necesidad_reunion_ss": "",
         "servicio_ss": "",
         "num_ponentes_ss": "",
-        "num_asistentes_totales_ss":0
+        "num_asistentes_totales_ss":0,
+        "owner_ss": "",
+        "delegate_ss": ""
     }
 
     st.session_state["form_data_speaking_services"] = {}
@@ -680,6 +687,7 @@ if meeting_type == "Reunión Merck Program":
     "desplazamiento_ponentes_ss",
     "alojamiento_ponentes_ss",
     "nombre_evento_ss",
+    "owner_ss",
     "descripcion_objetivo_ss",
     "tipo_evento_ss",
     "num_asistentes_totales_ss",
@@ -715,11 +723,30 @@ if meeting_type == "Reunión Merck Program":
 
     st.header("1. Detalles del Evento", divider=True)
     col1, col2 = st.columns(2)
+    with col1:
+        st.text_input(
+            "Owner *",
+            value=st.session_state["form_data_speaking_services"]["owner_ss"],
+            key="owner_ss",
+            on_change=lambda: save_to_session_state("owner_ss", st.session_state["owner_ss"])
+        )
+    with col2:
+        st.text_input(
+            "Delegate",
+            value=st.session_state["form_data_speaking_services"]["delegate_ss"],
+            key="delegate_ss",
+            on_change=lambda: save_to_session_state("delegate_ss", st.session_state["delegate_ss"])
+        )
+    col1, col2 = st.columns(2)
     st.text_input("Nombre del evento *", value=st.session_state["form_data_speaking_services"]["nombre_evento_ss"], max_chars=255, key="nombre_evento_ss", on_change=lambda: save_to_session_state("nombre_evento_ss", st.session_state["nombre_evento_ss"]))
-    st.text_area("Descripción y objetivo *", value=st.session_state["form_data_speaking_services"]["descripcion_objetivo_ss"], max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
+    descr = st.text_area("Descripción y objetivo *", value=st.session_state["form_data_speaking_services"]["descripcion_objetivo_ss"], max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
+    
+    for word in black_list:  
+        if word.lower() in descr.lower():  
+            st.warning(f"La descripción contiene una palabra de la Black List: '{word}'")  
+            break 
 
     col1, col2 = st.columns(2)
-
     with col1:
         start_date_ss = st.date_input("Fecha de inicio del evento *", 
                     value=st.session_state["form_data_speaking_services"]["start_date_ss"],
@@ -801,9 +828,15 @@ if meeting_type == "Reunión Merck Program":
 
 
 
-    st.text_area("Necesidad de la reunión y resultados esperados *", max_chars=4000, 
+    necesidad = st.text_area("Necesidad de la reunión y resultados esperados *", max_chars=4000, 
                       value =st.session_state["form_data_speaking_services"]["necesidad_reunion_ss"],
                       key="necesidad_reunion_ss", help = "Describa la necesidad detectada para organizar esta reunión de la mano de los profesionales seleccionados y cuál el resultado que se espera obtener esperado.", on_change=lambda: save_to_session_state("necesidad_reunion_ss", st.session_state["necesidad_reunion_ss"]))
+    
+    for word in black_list:  
+        if word.lower() in necesidad.lower():  
+            st.warning(f"La descripción contiene una palabra de la Black List: '{word}'")  
+            break
+    
     servicio = st.text_area("Descripción del servicio *", max_chars=4000, 
                     key="servicio_ss", 
                     help = "Ponencia [nombre del evento]",
@@ -811,9 +844,42 @@ if meeting_type == "Reunión Merck Program":
                     disabled=True)
     st.session_state["form_data_speaking_services"]["servicio_ss"] = servicio
 
-    st.header("3. Logística de la Actividad", divider=True)
+    st.header("3. Detalle nº ponentes", divider=True)
+
+    col1, col2 = st.columns(2)
     col1, col2 = st.columns(2)
 
+    
+    with col1:
+        num_ponentes = st.text_input(
+            "Nº de ponentes *", 
+            value=st.session_state["form_data_speaking_services"].get("num_ponentes_copy_ss"), 
+            key="num_ponentes_ss", 
+            help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas. El valor del campo debe de ser un número entero.",
+            on_change = lambda: numero_ponentes_completo()
+        )
+
+    if st.session_state.num_ponentes_correcto_ss == False:
+        st.warning("Se debe introducir un valor numérico.", icon="❌")
+    
+        
+        
+    with col2:
+        st.multiselect(
+            "Criterios de selección *",
+            [
+                "Experiencia como ponente", "Experiencia como profesor",
+                "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
+            ],
+            key="criterios_seleccion_ss",
+            default=st.session_state["form_data_speaking_services"]["criterios_seleccion_ss"] if "criterios_seleccion_ss" in st.session_state["form_data_speaking_services"] else [],
+            on_change=lambda: save_to_session_state("criterios_seleccion_ss", st.session_state["criterios_seleccion_ss"])
+        )
+
+
+    st.header("4. Logística de los ponentes", divider=True)
+
+    col1, col2 = st.columns(2)
     with col1:
         st.selectbox("¿Desplazamiento de ponentes? *",
                      ["No", "Sí"],
@@ -845,7 +911,7 @@ if meeting_type == "Reunión Merck Program":
 
     noches = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days + 1
     if st.session_state.num_noches_correcto_ss == False:
-        st.error(f"El número de noches no puede exceder la duración del evento ({noches} días).")
+        st.warning(f"El número de noches no puede exceder la duración del evento ({noches} días).")
 
                         
     with col2:
@@ -857,39 +923,8 @@ if meeting_type == "Reunión Merck Program":
                     on_change=lambda: save_to_session_state("hotel_ss", st.session_state["hotel_ss"]))
 
 
-    st.header("4. Criterios de Selección", divider=True)
-    col1, col2 = st.columns(2)
-    col1, col2 = st.columns(2)
 
-    
-    with col1:
-        num_ponentes = st.text_input(
-            "Nº de ponentes *", 
-            value=st.session_state["form_data_speaking_services"].get("num_ponentes_copy_ss"), 
-            key="num_ponentes_ss", 
-            help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades comerciales legítimas. El valor del campo debe de ser un número entero.",
-            on_change = lambda: numero_ponentes_completo()
-        )
-
-    if st.session_state.num_ponentes_correcto_ss == False:
-        st.warning("Se debe introducir un valor numérico.", icon="❌")
-    
-        
-        
-    with col2:
-        st.multiselect(
-            "Criterios de selección *",
-            [
-                "Kol Global", "Experiencia como ponente", "Experiencia como profesor",
-                "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
-            ],
-            key="criterios_seleccion_ss",
-            default=st.session_state["form_data_speaking_services"]["criterios_seleccion_ss"] if "criterios_seleccion_ss" in st.session_state["form_data_speaking_services"] else [],
-            on_change=lambda: save_to_session_state("criterios_seleccion_ss", st.session_state["criterios_seleccion_ss"])
-        )
-
-
-    st.header("5. Detalles de los Ponentes", divider=True)
+    st.header("5. Agregar datos de ponentes", divider=True)
     ponentes_section()
 
     st.header("6. Documentos", divider=True)
@@ -902,6 +937,10 @@ if meeting_type == "Reunión Merck Program":
                  type=["pdf", "docx", "xlsx", "ppt"],
                  key="documentosubido_2_ss", 
                  on_change=lambda: save_to_session_state("documentosubido_2_ss", st.session_state["documentosubido_2_ss"] if st.session_state["documentosubido_2_ss"] else "")) 
+        st.file_uploader("Documentos adicionales", 
+                 type=["pdf", "docx", "xlsx", "ppt"],
+                 key="documentosubido_3_ss", 
+                 on_change=lambda: save_to_session_state("documentosubido_3_ss", st.session_state["documentosubido_3_ss"] if st.session_state["documentosubido_3_ss"] else "")) 
 
 
     # Estado inicial para el botón de descargar
@@ -913,12 +952,12 @@ if meeting_type == "Reunión Merck Program":
 
 
 else:
-
     mandatory_fields = [
         "start_date_ss",
         "end_date_ss",
         "nombre_evento_ss",
         "tipo_evento_ss",
+        "owner_ss"
     ]
 
     # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ss' y 'hotel_ab' tengan valor.
@@ -937,6 +976,21 @@ else:
     }
     #st.header("Caso Paragüas", divider=True)
     st.header("1. Detalles del Evento", divider=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input(
+            "Owner *",
+            value=st.session_state["form_data_speaking_services"]["owner_ss"],
+            key="owner_ss",
+            on_change=lambda: save_to_session_state("owner_ss", st.session_state["owner_ss"])
+        )
+    with col2:
+        st.text_input(
+            "Delegate",
+            value=st.session_state["form_data_speaking_services"]["delegate_ss"],
+            key="delegate_ss",
+            on_change=lambda: save_to_session_state("delegate_ss", st.session_state["delegate_ss"])
+        )
     col1, col2 = st.columns(2)
     st.text_input("Nombre del evento *", 
                   value=st.session_state["form_data_speaking_services"]["nombre_evento_ss"],
@@ -990,7 +1044,7 @@ else:
             on_change=lambda: save_to_session_state("ciudad_ss", st.session_state["ciudad_ss"])
         )
 
-    st.header("2. Detalles de los Ponentes", divider=True)
+    st.header("2. Agregar datos de ponentes", divider=True)
     ponentes_section()
     st.session_state.download_enabled_ss = False
     button_form_reducido(meeting_type)

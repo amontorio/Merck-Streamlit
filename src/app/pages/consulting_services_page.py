@@ -30,7 +30,7 @@ mandatory_fields = [
         "presupuesto_estimado_cs",
         "estado_aprobacion_cs",
         "necesidad_reunion_cs",
-        #"descripcion_servicio_cs",
+        "owner_cs",
         "numero_consultores_cs",
         "criterios_seleccion_cs",
         "documentosubido_1_cs"
@@ -44,6 +44,8 @@ dependendent_fields = {
     },
 }
 
+black_list = ["captar", "otorgar", "premio", "regalo", "ventaja", "beneficio", "precio", "Fidelizar", "excluir", "influir", "defensor", "relación", "intercambio", "pago", "retorno de la inversión", "contra ataque", "prescriptor principal", "agradecer", "generoso", "favor", "entretenimiento", "espectáculo", "reemplazar", "expulsar", "forzar", "agresivo", "ilegal", "descuento", "contratar", "Abuso", "Mal uso", "Demandar", "Investigación", "Monopolio", "Antitrust", "Anticompetitivo", "Cartel", "Manipular", "Libre mercado", "Colusión", "Ilegal", "Privilegio", "Concesión", "Agresivo"]  
+
 
 def render_svg(svg_string):
     """Renders the given svg string."""
@@ -53,7 +55,7 @@ def render_svg(svg_string):
 
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     if key != "participantes_cs":
-        if key not in ["documentosubido_1_cs"]:
+        if key not in ["documentosubido_1_cs", "documentosubido_2_cs"]:
             st.session_state[key] = value
         st.session_state["form_data_consulting_services"][key] = value
     else:
@@ -364,7 +366,7 @@ def single_consultant(id_user, info_user, index):
 
 ##########################################################
 def participantes_section():
-    st.header("3. Detalles de los consultores", divider=True)
+    st.header("3. Agregar datos de consultores", divider=True)
 
     if st.button("Agregar consultor", use_container_width=True, icon="➕", key="add_participant_button"):
         add_participant()
@@ -412,6 +414,8 @@ def participantes_section():
 if "form_data_consulting_services" not in st.session_state:
     field_defaults = {
         "nombre_necesidades_cs": "",
+        "owner_cs": "",
+        "delegate_cs": "",
         "start_date_cs": date.today(),
         "end_date_cs": date.today(),
         "presupuesto_estimado_cs": 0.0,
@@ -446,9 +450,23 @@ if "form_data_consulting_services" not in st.session_state:
 
 af.show_main_title(title="Consulting Services", logo_size=200)
 
-st.header("1. Declaración de necesidades", divider=True)
+st.header("1. Detalle de la actividad", divider=True)
 col1, col2 = st.columns(2)
-
+with col1:
+    st.text_input(
+        "Owner *",
+        value=st.session_state["form_data_consulting_services"]["owner_cs"],
+        key="owner_cs",
+        on_change=lambda: save_to_session_state("owner_cs", st.session_state["owner_cs"])
+    )
+with col2:
+    st.text_input(
+        "Delegate",
+        value=st.session_state["form_data_consulting_services"]["delegate_cs"],
+        key="delegate_cs",
+        on_change=lambda: save_to_session_state("delegate_cs", st.session_state["delegate_cs"])
+    )
+col1, col2 = st.columns(2)
 with col1:
     st.text_input("Nombre *",
                   max_chars=255,
@@ -491,13 +509,17 @@ with col2:
                  on_change=lambda: save_to_session_state("estado_aprobacion_cs", st.session_state["estado_aprobacion_cs"]))
     
 
-st.text_area("Necesidad de la reunión y resultados esperados *",
+necesidad= st.text_area("Necesidad de la reunión y resultados esperados *",
                 max_chars=4000,
                 key="necesidad_reunion_cs",
                 help="Describa la necesidad de obtener información de los consultores y el propósito para el cual se utilizará dicha información.",
                 value= st.session_state["form_data_consulting_services"]["necesidad_reunion_cs"] if "necesidad_reunion_cs" in st.session_state["form_data_consulting_services"] else "",
                 on_change=lambda: save_to_session_state("necesidad_reunion_cs", st.session_state["necesidad_reunion_cs"]))
-
+for word in black_list:  
+    if word.lower() in necesidad.lower():  
+        st.warning(f"La descripción contiene una palabra de la Black List: '{word}'")  
+        break
+    
 servicio = st.text_area("Descripción del servicio *",
                 max_chars=4000,
                 key="descripcion_servicio_cs",
@@ -505,7 +527,7 @@ servicio = st.text_area("Descripción del servicio *",
                 disabled=True)
 st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] = servicio
 
-st.header("2. Criterios del destinatario", divider=True)
+st.header("2. Detalle nº consultores", divider=True)
 col3, col4 = st.columns(2)
 
 with col3:
@@ -525,7 +547,7 @@ with col4:
     st.multiselect(
         "Criterios de selección *",
         [
-            "Kol Global", "Experiencia como ponente", "Experiencia como consultor",
+            "Experiencia como ponente", "Experiencia como consultor",
             "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
         ],
         key="criterios_seleccion_cs",
@@ -535,6 +557,7 @@ with col4:
 st.text_area("Justificación de número de participantes *", 
              max_chars=4000, 
              key="justificacion_numero_participantes_cs", 
+             help = "Asegúrese de que  se contrate la cantidad necesaria de consultores para brindar los servicios que satisfacen las necesidades comerciales legítimas.",
              value="" if st.session_state["form_data_consulting_services"]["numero_consultores_cs"] <=1 else st.session_state["form_data_consulting_services"].get("justificacion_numero_participantes_cs", ""), 
              disabled=st.session_state["form_data_consulting_services"]["numero_consultores_cs"] <= 1, 
              on_change=lambda: save_to_session_state("justificacion_numero_participantes_cs", st.session_state["justificacion_numero_participantes_cs"]))
@@ -547,6 +570,7 @@ participantes_section()
 
 st.header("4. Documentos", divider=True)
 st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
+st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_cs", on_change=lambda: save_to_session_state("documentosubido_2_cs", st.session_state["documentosubido_2_cs"]))
 
 
 st.session_state.download_enabled_cs = False
@@ -565,6 +589,10 @@ def generacion_errores():
     return errores_general, errores_participantes
 
 def mostrar_errores(errores_general, errores_participantes):
+    try:
+        errores_general, errores_participantes = af.validar_campos(st.session_state["form_data_consulting_services"], mandatory_fields, dependendent_fields)
+    except Exception as e:
+        traceback.print_exc()
     if not errores_general and all(not lista for lista in errores_participantes.values()):
         st.session_state.download_enabled_cs = True
     else:
@@ -638,7 +666,7 @@ button_form()
 
 
 def download_document(disabled):
-    nombre = "Consulting_Services.zip"
+    nombre = f"Consulting_Services - {st.session_state['form_data_consulting_services']['nombre_necesidades_cs']}.zip"
     if st.session_state.path_doc_cs:
         with open(st.session_state.path_doc_cs, "rb") as file:
             st.download_button(
