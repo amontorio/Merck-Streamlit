@@ -71,7 +71,7 @@ if "form_data_event" not in st.session_state:
         "event_name": "",
         "owner": "",
         "delegate": "",
-        "event_type": "Virtual",
+        "event_type": "",
         "start_date": date.today(),
         "end_date": date.today(),
         "venue": "",
@@ -80,13 +80,13 @@ if "form_data_event" not in st.session_state:
         "attendee_profile": "",
         "event_objetive": "",
         "amount": 0.0,
-        "payment_type": "Pago directo",
+        "payment_type": "",
         "name_st": "",
         "associated_product": "",
         "short_description": "",
         "benefits": "",
-        "exclusive_sponsorship": "No",
-        "recurrent_sponsorship": "No",
+        "exclusive_sponsorship": "",
+        "recurrent_sponsorship": "",
         "recurrent_text": "",
         "organization_name": "",
         "organization_cif": "",
@@ -323,13 +323,13 @@ def crear_nombre_y_tipo():
         event = st.selectbox(
             "Tipo de evento *",
             placeholder = "Elegir una opción",
-            options=["Virtual", "Presencial", "Híbrido"],
+            options=["","Virtual", "Presencial", "Híbrido"],
             help="""Selecciona el tipo de evento que deseas realizar. 
                 \n- **Virtual**: Evento realizado completamente en línea.
                 \n- **Presencial**: Evento llevado a cabo físicamente en una ubicación específica.
                 \n- **Híbrido**: Combina elementos de eventos virtuales y presenciales.""",
             key="event_type",
-            index = ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_event"]["event_type"]) if "event_type" in st.session_state["form_data_event"] else 0,
+            index = ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_event"]["event_type"]) if "event_type" in st.session_state["form_data_event"] else 0,
             on_change=lambda: (
                         save_to_session_state("event_type", st.session_state["event_type"]),
                         save_to_session_state("venue", ""),
@@ -347,6 +347,8 @@ def crear_fechas():
                                    key="start_date", 
                                    on_change= handle_fecha_inicio, 
                                    format = "DD/MM/YYYY")
+        if st.session_state["form_data_event"]["start_date"] == date.today():
+            st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
     with col4:
         st.date_input("Fecha de fin del evento *", 
                       value= st.session_state["form_data_event"]["start_date"] if st.session_state["form_data_event"]["end_date"] < st.session_state["form_data_event"]["start_date"] else st.session_state["form_data_event"]["end_date"],
@@ -354,6 +356,8 @@ def crear_fechas():
                       key="end_date", 
                       on_change=lambda: save_to_session_state("end_date", st.session_state["end_date"]),
                       format = "DD/MM/YYYY")
+        if st.session_state["form_data_event"]["end_date"] == date.today():
+            st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
 
 def crear_owner_delegate():
     col1, col2 = st.columns(2)
@@ -508,8 +512,8 @@ def crear_detalles_patrocinio():
         with col7:
             st.number_input("Importe (€) *", min_value=0.0, step=100.0, value=st.session_state["form_data_event"]["amount"], key="amount", on_change=lambda: save_to_session_state("amount", st.session_state["amount"]))
         with col8:
-            payment = st.selectbox("Tipo de pago *", options=["Pago directo", "Pago a través de la secretaría técnica (ST)"],
-                         index = ["Pago directo", "Pago a través de la secretaría técnica (ST)"].index(st.session_state["form_data_event"]["payment_type"]) if "payment_type" in st.session_state["form_data_event"] else 0,
+            payment = st.selectbox("Tipo de pago *", options=["", "Pago directo", "Pago a través de la secretaría técnica (ST)"],
+                         index = ["", "Pago directo", "Pago a través de la secretaría técnica (ST)"].index(st.session_state["form_data_event"]["payment_type"]) if "payment_type" in st.session_state["form_data_event"] else 0,
                          key="payment_type", 
                          on_change=lambda: save_to_session_state("payment_type", st.session_state["payment_type"]))
             
@@ -521,7 +525,7 @@ def crear_detalles_patrocinio():
 
         st.text_input(f"Nombre de la secretaría técnica (ST) {extra}", 
                       value=st.session_state["form_data_event"]["name_st"] if st.session_state["form_data_event"]["payment_type"] != "Pago directo" else "", 
-                      max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state["form_data_event"]["payment_type"] != "Pago a través de la secretaría técnica (ST)", 
+                      max_chars=MEDIUM_MAX_CHARS, disabled= st.session_state["form_data_event"]["payment_type"] == "Pago directo", 
                       key="name_st", on_change=lambda: save_to_session_state("name_st", st.session_state["name_st"]))
         
 
@@ -530,21 +534,22 @@ def crear_detalles_patrocinio():
         with col20:
             st.text_area("Descripción del evento *", placeholder="Incluye nombre, fecha, sede, ciudad, descripción, objetivos y organizador", value=st.session_state["form_data_event"]["short_description"], max_chars=LARGE_MAX_CHARS, key="short_description", on_change=lambda: save_to_session_state("short_description", st.session_state["short_description"]))
         with col21:
+            estado = True
             if  st.session_state["form_data_event"]["event_name"] == "" or st.session_state["form_data_event"]["start_date"] == "" or \
                 st.session_state["form_data_event"]["end_date"]  == "" or st.session_state["form_data_event"]["organization_name"] == "" or \
                 st.session_state["form_data_event"]["event_objetive"] == "":
+                    estado = True
+            else:
                 if st.session_state["form_data_event"]["event_type"] != "Virtual" and (st.session_state["form_data_event"]["city"]=="" or st.session_state["form_data_event"]["venue"]==""):
                     estado = True
                 else:
                     estado = False
-            else:
-                estado = False
             crear_descripción_ia(estado)
             
         st.text_area("Contraprestaciones *", value=st.session_state["form_data_event"]["benefits"], key="benefits", on_change=lambda: save_to_session_state("benefits", st.session_state["benefits"]))
 
-        patrocinador = st.selectbox("Merck patrocinador único o mayoritario *", options=["No", "Sí"], key="exclusive_sponsorship", help="Si Merck es el único financiador, documente completamente el presupuesto detallado de la actividad y asegúrese de que los conceptos y los límites estén en línea con las políticas y los códigos aplicables. Confirme mediante documentos de respaldo si el Solicitante ha solicitado financiación o patrocinio de otros",
-                     index = ["No", "Sí"].index(st.session_state["form_data_event"]["exclusive_sponsorship"]) if "exclusive_sponsorship" in st.session_state["form_data_event"] else 0,
+        patrocinador = st.selectbox("Merck patrocinador único o mayoritario *", options=["", "No", "Sí"], key="exclusive_sponsorship", help="Si Merck es el único financiador, documente completamente el presupuesto detallado de la actividad y asegúrese de que los conceptos y los límites estén en línea con las políticas y los códigos aplicables. Confirme mediante documentos de respaldo si el Solicitante ha solicitado financiación o patrocinio de otros",
+                     index = ["", "No", "Sí"].index(st.session_state["form_data_event"]["exclusive_sponsorship"]) if "exclusive_sponsorship" in st.session_state["form_data_event"] else 0,
                      on_change=lambda: (
                                     save_to_session_state("exclusive_sponsorship", st.session_state["exclusive_sponsorship"]),
                                     save_to_session_state("documentosubido_3_event", ""),
@@ -559,12 +564,13 @@ def crear_detalles_patrocinio():
 
         col11, col12 = st.columns(2, vertical_alignment="center")
         with col11:
-            recurr = st.selectbox("Patrocinio recurrente *", options=["No lo sé","Sí", "No"], 
-                         index = ["No lo sé","Sí", "No"].index(st.session_state["form_data_event"]["recurrent_sponsorship"]) if "recurrent_sponsorship" in st.session_state["form_data_event"] else 0,
+            recurr = st.selectbox("Patrocinio recurrente *", options=["", "No lo sé","Sí", "No"], 
+                         index = ["", "No lo sé","Sí", "No"].index(st.session_state["form_data_event"]["recurrent_sponsorship"]) if "recurrent_sponsorship" in st.session_state["form_data_event"] else 0,
                          key="recurrent_sponsorship", help="¿Merck ha colaborado en ediciones anteriores de este evento?", on_change=lambda: save_to_session_state("recurrent_sponsorship", st.session_state["recurrent_sponsorship"]))
         with col12:
             #if st.session_state.recurrent_sponsorship == "Sí":
-            st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
+            #st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
+            st.text_area("Detalles del patrocinio recurrente", value= st.session_state["form_data_event"]["recurrent_text"] if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
 
 crear_detalles_patrocinio()
 
@@ -691,6 +697,7 @@ def download_document():
 button_form()
 # Botón de descarga
 disabled =  not st.session_state.download_enabled
-download_document()
+if disabled == False:
+    download_document()
 
 #st.write(st.session_state["form_data_event"])

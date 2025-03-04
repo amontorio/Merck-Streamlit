@@ -82,7 +82,7 @@ def add_participant():
         f"email_{id_user}": "",
         f"email_copy_{id_user}": "",
         f"email_correcto_{id_user}": True,
-        f"cobra_sociedad_{id_user}": "No",
+        f"cobra_sociedad_{id_user}": "",
         f"nombre_sociedad_{id_user}": "",
         f"honorarios_{id_user}": 0.0,
         f"preparacion_horas_{id_user}": 0,
@@ -262,9 +262,9 @@ def single_consultant(id_user, info_user, index):
                         with col1: 
                             cobra = st.selectbox(
                                 "¿Cobra a través de sociedad? *", 
-                                ["No", "Sí"], 
+                                ["", "No", "Sí"], 
                                 key=f"cobra_sociedad_{id_user}",
-                                index= ["No", "Sí"].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
+                                index= ["", "No", "Sí"].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
                                 on_change= lambda: save_to_session_state("participantes_cs", st.session_state[f"cobra_sociedad_{id_user}"], id_user, f"cobra_sociedad_{id_user}")
 
                             )
@@ -420,7 +420,7 @@ if "form_data_consulting_services" not in st.session_state:
         "end_date_cs": date.today(),
         "presupuesto_estimado_cs": 0.0,
         "producto_asociado_cs": "",
-        "estado_aprobacion_cs": "N/A",
+        "estado_aprobacion_cs": "",
         "necesidad_reunion_cs": "",
         "descripcion_servicio_cs": "",
         "numero_consultores_cs": 0,
@@ -466,6 +466,7 @@ with col2:
         key="delegate_cs",
         on_change=lambda: save_to_session_state("delegate_cs", st.session_state["delegate_cs"])
     )
+
 col1, col2 = st.columns(2)
 with col1:
     st.text_input("Nombre *",
@@ -473,12 +474,27 @@ with col1:
                   key="nombre_necesidades_cs",
                   value= st.session_state["form_data_consulting_services"]["nombre_necesidades_cs"] if "nombre_necesidades_cs" in st.session_state["form_data_consulting_services"] else "",
                   on_change=lambda: save_to_session_state("nombre_necesidades_cs", st.session_state["nombre_necesidades_cs"]))
-    
+with col2:
+    st.number_input("Presupuesto total estimado (€)*",
+                    min_value=0.0,
+                    step=100.00,
+                    key="presupuesto_estimado_cs",
+                    help="Ratio obligatorio (5 asistentes por ponente)",
+                    value= st.session_state["form_data_consulting_services"]["presupuesto_estimado_cs"] if "presupuesto_estimado_cs" in st.session_state["form_data_consulting_services"] else 0.0,
+                on_change=lambda: save_to_session_state("presupuesto_estimado_cs", st.session_state["presupuesto_estimado_cs"]))
+if st.session_state["form_data_consulting_services"]["presupuesto_estimado_cs"] == 0.00:
+    st.warning(f"Revisa si el presupuesto total estimado debe ser mayor a 0.")
+
+col1, col2 = st.columns(2)
+with col1:
     date_cs = st.date_input("Fecha de inicio *",
                   value=st.session_state["form_data_consulting_services"]["start_date_cs"],
                   key="start_date_cs",
                   on_change=handle_fecha_inicio,
                   format = "DD/MM/YYYY")
+    if st.session_state["form_data_consulting_services"]["start_date_cs"] == date.today():
+        st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
+
     
     st.text_input("Producto asociado",
                   max_chars=255,
@@ -487,14 +503,6 @@ with col1:
                   on_change=lambda: save_to_session_state("producto_asociado_cs", st.session_state["producto_asociado_cs"]))
         
 with col2:
-    st.number_input("Presupuesto total estimado (€)*",
-                    min_value=0.0,
-                    step=100.00,
-                    key="presupuesto_estimado_cs",
-                    help="Ratio obligatorio (5 asistentes por ponente)",
-                    value= st.session_state["form_data_consulting_services"]["presupuesto_estimado_cs"] if "presupuesto_estimado_cs" in st.session_state["form_data_consulting_services"] else 0.0,
-                    on_change=lambda: save_to_session_state("presupuesto_estimado_cs", st.session_state["presupuesto_estimado_cs"]))
-    
     st.date_input("Fecha de fin *",
                   value= date_cs if st.session_state["form_data_consulting_services"]["end_date_cs"] < date_cs else st.session_state["form_data_consulting_services"]["end_date_cs"],
                   min_value = date_cs,
@@ -502,12 +510,16 @@ with col2:
                   on_change=lambda: save_to_session_state("end_date_cs", st.session_state["end_date_cs"]),
                   format = "DD/MM/YYYY")
     
-    st.selectbox("Estado de la aprobación del producto",
-                 ["N/A", "Aprobado", "No Aprobado"],
-                 key="estado_aprobacion_cs",
-                 index= ["N/A", "Aprobado", "No Aprobado"].index(st.session_state["form_data_consulting_services"]["estado_aprobacion_cs"]) if "estado_aprobacion_cs" in st.session_state["form_data_consulting_services"] else 0,
-                 on_change=lambda: save_to_session_state("estado_aprobacion_cs", st.session_state["estado_aprobacion_cs"]))
+    if st.session_state["form_data_consulting_services"]["end_date_cs"] == date.today():
+        st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
     
+    st.selectbox("Estado de la aprobación del producto",
+                 ["", "N/A", "Aprobado", "No Aprobado"],
+                 key="estado_aprobacion_cs",
+                 index= ["", "N/A", "Aprobado", "No Aprobado"].index(st.session_state["form_data_consulting_services"]["estado_aprobacion_cs"]) if "estado_aprobacion_cs" in st.session_state["form_data_consulting_services"] else 0,
+                 on_change=lambda: save_to_session_state("estado_aprobacion_cs", st.session_state["estado_aprobacion_cs"]))
+
+
 
 necesidad= st.text_area("Necesidad de la reunión y resultados esperados *",
                 max_chars=4000,
@@ -569,8 +581,10 @@ participantes_section()
 
 
 st.header("4. Documentos", divider=True)
-st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
-st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_cs", on_change=lambda: save_to_session_state("documentosubido_2_cs", st.session_state["documentosubido_2_cs"]))
+
+with st.expander("Ver documentos necesarios"):
+    st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
+    st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_cs", on_change=lambda: save_to_session_state("documentosubido_2_cs", st.session_state["documentosubido_2_cs"]))
 
 
 st.session_state.download_enabled_cs = False
@@ -690,7 +704,8 @@ def download_document(disabled):
         )
 
 disabled = not st.session_state.download_enabled_cs
-download_document(disabled)
+if disabled == False:
+    download_document(disabled)
 
 
 #st.write(st.session_state["form_data_consulting_services"])

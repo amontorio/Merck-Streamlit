@@ -43,7 +43,7 @@ def crear_documento_sponsorship_of_event(dataframe):
     agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre del evento", f"Sponsorship of Event/Activity {datos.get('event_name', '')}")
     agregar_bullet_point("Owner", datos.get('owner', ''))
-    if datos.get("delegate", "") == "":
+    if datos.get("delegate", "") != "":
         agregar_bullet_point("Delegate", datos.get('delegate', ''))
     else:
         agregar_bullet_point("Delegate", "N/A")
@@ -180,7 +180,7 @@ def crear_documento_advisory(data):
     agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre", data.get('nombre_evento_ab', ''))
     agregar_bullet_point("Owner", data.get('owner_ab', ''))
-    if data.get("delegate_ab") == "":
+    if data.get("delegate_ab") != "":
         agregar_bullet_point("Delegate", data.get('delegate_ab', ""))
     else:
         agregar_bullet_point("Delegate", "N/A")
@@ -323,7 +323,7 @@ def crear_documento_consulting_services(data):
     agregar_encabezado("Declaración de necesidades")
     agregar_bullet_point("Nombre", data.get("nombre_necesidades_cs", ""))
     agregar_bullet_point("Owner", data.get('owner_cs', ''))
-    if data.get("delegate_cs", "") == "":
+    if data.get("delegate_cs", "") != "":
         agregar_bullet_point("Delegate", data.get('delegate_cs', ''))
     else:
         agregar_bullet_point("Delegate", "N/A")
@@ -458,7 +458,7 @@ def crear_documento_speaking(data):
     agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
     agregar_bullet_point("Owner", data.get('owner_ss', ''))
-    if data.get("delegate_ss", "") == "":
+    if data.get("delegate_ss", "") != "":
         agregar_bullet_point("Delegate", data.get('delegate_ss', ''))
     else:
         agregar_bullet_point("Delegate", "N/A")
@@ -616,7 +616,7 @@ def crear_documento_speaking_reducido(data):
     agregar_encabezado("Detalles del Evento")
     agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
     agregar_bullet_point("Owner", data.get('owner_ss', ''))
-    if data.get("delegate_ss", "") == "":
+    if data.get("delegate_ss", "") != "":
         agregar_bullet_point("Delegate", data.get('delegate_ss', ''))
     else:
         agregar_bullet_point("Delegate", "N/A")

@@ -519,6 +519,8 @@ with col1:
                   key="start_date_ab",
                   on_change= handle_fecha_inicio,
                   format = "DD/MM/YYYY")
+    if st.session_state["form_data_advisory_board"]["start_date_ab"] == date.today():
+        st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
 
 with col2:
     #end_date_value = valor_fecha(start_ab)
@@ -530,6 +532,8 @@ with col2:
                   on_change=lambda: save_to_session_state("end_date_ab", st.session_state["end_date_ab"]),
                   format = "DD/MM/YYYY")
 
+    if st.session_state["form_data_advisory_board"]["end_date_ab"] == date.today():
+        st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
 
 # col1, col2 = st.columns(2)
 # with col1:
@@ -638,6 +642,8 @@ with col2:
             "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
         ],
         key="criterios_seleccion_ab",
+        max_selections = 1,
+        placeholder= "Seleccionar una única opción",
         default=st.session_state["form_data_advisory_board"]["criterios_seleccion_ab"] if "criterios_seleccion_ab" in st.session_state["form_data_advisory_board"] else [],
         on_change=lambda: save_to_session_state("criterios_seleccion_ab", st.session_state["criterios_seleccion_ab"])
     )
@@ -696,8 +702,9 @@ with col2:
 participantes_section()
 
 st.header("6. Documentos", divider=True)
-st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
-st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2", on_change=lambda: save_to_session_state("documentosubido_2", st.session_state["documentosubido_2"]))
+with st.expander("Ver documentos necesarios"):
+    st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
+    st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2", on_change=lambda: save_to_session_state("documentosubido_2", st.session_state["documentosubido_2"]))
 
 
 # Estado inicial para el botón de descargar
@@ -817,7 +824,8 @@ def download_document():
 button_form()
 # Botón de descarga
 disabled = not st.session_state.download_enabled_ab
-download_document()
+if disabled == False:
+    download_document()
 
 #st.header("Datos guardados")
 #st.write(st.session_state["form_data_advisory_board"])

@@ -54,10 +54,13 @@ with st.container():
     st.markdown("""
  
 ##### 📄 Plantillas Disponibles  
-**Sponsorship of event:** Colaboración en la que Merck apoya un evento/actividad organizado por una Organización Sanitaria o de Pacientes por la cual se recibe una contraprestación. 
-**Speaking Services:** Contratación de uno o más proveedores de servicios de oratoria (HCPs) para hablar (o moderar) en nombre de Merck en una reunión. 
-**Advisory Board:** Contratación de uno o varios proveedores de servicios (HCPs) para obtener información y orientación en relación a temas o actividades específicos.
-**Consulting Services:** Contratación de uno o más Proveedores de Servicios (HCPs) para proporcionar conocimiento experto sobre un tema específico, desarrollo de contenido, servicios de traducción, servicios de autoría, brindar asesoramiento científico/médico, etc, con el fin de obtener aportes y orientación de expertos relacionados con temas  o actividades específicos.
+- **Sponsorship of event:** Colaboración en la que Merck apoya un evento/actividad organizado por una Organización Sanitaria o de Pacientes por la cual se recibe una contraprestación. 
+
+- **Speaking Services:** Contratación de uno o más proveedores de servicios de oratoria (HCPs) para hablar (o moderar) en nombre de Merck en una reunión. 
+
+- **Advisory Board:** Contratación de uno o varios proveedores de servicios (HCPs) para obtener información y orientación en relación a temas o actividades específicos.
+            
+- **Consulting Services:** Contratación de uno o más Proveedores de Servicios (HCPs) para proporcionar conocimiento experto sobre un tema específico, desarrollo de contenido, servicios de traducción, servicios de autoría, brindar asesoramiento científico/médico, etc, con el fin de obtener aportes y orientación de expertos relacionados con temas  o actividades específicos.
 
                 
 ##### 🚀 ¿Cómo Funciona?  

@@ -93,7 +93,7 @@ def add_ponente():
         f"email_{id_user}": "",
         f"email_copy_{id_user}": "",
         f"email_correcto_{id_user}": True,
-        f"cobra_sociedad_{id_user}": "No",
+        f"cobra_sociedad_{id_user}": "",
         f"nombre_sociedad_{id_user}": "",
         f"honorarios_{id_user}": 0.0,
         f"preparacion_horas_{id_user}": 0,
@@ -304,9 +304,9 @@ def single_ponente(id_user, info_user, index):
                         with col1:
                             cobra = st.selectbox(
                                 "¿Cobra a través de sociedad? *", 
-                                ["No", "Sí"], 
+                                ["", "No", "Sí"], 
                                 key=f"cobra_sociedad_{id_user}",
-                                index= ["No", "Sí"].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
+                                index= ["", "No", "Sí"].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"]) if f"cobra_sociedad_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
                                 on_change= lambda: save_to_session_state("participantes_ss", st.session_state[f"cobra_sociedad_{id_user}"], id_user, f"cobra_sociedad_{id_user}")
                             )
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
@@ -624,14 +624,14 @@ if "form_data_speaking_services" not in st.session_state:
     field_defaults = {
         "start_date_ss": date.today(),
         "end_date_ss": date.today(),
-        "tipo_evento_ss": "Virtual",
+        "tipo_evento_ss": "",
         "num_noches_ss": "",
         "hotel_ss": "",
         "documentosubido_1_ss": None,
         "documentosubido_2_ss": None,
         "documentosubido_3_ss": None,
-        "desplazamiento_ponentes_ss": "No",
-        "alojamiento_ponentes_ss": "No",
+        "desplazamiento_ponentes_ss": "",
+        "alojamiento_ponentes_ss": "",
         "presupuesto_estimado_ss": 0.00,
         "publico_objetivo_ss": "",
         "nombre_evento_ss": "",
@@ -753,19 +753,23 @@ if meeting_type == "Reunión Merck Program":
                     key="start_date_ss", 
                     on_change=handle_fecha_inicio,
                     format = "DD/MM/YYYY")
+        if st.session_state["form_data_speaking_services"]["start_date_ss"] == date.today():
+            st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
     with col2:
-        st.date_input("Fecha de fin del evento *", 
+        end_date_ss = st.date_input("Fecha de fin del evento *", 
                     value= start_date_ss if st.session_state["form_data_speaking_services"]["end_date_ss"] < start_date_ss else  st.session_state["form_data_speaking_services"]["end_date_ss"],
                     key="end_date_ss", 
                     min_value = start_date_ss,
                     on_change=lambda: save_to_session_state("end_date_ss", st.session_state["end_date_ss"]),
                     format = "DD/MM/YYYY")
+        if st.session_state["form_data_speaking_services"]["end_date_ss"] == date.today():
+            st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
 
 
     col1, col2 = st.columns(2)
     with col1:
-        st.selectbox("Tipo de evento *", ["Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
-                    index= ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
+        st.selectbox("Tipo de evento *", ["", "Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
+                    index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
                     on_change=lambda: (
                         save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
                         save_to_session_state("sede_ss", ""),
@@ -882,13 +886,13 @@ if meeting_type == "Reunión Merck Program":
     col1, col2 = st.columns(2)
     with col1:
         st.selectbox("¿Desplazamiento de ponentes? *",
-                     ["No", "Sí"],
-                     index=["No", "Sí"].index(st.session_state["form_data_speaking_services"]["desplazamiento_ponentes_ss"]),
+                     ["", "No", "Sí"],
+                     index=["", "No", "Sí"].index(st.session_state["form_data_speaking_services"]["desplazamiento_ponentes_ss"]),
                      key="desplazamiento_ponentes_ss",
                      on_change=lambda: save_to_session_state("desplazamiento_ponentes_ss", st.session_state["desplazamiento_ponentes_ss"]))
     with col2:
-        st.selectbox("¿Alojamiento de ponentes? *", ["No", "Sí"], 
-                    index=["No", "Sí"].index(st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"]),
+        st.selectbox("¿Alojamiento de ponentes? *", ["","No", "Sí"], 
+                    index=["","No", "Sí"].index(st.session_state["form_data_speaking_services"]["alojamiento_ponentes_ss"]),
                     key="alojamiento_ponentes_ss", 
                     on_change=lambda: (
                                         save_to_session_state("alojamiento_ponentes_ss", st.session_state["alojamiento_ponentes_ss"]),
@@ -947,7 +951,8 @@ if meeting_type == "Reunión Merck Program":
     st.session_state.download_enabled_ss = False
     button_form(meeting_type)
     disabled = not st.session_state.download_enabled_ss
-    download_document(disabled, meeting_type)
+    if disabled == False:
+        download_document(disabled, meeting_type)
 
 
 
@@ -998,13 +1003,14 @@ else:
     #st.text_area("Descripción y objetivo *", max_chars=4000, key="descripcion_objetivo_ss", on_change=lambda: save_to_session_state("descripcion_objetivo_ss", st.session_state["descripcion_objetivo_ss"]))
 
     col1, col2 = st.columns(2)
-
     with col1:
         start_date_ss = st.date_input("Fecha de inicio del evento *", 
                     value=st.session_state["form_data_speaking_services"]["start_date_ss"],
                     key="start_date_ss", 
                     on_change=handle_fecha_inicio,
                     format = "DD/MM/YYYY")
+        if st.session_state["form_data_speaking_services"]["start_date_ss"] == date.today():
+            st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
     with col2:
         st.date_input("Fecha de fin del evento *", 
                     value= start_date_ss if st.session_state["form_data_speaking_services"]["end_date_ss"] < start_date_ss else  st.session_state["form_data_speaking_services"]["end_date_ss"],
@@ -1012,9 +1018,12 @@ else:
                     min_value = start_date_ss,
                     on_change=lambda: save_to_session_state("end_date_ss", st.session_state["end_date_ss"]),
                     format = "DD/MM/YYYY")
+    
+        if st.session_state["form_data_speaking_services"]["end_date_ss"] == date.today():
+            st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
         
-    st.selectbox("Tipo de evento *", ["Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
-                    index= ["Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
+    st.selectbox("Tipo de evento *", ["", "Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
+                    index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
                     on_change=lambda: (
                         save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
                         save_to_session_state("sede_ss", ""),
@@ -1049,7 +1058,8 @@ else:
     st.session_state.download_enabled_ss = False
     button_form_reducido(meeting_type)
     disabled = not st.session_state.download_enabled_ss
-    download_document(disabled, meeting_type)
+    if disabled == False:
+        download_document(disabled, meeting_type)
 
 
 #st.write(st.session_state["form_data_speaking_services"])
