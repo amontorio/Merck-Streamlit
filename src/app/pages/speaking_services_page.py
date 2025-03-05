@@ -575,7 +575,7 @@ def download_document(disabled, tipo):
     if tipo == "Reunión Merck Program":
         nombre = f"Speaking_Service_Merck_Program - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
     else:
-        nombre = f"Speaking_Service_Paragüas.zip - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}"
+        nombre = f"Speaking_Service_Paragüas - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
     if st.session_state.path_doc_ss:
         with open(st.session_state.path_doc_ss, "rb") as file:
             st.download_button(
@@ -679,17 +679,16 @@ if meeting_type == "Reunión Merck Program":
 
     # Lista de parámetros obligatorios
     mandatory_fields = [
+    "nombre_evento_ss",
+    "owner_ss",
     "start_date_ss",
     "end_date_ss",
     "presupuesto_estimado_ss",
     "necesidad_reunion_ss",
-    #"servicio_ss",
+    "tipo_evento_ss",
     "desplazamiento_ponentes_ss",
     "alojamiento_ponentes_ss",
-    "nombre_evento_ss",
-    "owner_ss",
     "descripcion_objetivo_ss",
-    "tipo_evento_ss",
     "num_asistentes_totales_ss",
     "publico_objetivo_ss",
     "num_ponentes_ss",
@@ -793,7 +792,7 @@ if meeting_type == "Reunión Merck Program":
     with col1:
 
             st.text_input(
-            "Sede",
+            "Sede *",
             max_chars=255,
             key="sede_ss",
             disabled=st.session_state["form_data_speaking_services"]["tipo_evento_ss"] == "Virtual",
@@ -802,7 +801,7 @@ if meeting_type == "Reunión Merck Program":
         )
     with col2:
         st.text_input(
-            "Ciudad",
+            "Ciudad *",
             max_chars=255,
             key="ciudad_ss",
             disabled=st.session_state["form_data_speaking_services"]["tipo_evento_ss"] == "Virtual",

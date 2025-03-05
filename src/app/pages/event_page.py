@@ -115,9 +115,10 @@ if "form_data_event" not in st.session_state:
 
 mandatory_fields = [
     "event_name",
-    "event_type",
+    "owner",
     "start_date",
     "end_date",
+    "event_type",
     "num_attendees",
     "attendee_profile",
     "event_objetive",
@@ -132,10 +133,9 @@ mandatory_fields = [
     "signer_first_name",
     "signer_position",
     "signer_email",
-    "documentosubido_1_event",
-    "documentosubido_2_event",
     "event_objetive",
-    "owner"
+    "documentosubido_1_event",
+    "documentosubido_2_event"
 ]
 
 dependendent_fields = {

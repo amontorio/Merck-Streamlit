@@ -16,7 +16,7 @@ import traceback
 FIELD_MAPPINGS = {
     
     # Consulting Services
-    "nombre_necesidades_cs": "Nombre Necesidades",
+    "nombre_necesidades_cs": "Nombre del Evento",
     "start_date_cs": "Start Date",
     "end_date_cs": "End Date",
     "presupuesto_estimado_cs": "Presupuesto Estimado",
@@ -42,7 +42,7 @@ FIELD_MAPPINGS = {
     "descripcion_objetivo_ss": "Descripción y objetivo",
     "desplazamiento_ponentes_ss": "Desplazamiento de los ponentes",
     "alojamiento_ponentes": "Alojamiento de los ponentes",
-    "nombre_evento_ss": "Nombre Evento",
+    "nombre_evento_ss": "Nombre del Evento",
     "descripcion_objetivo_ss": "Descripción y objetivo",
     "tipo_evento_ss": "Tipo Evento",
     "num_asistentes_totales_ss": "Número Asistentes Totales",
@@ -79,6 +79,7 @@ FIELD_MAPPINGS = {
     "documentosubido_1": "Programa del Evento",
     "documentosubido_2": "Documentación Adicional",
     "start_date_ab": "Start Date",
+    "nombre_evento_ab": "Nombre del Evento",
     "end_date_ab": "End Date",
     "estado_aprobacion_ab": "Estado Aprobación",
     "otra_actividad_departamento_ab": "Otra Actividad Departamento",

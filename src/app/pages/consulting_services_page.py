@@ -469,7 +469,7 @@ with col2:
 
 col1, col2 = st.columns(2)
 with col1:
-    st.text_input("Nombre *",
+    st.text_input("Nombre del evento *",
                   max_chars=255,
                   key="nombre_necesidades_cs",
                   value= st.session_state["form_data_consulting_services"]["nombre_necesidades_cs"] if "nombre_necesidades_cs" in st.session_state["form_data_consulting_services"] else "",

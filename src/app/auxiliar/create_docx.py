@@ -184,7 +184,7 @@ def crear_documento_advisory(data):
         agregar_bullet_point("Delegate", data.get('delegate_ab', ""))
     else:
         agregar_bullet_point("Delegate", "N/A")
-    agregar_bullet_point("Descripción y objetivo", data.get("descripcion_objetivo_ab", ""))
+    #agregar_bullet_point("Descripción y objetivo", data.get("descripcion_objetivo_ab", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_ab", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_ab", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Tipo de evento", data.get("tipo_evento_ab", ""))
@@ -196,7 +196,7 @@ def crear_documento_advisory(data):
         agregar_bullet_point("Ciudad", "N/A")
     else:
         agregar_bullet_point("Ciudad", data.get("ciudad_ab", "N/A"))
-    agregar_bullet_point("Público objetivo", data.get("publico_objetivo_ab", ""))
+    #agregar_bullet_point("Público objetivo", data.get("publico_objetivo_ab", ""))
     
     agregar_encabezado("Detalles de la Actividad")
     if data.get("producto_asociado_ab", "") != "":
@@ -209,18 +209,18 @@ def crear_documento_advisory(data):
     agregar_bullet_point("Actividad en el departamento en los últimos 12 meses", data.get("otra_actividad_departamento_ab", ""))
     agregar_bullet_point("Actividad en otro departamento en los últimos 12 meses", data.get("otra_actividad_otro_departamento_ab", ""))
 
-    agregar_encabezado("Logística de la Actividad")
+    agregar_encabezado("Detalle nº Participantes")
+    agregar_bullet_point("Nº de participantes", data.get("num_participantes_ab", ""))
+    agregar_bullet_point("Justificación de número de participantes", data.get("justificacion_participantes_ab", ""))
+    criterios = ", ".join(data.get("criterios_seleccion_ab", []))
+    agregar_bullet_point("Criterios de selección", criterios)
+
+    agregar_encabezado("Logística de los Participantes")
     agregar_bullet_point("Desplazamiento de participantes", data.get("desplazamiento_ab", ""))
     agregar_bullet_point("Alojamiento de participantes", data.get("alojamiento_ab", ""))
     if data.get("alojamiento_ab") == "Sí":
         agregar_bullet_point("Nº de noches", data.get("num_noches_ab", ""))
         agregar_bullet_point("Hotel", data.get("hotel_ab", ""))
-
-    agregar_encabezado("Participantes del Advisory")
-    agregar_bullet_point("Nº de participantes", data.get("num_participantes_ab", ""))
-    agregar_bullet_point("Justificación de número de participantes", data.get("justificacion_participantes_ab", ""))
-    criterios = ", ".join(data.get("criterios_seleccion_ab", []))
-    agregar_bullet_point("Criterios de selección", criterios)
     
     agregar_encabezado("Detalles de los Participantes del Advisory")
     def agregar_tabla_participantes(participantes):
@@ -276,7 +276,7 @@ def crear_documento_advisory(data):
             zipf.write(doc1_path, os.path.basename(doc1_path))  
         if doc2 is not None:
             file_type = str(doc2.name).split(".")[-1]
-            doc2_path = os.path.join(output_dir, f"ProgramaEvento.{file_type}")  
+            doc2_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
             with open(doc2_path, "wb") as f:
                 f.write(doc2.getbuffer()) 
             zipf.write(doc2_path, os.path.basename(doc2_path))  
@@ -320,14 +320,13 @@ def crear_documento_consulting_services(data):
         run_valor.font.size = Pt(11)
 
     # Agregar secciones
-    agregar_encabezado("Declaración de necesidades")
+    agregar_encabezado("Detalle de la Actividad")
     agregar_bullet_point("Nombre", data.get("nombre_necesidades_cs", ""))
     agregar_bullet_point("Owner", data.get('owner_cs', ''))
     if data.get("delegate_cs", "") != "":
         agregar_bullet_point("Delegate", data.get('delegate_cs', ''))
     else:
         agregar_bullet_point("Delegate", "N/A")
-    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_cs", ""))
     agregar_bullet_point("Fecha de inicio", data.get("start_date_cs", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Fecha de fin", data.get("end_date_cs", "").strftime("%d/%m/%Y"))
     agregar_bullet_point("Presupuesto estimado", f"{data.get('presupuesto_estimado_cs', 0)} €")
@@ -337,8 +336,9 @@ def crear_documento_consulting_services(data):
         agregar_bullet_point("Producto asociado", "N/A")
     agregar_bullet_point("Estado de aprobación", data.get("estado_aprobacion_cs", "N/A"))
     agregar_bullet_point("Necesidad de la reunión", data.get("necesidad_reunion_cs", ""))
+    agregar_bullet_point("Descripción del servicio", data.get("descripcion_servicio_cs", ""))
 
-    agregar_encabezado("Criterios del destinatario")
+    agregar_encabezado("Detalle nº Consultores")
     agregar_bullet_point("Número de consultores", data.get("numero_consultores_cs", ""))
     criterios = ", ".join(data.get("criterios_seleccion_cs", []))
     agregar_bullet_point("Criterios del destinatario", criterios)
@@ -410,7 +410,7 @@ def crear_documento_consulting_services(data):
         
         if doc2 is not None:
             file_type = str(doc2.name).split(".")[-1]
-            doc2_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
+            doc2_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
             with open(doc2_path, "wb") as f:
                 f.write(doc2.getbuffer())  
             zipf.write(doc2_path, os.path.basename(doc2_path)) 
@@ -488,18 +488,18 @@ def crear_documento_speaking(data):
     agregar_bullet_point("Necesidad de la reunión y resultados esperados", data.get("necesidad_reunion_ss", ""))
     agregar_bullet_point("Descripción del servicio", data.get("servicio_ss", ""))
     
-    agregar_encabezado("Logística de la Actividad")
+    agregar_encabezado("Detalle nº de Ponentes")
+    agregar_bullet_point("Nº de ponentes", data.get("num_ponentes_ss", ""))
+    criterios = ", ".join(data.get("criterios_seleccion_ss", []))
+    agregar_bullet_point("Criterios de selección", criterios)
+
+    agregar_encabezado("Logística de los Ponentes")
     agregar_bullet_point("Desplazamiento de ponentes", data.get("desplazamiento_ponentes_ss", ""))
     agregar_bullet_point("Alojamiento de ponentes", data.get("alojamiento_ponentes_ss", ""))
     if data.get("alojamiento_ponentes_ss", "") == "Sí":
         agregar_bullet_point("Nº de noches", data.get("num_noches_ss", ""))
         agregar_bullet_point("Hotel", data.get("hotel_ss", ""))
     
-    
-    agregar_encabezado("Criterios de Selección")
-    agregar_bullet_point("Nº de ponentes", data.get("num_ponentes_ss", ""))
-    criterios = ", ".join(data.get("criterios_seleccion_ss", []))
-    agregar_bullet_point("Criterios de selección", criterios)
 
     agregar_encabezado("Detalles de los Ponentes")
     def agregar_tabla_participantes(participantes):
@@ -565,7 +565,7 @@ def crear_documento_speaking(data):
 
         if doc3 is not None:
             file_type = str(doc3.name).split(".")[-1]
-            doc3_path = os.path.join(output_dir, f"Contratos.{file_type}")  
+            doc3_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
             with open(doc3_path, "wb") as f:
                 f.write(doc3.getbuffer()) 
             zipf.write(doc3_path, os.path.basename(doc3_path))  

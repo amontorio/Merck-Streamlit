@@ -24,6 +24,7 @@ tarifas = {
 mandatory_fields = [
 "start_date_ab",
 "end_date_ab",
+"nombre_evento_ab",
 "owner_ab",
 "otra_actividad_departamento_ab",
 "otra_actividad_otro_departamento_ab",
@@ -491,7 +492,7 @@ with col2:
         key="delegate_ab",
         on_change=lambda: save_to_session_state("delegate_ab", st.session_state["delegate_ab"])
     )
-st.text_input("Nombre *", 
+st.text_input("Nombre del evento*", 
               max_chars=255, 
               key="nombre_evento_ab",
               value= st.session_state["form_data_advisory_board"]["nombre_evento_ab"] if "nombre_evento_ab" in st.session_state["form_data_advisory_board"] else "",
@@ -551,7 +552,7 @@ st.selectbox("Tipo de evento *",
 col1, col2 = st.columns(2)
 with col1:
     st.text_input(
-        "Sede",
+        "Sede *",
         max_chars=255,
         key="sede_ab",
         disabled=st.session_state["form_data_advisory_board"]["tipo_evento_ab"] == "Virtual",
@@ -560,7 +561,7 @@ with col1:
     )
 with col2:
     st.text_input(
-        "Ciudad",
+        "Ciudad *",
         max_chars=255,
         key="ciudad_ab",
         disabled=st.session_state["form_data_advisory_board"]["tipo_evento_ab"] == "Virtual",
