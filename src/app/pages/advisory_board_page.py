@@ -643,8 +643,6 @@ with col2:
             "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
         ],
         key="criterios_seleccion_ab",
-        max_selections = 1,
-        placeholder= "Seleccionar una única opción",
         default=st.session_state["form_data_advisory_board"]["criterios_seleccion_ab"] if "criterios_seleccion_ab" in st.session_state["form_data_advisory_board"] else [],
         on_change=lambda: save_to_session_state("criterios_seleccion_ab", st.session_state["criterios_seleccion_ab"])
     )
