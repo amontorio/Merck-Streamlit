@@ -316,7 +316,7 @@ def single_ponente(id_user, info_user, index):
                            
                         with col2:                   
                             nombre_sociedad = st.text_input(
-                                "Nombre de la sociedad",
+                                "Nombre de la sociedad *",
                                 value = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] if cobra == "Sí" else "",
                                 key=f"nombre_sociedad_{id_user}",
                                 on_change = lambda: save_to_session_state("participantes_ss","", id_user, f"nombre_sociedad_{id_user}")
