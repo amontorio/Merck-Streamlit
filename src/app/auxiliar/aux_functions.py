@@ -105,6 +105,7 @@ FIELD_MAPPINGS = {
     "documentosubido_1_event": "Agenda del Evento",
     "documentosubido_2_event": "Solicitud de Patrocinio",
     "documentosubido_4_event": "Documentación Adicional",
+    "documentosubido_5_event": "Dossier Comercial",
     "documentosubido_3_event": "Presupuesto Desglosado/Dossier Comercial",
     "event_name": "Nombre del Evento",
     "event_type": "Tipo de Evento",
@@ -488,7 +489,7 @@ def validar_campos_ia(input_data, campos_ia):
                 if result_hoteles:  
                     result['hoteles'] = result_hoteles
             except:
-                print("")
+                traceback.print_exc()
 
     # Validación de sede y ubicación
     campos_ia_sede_location = campos_ia.get("validar_sede_location", {})
@@ -503,7 +504,7 @@ def validar_campos_ia(input_data, campos_ia):
                 if result_location:
                     result['location'] = result_location
             except:
-                print("")
+                traceback.print_exc()
 
     # Validación de sede y venue
     campos_ia_sede_venue = campos_ia.get("validar_sede_venue", {})
@@ -515,7 +516,8 @@ def validar_campos_ia(input_data, campos_ia):
                 if result_venue:
                     result['venue'] = result_venue
             except:
-                print("")
+                traceback.print_exc()
+
     for key, res in result.items():
         if not res["valor"]:
             errores_ia.append(res["descripcion"])
@@ -590,7 +592,6 @@ def avisos_campos_ia(input_data, campos_avisos_ia):
                     result['correspondencias'] = result_correspondencias
             except:
                 traceback.print_exc()
-                print("")
 
     for key, res in result.items():
         if not res["valor"]:
