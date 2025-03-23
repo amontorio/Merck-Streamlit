@@ -28,7 +28,6 @@ mandatory_fields = [
         "start_date_cs",
         "end_date_cs",
         "presupuesto_estimado_cs",
-        "estado_aprobacion_cs",
         "necesidad_reunion_cs",
         "owner_cs",
         "numero_consultores_cs",
@@ -270,7 +269,7 @@ def single_consultant(id_user, info_user, index):
                             )
                             st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
-                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
+                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación *</p>', unsafe_allow_html=True)  
                             
                         with col2:
                             nombre_sociedad = st.text_input(
@@ -283,7 +282,7 @@ def single_consultant(id_user, info_user, index):
                                 disabled= cobra == "No"
                             )
                             
-                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
+                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia *</p>', unsafe_allow_html=True)  
                         col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
 
                         with col_prep_horas:
@@ -391,8 +390,6 @@ def participantes_section():
             if st.button(label=f"Consultor {index + 1}{aux}{nombre_expander_cs}", use_container_width=True, icon="👩‍⚕️"):
                     
                 single_consultant(id_user, info_user, index)
-                # handle_email(id_user)
-                # print("FORM", st.session_state["form_data_consulting_services"]["participantes_cs"][id_user])
 
                 if st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_correcto_{id_user}"] == False:
                     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_{id_user}"] = ""
@@ -479,11 +476,10 @@ with col2:
                     min_value=0.0,
                     step=100.00,
                     key="presupuesto_estimado_cs",
-                    help="Ratio obligatorio (5 asistentes por ponente)",
                     value= st.session_state["form_data_consulting_services"]["presupuesto_estimado_cs"] if "presupuesto_estimado_cs" in st.session_state["form_data_consulting_services"] else 0.0,
                 on_change=lambda: save_to_session_state("presupuesto_estimado_cs", st.session_state["presupuesto_estimado_cs"]))
 if st.session_state["form_data_consulting_services"]["presupuesto_estimado_cs"] == 0.00:
-    st.warning(f"Revisa si el presupuesto total estimado debe ser mayor a 0.")
+    st.warning(f"Revisa si el presupuesto total estimado debe ser mayor que 0€.")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -535,8 +531,7 @@ for word in black_list:
 servicio = st.text_area("Descripción del servicio *",
                 max_chars=4000,
                 key="descripcion_servicio_cs",
-                value= f"Consulting Services - {st.session_state['form_data_consulting_services']['nombre_necesidades_cs']}", #st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
-                disabled=True)
+                value= f"Consulting Services - {st.session_state['form_data_consulting_services']['nombre_necesidades_cs']}")
 st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] = servicio
 
 st.header("2. Detalle nº consultores", divider=True)
@@ -584,7 +579,7 @@ st.header("4. Documentos", divider=True)
 
 with st.expander("Ver documentos necesarios"):
     st.file_uploader("Agenda o Guión  del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1_cs", on_change=lambda: save_to_session_state("documentosubido_1_cs", st.session_state["documentosubido_1_cs"]))
-    st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_cs", on_change=lambda: save_to_session_state("documentosubido_2_cs", st.session_state["documentosubido_2_cs"]))
+    st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_cs", on_change=lambda: save_to_session_state("documentosubido_2_cs", st.session_state["documentosubido_2_cs"]), accept_multiple_files = True)
 
 
 st.session_state.download_enabled_cs = False
@@ -636,7 +631,6 @@ def mostrar_errores(errores_general, errores_participantes):
 # Botón para enviar
 def button_form():
     if st.button(label="Generar Plantilla", use_container_width=True, type="primary"):
-        #st.session_state.download_enabled_cs = False
         st.session_state.errores = True
             
         with st.status("Validando campos...", expanded=True, state = "running") as status:
@@ -652,7 +646,6 @@ def button_form():
             errores_general_cs, errores_participantes_cs = generacion_errores()
 
             st.session_state.errores_general_cs, st.session_state.errores_participantes_cs = errores_general_cs, errores_participantes_cs
-
 
             # Actualizo el estado
             if st.session_state.download_enabled_cs == True:
@@ -706,7 +699,6 @@ def download_document(disabled):
 disabled = not st.session_state.download_enabled_cs
 if disabled == False:
     download_document(disabled)
-
 
 #st.write(st.session_state["form_data_consulting_services"])
 #st.write(st.session_state)

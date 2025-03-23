@@ -18,7 +18,7 @@ LARGE_MAX_CHARS = 4000
 MEDIUM_MAX_CHARS = 255
 
 def save_to_session_state(key, value):
-    if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event", "documentosubido_4_event"]:
+    if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event", "documentosubido_4_event", "documentosubido_5_event"]:
         st.session_state[key] = value
     st.session_state["form_data_event"][key] = value
     
@@ -97,7 +97,8 @@ if "form_data_event" not in st.session_state:
         "documentosubido_1_event": None,
         "documentosubido_2_event": None,
         "documentosubido_3_event": None,
-        "documentosubido_4_event": None
+        "documentosubido_4_event": None,
+        "documentosubido_5_event": None
     }
     
     st.session_state["form_data_event"] = {}
@@ -288,6 +289,7 @@ def save_form_data_event():
         "documentosubido_2_event": st.session_state["form_data_event"].get("documentosubido_2_event", None),
         "documentosubido_3_event": st.session_state["form_data_event"].get("documentosubido_3_event", None),
         "documentosubido_4_event": st.session_state["form_data_event"].get("documentosubido_4_event", None),
+         "documentosubido_5_event": st.session_state["form_data_event"].get("documentosubido_5_event", None),
         "owner": st.session_state["form_data_event"].get("owner", ""),
         "delegate": st.session_state["form_data_event"].get("delegate", "")
     }
@@ -314,7 +316,6 @@ def crear_nombre_y_tipo():
             "Nombre del evento *",
             placeholder="Escribe el nombre del evento",
             value=st.session_state["form_data_event"]["event_name"],
-            help="Introduce el nombre del evento",
             max_chars=MEDIUM_MAX_CHARS,
             key="event_name",
             on_change=lambda: save_to_session_state("event_name", st.session_state["event_name"])
@@ -387,7 +388,6 @@ def crear_ubicacion():
         f"Sede {extra}",
         disabled=is_virtual,
         value=venue_value,
-        help="Indica el nombre de la sede",
         max_chars=MEDIUM_MAX_CHARS,
         key="venue",
         on_change=lambda: save_to_session_state("venue", st.session_state["venue"])
@@ -396,7 +396,6 @@ def crear_ubicacion():
         f"Ciudad  {extra}", 
         disabled=is_virtual,
         value=city_value,
-        help="Indica la ciudad en la que se encuentra la sede",
         max_chars=MEDIUM_MAX_CHARS, 
         key="city",
         on_change=lambda: save_to_session_state("city", st.session_state["city"])
@@ -511,6 +510,10 @@ def crear_detalles_patrocinio():
         col7, col8 = st.columns(2)
         with col7:
             st.number_input("Importe (€) *", min_value=0.0, step=100.0, value=st.session_state["form_data_event"]["amount"], key="amount", on_change=lambda: save_to_session_state("amount", st.session_state["amount"]))
+        
+        if st.session_state["form_data_event"]["amount"] == 0.00:
+            st.warning(f"Revisa si el presupuesto total estimado debe ser mayor que 0€.")
+
         with col8:
             payment = st.selectbox("Tipo de pago *", options=["", "Pago directo", "Pago a través de la secretaría técnica (ST)"],
                          index = ["", "Pago directo", "Pago a través de la secretaría técnica (ST)"].index(st.session_state["form_data_event"]["payment_type"]) if "payment_type" in st.session_state["form_data_event"] else 0,
@@ -570,7 +573,13 @@ def crear_detalles_patrocinio():
         with col12:
             #if st.session_state.recurrent_sponsorship == "Sí":
             #st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
-            st.text_area("Detalles del patrocinio recurrente", value= st.session_state["form_data_event"]["recurrent_text"] if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
+            st.text_area("Detalles del patrocinio recurrente", 
+                         #value= st.session_state["form_data_event"]["recurrent_text"] if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", 
+                         value= "Se han realizado colaboraciones en ediciones anteriores." if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", 
+                         max_chars=LARGE_MAX_CHARS, 
+                         disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", 
+                         key="recurrent_text", 
+                         on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
 
 crear_detalles_patrocinio()
 
@@ -581,7 +590,9 @@ with st.expander("Ver documentos necesarios"):
                      on_change=lambda: save_to_session_state("documentosubido_1_event", st.session_state["documentosubido_1_event"] if st.session_state["documentosubido_1_event"] else "")) 
     st.file_uploader("Adjuntar solicitud de patrocinio *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2_event", accept_multiple_files=False,
                     on_change=lambda: save_to_session_state("documentosubido_2_event", st.session_state["documentosubido_2_event"] if st.session_state["documentosubido_2_event"] else "")) 
-    st.file_uploader("Adjuntar documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_4_event", accept_multiple_files=False,
+    st.file_uploader("Dossier Comercial", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_5_event", accept_multiple_files=False,
+                    on_change=lambda: save_to_session_state("documentosubido_5_event", st.session_state["documentosubido_5_event"] if st.session_state["documentosubido_5_event"] else ""))
+    st.file_uploader("Adjuntar documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_4_event", accept_multiple_files=True,
                     on_change=lambda: save_to_session_state("documentosubido_4_event", st.session_state["documentosubido_4_event"] if st.session_state["documentosubido_4_event"] else "")) 
 
 

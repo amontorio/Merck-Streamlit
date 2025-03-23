@@ -67,7 +67,7 @@ with st.container():
 1. Completa el formulario de la plantilla que necesites.  
 2. Adjunta los documentos requeridos.  
 3. Genera la carpeta ZIP automáticamente.  
-4. ¡Tu carpeta zip se ha descargago! Envíala por correo electrónico a quien corresponda.
+4. ¡Tu carpeta zip se ha descargado! Envíala por correo electrónico a quién corresponda.
 
                 
 ##### 📌 Notas  

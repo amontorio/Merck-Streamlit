@@ -95,7 +95,7 @@ def crear_documento_sponsorship_of_event(dataframe):
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        nombre_archivo = 'Sponsorship of Event.docx'
+        nombre_archivo = 'Sponsorship_Event_Plantilla.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
@@ -104,6 +104,7 @@ def crear_documento_sponsorship_of_event(dataframe):
         doc2 = datos.get("documentosubido_2_event", None)
         doc3 = datos.get("documentosubido_3_event", None)
         doc4 = datos.get("documentosubido_4_event", None)
+        doc5 = datos.get("documentosubido_5_event", None)
 
         if doc1 is not None:
             #print(str(doc1.type))
@@ -128,11 +129,21 @@ def crear_documento_sponsorship_of_event(dataframe):
             zipf.write(doc3_path, os.path.basename(doc3_path))  
         
         if doc4 is not None:
-            file_type = str(doc4.name).split(".")[-1]
-            doc4_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
-            with open(doc4_path, "wb") as f:
-                f.write(doc4_path.getbuffer()) 
-            zipf.write(doc4_path, os.path.basename(doc4_path))  
+            contador = 1
+            for uploaded_file in doc4:
+                file_type = str(uploaded_file.name).split(".")[-1]
+                doc4_path = os.path.join(output_dir,  f"DocumentoAdicional_{contador}.{file_type}") 
+                with open(doc4_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer()) 
+                zipf.write(doc4_path, os.path.basename(doc4_path))  
+                contador += 1
+
+        if doc5 is not None and doc5 != "":
+            file_type = str(doc5.name).split(".")[-1]
+            doc5_path = os.path.join(output_dir, f"DossierComercial.{file_type}")  
+            with open(doc5_path, "wb") as f:
+                f.write(doc5.getbuffer()) 
+            zipf.write(doc5_path, os.path.basename(doc5_path)) 
 
     os.remove(archivo_docx)
     if doc1 is not None:
@@ -143,6 +154,8 @@ def crear_documento_sponsorship_of_event(dataframe):
         os.remove(doc3_path)
     if doc4 is not None:
         os.remove(doc4_path)
+    if doc5 is not None and doc5 != "":
+        os.remove(doc5_path)
     print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
 
     return documento, archivo_zip
@@ -154,7 +167,7 @@ def crear_documento_advisory(data):
 
     # Agregar el título
     titulo = documento.add_paragraph()
-    run_titulo = titulo.add_run('Advisory Board Participation')
+    run_titulo = titulo.add_run('Advisory Board')
     run_titulo.font.size = Pt(16)
     run_titulo.font.bold = True
     run_titulo.font.color.rgb = RGBColor(0, 0, 128)  # Azul oscuro
@@ -260,7 +273,7 @@ def crear_documento_advisory(data):
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        nombre_archivo = 'Advisory_Board_Participation.docx'
+        nombre_archivo = 'Advisory_Board_Plantilla.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
@@ -275,11 +288,14 @@ def crear_documento_advisory(data):
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
         if doc2 is not None:
-            file_type = str(doc2.name).split(".")[-1]
-            doc2_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
-            with open(doc2_path, "wb") as f:
-                f.write(doc2.getbuffer()) 
-            zipf.write(doc2_path, os.path.basename(doc2_path))  
+            contador = 1
+            for uploaded_file in doc2:
+                file_type = str(uploaded_file.name).split(".")[-1]
+                doc2_path = os.path.join(output_dir,  f"DocumentoAdicional_{contador}.{file_type}") 
+                with open(doc2_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer()) 
+                zipf.write(doc2_path, os.path.basename(doc2_path))  
+                contador += 1
 
     os.remove(archivo_docx)
     if doc1 is not None:
@@ -350,7 +366,6 @@ def crear_documento_consulting_services(data):
     agregar_encabezado("Detalles de los Consultores")
     tabla = documento.add_table(rows=1, cols=8)
     tabla.style = 'Table Grid'
-    #encabezados = ["Nombre", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Nombre de la sociedad", "Honorarios", "Tiempos"]
     encabezados = ["Nombre", "DNI", "Tier", "Centro de trabajo", "Email", "Cobra a través de sociedad", "Honorarios", "Tiempos"]
     hdr_cells = tabla.rows[0].cells
     for i, encabezado in enumerate(encabezados):
@@ -358,34 +373,29 @@ def crear_documento_consulting_services(data):
         hdr_cells[i].paragraphs[0].runs[0].bold = True
     
     for participante in data.get("participantes_cs", {}).values():
-        for participante in data.get("participantes_cs", {}).values():
-            id_participante = participante["id"]
-            row_cells = tabla.add_row().cells
-            
-            # Fill in basic fields
-            #row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
-            row_cells[1].text = participante.get(f"dni_{id_participante}", "")
-            row_cells[2].text = participante.get(f"tier_{id_participante}", "")
-            row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
-            row_cells[4].text = participante.get(f"email_{id_participante}", "")
-            if participante.get(f"cobra_sociedad_{id_participante}", "") == "Sí":
-                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") + ", con sociedad: " + participante.get(f"nombre_sociedad_{id_participante}", "")
-            else:
-                row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") 
-            #row_cells[6].text = participante.get(f"nombre_sociedad_{id_participante}", "")
+        id_participante = participante["id"]
+        row_cells = tabla.add_row().cells
+        
+        # Fill in basic fields
+        row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
+        row_cells[1].text = participante.get(f"dni_{id_participante}", "")
+        row_cells[2].text = participante.get(f"tier_{id_participante}", "")
+        row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
+        row_cells[4].text = participante.get(f"email_{id_participante}", "")
+        if participante.get(f"cobra_sociedad_{id_participante}", "") == "Sí":
+            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") + ", con sociedad: " + participante.get(f"nombre_sociedad_{id_participante}", "")
+        else:
+            row_cells[5].text = participante.get(f"cobra_sociedad_{id_participante}", "") 
+        honorarios = participante.get(f"honorarios_{id_participante}", 0)
+        row_cells[6].text = f"{honorarios} €"
 
-            # Add honorarios with € symbol
-            honorarios = participante.get(f"honorarios_{id_participante}", 0)
-            row_cells[6].text = f"{honorarios} €"
-
-            # Add preparation and presentation times
-            prep_horas = participante.get(f"preparacion_horas_{id_participante}", 0)
-            prep_mins = participante.get(f"preparacion_minutos_{id_participante}", 0)
-            pon_horas = participante.get(f"ponencia_horas_{id_participante}", 0)
-            pon_mins = participante.get(f"ponencia_minutos_{id_participante}", 0)
-            
-            row_cells[7].text = f"Preparación: {prep_horas}horas y {prep_mins}minutos, Ponencia: {pon_horas}horas y {pon_mins}minutos"
+        # Add preparation and presentation times
+        prep_horas = participante.get(f"preparacion_horas_{id_participante}", 0)
+        prep_mins = participante.get(f"preparacion_minutos_{id_participante}", 0)
+        pon_horas = participante.get(f"ponencia_horas_{id_participante}", 0)
+        pon_mins = participante.get(f"ponencia_minutos_{id_participante}", 0)
+        
+        row_cells[7].text = f"Preparación: {prep_horas}horas y {prep_mins}minutos, Ponencia: {pon_horas}horas y {pon_mins}minutos"
 
     nombre_zip = f"Consulting_Services {data.get('nombre_necesidades_cs', '')}.zip"
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'docs')
@@ -393,7 +403,7 @@ def crear_documento_consulting_services(data):
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        nombre_archivo = 'Consulting_Services_Participation.docx'
+        nombre_archivo = 'Consulting_Services_Plantilla.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
@@ -409,11 +419,15 @@ def crear_documento_consulting_services(data):
             zipf.write(doc1_path, os.path.basename(doc1_path)) 
         
         if doc2 is not None:
-            file_type = str(doc2.name).split(".")[-1]
-            doc2_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
-            with open(doc2_path, "wb") as f:
-                f.write(doc2.getbuffer())  
-            zipf.write(doc2_path, os.path.basename(doc2_path)) 
+            contador = 1
+            for uploaded_file in doc2:
+                file_type = str(uploaded_file.name).split(".")[-1]
+                doc2_path = os.path.join(output_dir,  f"DocumentoAdicional_{contador}.{file_type}") 
+                with open(doc2_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                zipf.write(doc2_path, os.path.basename(doc2_path))
+                contador += 1
+
 
 
     os.remove(archivo_docx)
@@ -432,7 +446,7 @@ def crear_documento_speaking(data):
 
     # Agregar el título
     titulo = documento.add_paragraph()
-    run_titulo = titulo.add_run('Speaking Participation')
+    run_titulo = titulo.add_run('Speaking Services')
     run_titulo.font.size = Pt(16)
     run_titulo.font.bold = True
     run_titulo.font.color.rgb = RGBColor(0, 0, 128)  # Azul oscuro
@@ -540,7 +554,7 @@ def crear_documento_speaking(data):
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        nombre_archivo = 'Speaking_Services_Participation.docx'
+        nombre_archivo = 'Speaking_Services_Plantilla.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))
@@ -564,11 +578,14 @@ def crear_documento_speaking(data):
             zipf.write(doc2_path, os.path.basename(doc2_path))  
 
         if doc3 is not None:
-            file_type = str(doc3.name).split(".")[-1]
-            doc3_path = os.path.join(output_dir, f"DocumentoAdicional.{file_type}")  
-            with open(doc3_path, "wb") as f:
-                f.write(doc3.getbuffer()) 
-            zipf.write(doc3_path, os.path.basename(doc3_path))  
+            contador = 1
+            for uploaded_file in doc3:
+                file_type = str(uploaded_file.name).split(".")[-1]
+                doc3_path = os.path.join(output_dir, f"DocumentoAdicional_{contador}.{file_type}")  
+                with open(doc3_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer()) 
+                zipf.write(doc3_path, os.path.basename(doc3_path))  
+                contador += 1
 
 
     os.remove(archivo_docx)
@@ -670,7 +687,7 @@ def crear_documento_speaking_reducido(data):
     archivo_zip = os.path.join(output_dir, nombre_zip)
 
     with zipfile.ZipFile(archivo_zip, 'w') as zipf:
-        nombre_archivo = 'Speaking_Services_Paragüas.docx'
+        nombre_archivo = 'Speaking_Services_Paragüas_Plantilla.docx'
         archivo_docx = os.path.join(output_dir, nombre_archivo)
         documento.save(archivo_docx)
         zipf.write(archivo_docx, os.path.basename(archivo_docx))

@@ -311,7 +311,7 @@ def single_ponente(id_user, info_user, index):
                             )
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
-                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
+                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación *</p>', unsafe_allow_html=True)  
 
                            
                         with col2:                   
@@ -327,7 +327,7 @@ def single_ponente(id_user, info_user, index):
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"nombre_sociedad_{id_user}"] = nombre_sociedad
 
                             
-                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
+                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia *</p>', unsafe_allow_html=True)  
                         col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
 
                         with col_prep_horas:
@@ -693,8 +693,7 @@ if meeting_type == "Reunión Merck Program":
     "publico_objetivo_ss",
     "num_ponentes_ss",
     "criterios_seleccion_ss",
-    "documentosubido_1_ss",
-    "documentosubido_2_ss"
+    "documentosubido_1_ss"
     ]
 
     # Parámetros dependientes: por ejemplo, si 'alojamiento_ab' es "Sí", se requiere que 'num_noches_ss' y 'hotel_ab' tengan valor.
@@ -824,6 +823,10 @@ if meeting_type == "Reunión Merck Program":
         st.number_input("Presupuesto total estimado (€)*", min_value=0.0, 
                         value= st.session_state["form_data_speaking_services"]["presupuesto_estimado_ss"] if "presupuesto_estimado_ss" in st.session_state["form_data_speaking_services"] else 0.0,
                         step=100.00, key="presupuesto_estimado_ss", on_change=lambda: save_to_session_state("presupuesto_estimado_ss", st.session_state["presupuesto_estimado_ss"]))
+    if st.session_state["form_data_speaking_services"]["presupuesto_estimado_ss"] == 0.00:
+        st.warning(f"Revisa si el presupuesto total estimado debe ser mayor que 0€.")
+
+    
     with col2:
         st.text_input("Producto asociado", max_chars=255, 
                       value =st.session_state["form_data_speaking_services"]["producto_asociado_ss"],
@@ -842,9 +845,7 @@ if meeting_type == "Reunión Merck Program":
     
     servicio = st.text_area("Descripción del servicio *", max_chars=4000, 
                     key="servicio_ss", 
-                    help = "Ponencia [nombre del evento]",
-                    value = f"Ponencia - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}", #st.session_state["form_data_speaking_services"]["servicio_ss"]
-                    disabled=True)
+                    value = f"Ponencia - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}")
     st.session_state["form_data_speaking_services"]["servicio_ss"] = servicio
 
     st.header("3. Detalle nº ponentes", divider=True)
@@ -936,14 +937,15 @@ if meeting_type == "Reunión Merck Program":
                   type=["pdf", "docx", "xlsx", "ppt"],
                   key="documentosubido_1_ss", 
                   on_change=lambda: save_to_session_state("documentosubido_1_ss", st.session_state["documentosubido_1_ss"] if st.session_state["documentosubido_1_ss"] else "")) 
-        st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance *", 
+        st.file_uploader("Contratos inferiores a 1000€: MINUTA reunión previa con Compliance", 
                  type=["pdf", "docx", "xlsx", "ppt"],
                  key="documentosubido_2_ss", 
                  on_change=lambda: save_to_session_state("documentosubido_2_ss", st.session_state["documentosubido_2_ss"] if st.session_state["documentosubido_2_ss"] else "")) 
         st.file_uploader("Documentos adicionales", 
                  type=["pdf", "docx", "xlsx", "ppt"],
                  key="documentosubido_3_ss", 
-                 on_change=lambda: save_to_session_state("documentosubido_3_ss", st.session_state["documentosubido_3_ss"] if st.session_state["documentosubido_3_ss"] else "")) 
+                 on_change=lambda: save_to_session_state("documentosubido_3_ss", st.session_state["documentosubido_3_ss"] if st.session_state["documentosubido_3_ss"] else ""),
+                 accept_multiple_files = True) 
 
 
     # Estado inicial para el botón de descargar

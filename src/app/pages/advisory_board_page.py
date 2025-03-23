@@ -312,7 +312,7 @@ def single_participante(id_user, info_user, index):
                             )
                             st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"cobra_sociedad_{id_user}"] = cobra
                             
-                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación</p>', unsafe_allow_html=True)  
+                            st.markdown('<p style="font-size: 14px;">Tiempo de preparación *</p>', unsafe_allow_html=True)  
                             
                         with col2:                        
                             nombre_sociedad = st.text_input(
@@ -325,7 +325,7 @@ def single_participante(id_user, info_user, index):
                                 disabled= cobra == "No"
                             )
                             
-                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia</p>', unsafe_allow_html=True)  
+                            st.markdown('<p style="font-size: 14px;">Tiempo de ponencia *</p>', unsafe_allow_html=True)  
                         col_prep_horas, col_prep_minutos, col_ponencia_horas, col_ponencia_minutos = st.columns(4)
 
                         with col_prep_horas:
@@ -593,9 +593,7 @@ with col2:
 servicio = st.text_area("Descripción del servicio *", 
                  max_chars=4000, 
                  key="descripcion_servicio_ab", 
-                 help="Describa la necesidad de obtener información de los paticipantes y el propósito para el cual se utilizará dicha información.", 
-                 value= f"Advisory Board Participation - {st.session_state['form_data_advisory_board']['nombre_evento_ab']}", #st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] if "descripcion_servicio_ab" in st.session_state["form_data_advisory_board"] else "",
-                 disabled = True)
+                 value= f"Advisory Board Participation - {st.session_state['form_data_advisory_board']['nombre_evento_ab']}")
 st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] = servicio
 
 necesidad = st.text_area("Necesidad de la reunión y resultados esperados *",
@@ -613,7 +611,7 @@ for word in black_list:
 col1, col2 = st.columns(2)
 
 with col1:
-    st.selectbox("¿Otra actividad en el departamento en últimos 12 meses? *", 
+    st.selectbox("¿Ha habido alguna actividad en su departamento que haya abordado el mismo tema durante los últimos 12 meses? *", 
                  ["", "No lo sé", "Sí", "No"], 
                  key="otra_actividad_departamento_ab", 
                  index= ["", "No lo sé", "Sí", "No"].index(st.session_state["form_data_advisory_board"]["otra_actividad_departamento_ab"]) if "otra_actividad_departamento_ab" in st.session_state["form_data_advisory_board"] else 0,
@@ -632,7 +630,7 @@ with col1:
                     min_value=0,
                     step=1,
                     key="num_participantes_ab",
-                    help="Asegúrese de que se contrate la cantidad necesaria de participantes_ab para brindar los servicios que satisfacen las necesidades legítimas.",
+                    help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades  legítimas.",
                     value= st.session_state["form_data_advisory_board"]["num_participantes_ab"] if "num_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
                     on_change=lambda: save_to_session_state("num_participantes_ab", st.session_state["num_participantes_ab"]))
 with col2:
@@ -649,6 +647,7 @@ with col2:
 st.text_area("Justificación de número de participantes *",
              max_chars=4000,
              key="justificacion_participantes_ab",
+             help="Asegúrese de que se contrate la cantidad necesaria de ponentes para brindar los servicios que satisfacen las necesidades  legítimas.",
              value= st.session_state["form_data_advisory_board"]["justificacion_participantes_ab"] if "justificacion_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
              on_change=lambda: save_to_session_state("justificacion_participantes_ab", st.session_state["justificacion_participantes_ab"]))
     
@@ -703,7 +702,7 @@ participantes_section()
 st.header("6. Documentos", divider=True)
 with st.expander("Ver documentos necesarios"):
     st.file_uploader("Programa del evento *", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_1", on_change=lambda: save_to_session_state("documentosubido_1", st.session_state["documentosubido_1"]))
-    st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2", on_change=lambda: save_to_session_state("documentosubido_2", st.session_state["documentosubido_2"]))
+    st.file_uploader("Documentos adicionales", type=["pdf", "docx", "xlsx", "ppt"], key="documentosubido_2", on_change=lambda: save_to_session_state("documentosubido_2", st.session_state["documentosubido_2"]), accept_multiple_files = True)
 
 
 # Estado inicial para el botón de descargar
