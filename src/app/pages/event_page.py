@@ -87,7 +87,7 @@ if "form_data_event" not in st.session_state:
         "benefits": "",
         "exclusive_sponsorship": "",
         "recurrent_sponsorship": "",
-        "recurrent_text": "",
+        "recurrent_text": "Se han realizado colaboraciones en ediciones anteriores.",
         "organization_name": "",
         "organization_cif": "",
         "signer_first_name": "",
@@ -575,7 +575,7 @@ def crear_detalles_patrocinio():
             #st.text_area("Detalles del patrocinio recurrente", value="Colaboraciones anteriores" if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", max_chars=LARGE_MAX_CHARS, disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", key="recurrent_text", on_change=lambda: save_to_session_state("recurrent_text", st.session_state["recurrent_text"]))
             st.text_area("Detalles del patrocinio recurrente", 
                          #value= st.session_state["form_data_event"]["recurrent_text"] if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", 
-                         value= "Se han realizado colaboraciones en ediciones anteriores." if st.session_state["form_data_event"]["recurrent_sponsorship"] == "Sí" else "", 
+                         value= st.session_state["form_data_event"]["recurrent_text"] if st.session_state["form_data_event"]["recurrent_sponsorship"] != ["No", "No lo sé"] else "", ##"Se han realizado colaboraciones en ediciones anteriores."
                          max_chars=LARGE_MAX_CHARS, 
                          disabled=st.session_state["form_data_event"]["recurrent_sponsorship"] != "Sí", 
                          key="recurrent_text", 

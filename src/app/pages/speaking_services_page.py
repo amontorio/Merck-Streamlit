@@ -13,13 +13,26 @@ import re
 
 
 tarifas = {
-    "0": 300, 
+    "0": 0, 
     "1": 250,
     "2": 200,
     "3": 150,
     "4": 150
 }
 
+st.markdown("""
+    <style>
+    .stMultiSelect [data-baseweb="tag"] {
+        background-color: #28a745 !important;  /* Verde */
+        color: white !important;
+        border-radius: 10px !important;
+    }
+
+    .stMultiSelect [data-baseweb="tag"] span {
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 black_list = ["captar", "otorgar", "premio", "regalo", "ventaja", "beneficio", "precio", "Fidelizar", "excluir", "influir", "defensor", "relación", "intercambio", "pago", "retorno de la inversión", "contra ataque", "prescriptor principal", "agradecer", "generoso", "favor", "entretenimiento", "espectáculo", "reemplazar", "expulsar", "forzar", "agresivo", "ilegal", "descuento", "contratar", "Abuso", "Mal uso", "Demandar", "Investigación", "Monopolio", "Antitrust", "Anticompetitivo", "Cartel", "Manipular", "Libre mercado", "Colusión", "Ilegal", "Privilegio", "Concesión", "Agresivo"]  
 

@@ -15,12 +15,27 @@ import re
 
 # Diccionario de tarifas según el tier
 tarifas = {
-    "0": 300,  
+    "0": 0,  
     "1": 250,
     "2": 200,
     "3": 150,
     "4": 150
 }
+
+
+st.markdown("""
+    <style>
+    .stMultiSelect [data-baseweb="tag"] {
+        background-color: #007BFF !important;  /* Azul */
+        color: white !important;              /* Texto blanco */
+        border-radius: 10px !important;
+    }
+
+    .stMultiSelect [data-baseweb="tag"] span {
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # Lista de parámetros obligatorios
 mandatory_fields = [

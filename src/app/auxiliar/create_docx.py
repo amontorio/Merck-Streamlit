@@ -107,7 +107,6 @@ def crear_documento_sponsorship_of_event(dataframe):
         doc5 = datos.get("documentosubido_5_event", None)
 
         if doc1 is not None:
-            #print(str(doc1.type))
             file_type = str(doc1.name).split(".")[-1]
             doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:

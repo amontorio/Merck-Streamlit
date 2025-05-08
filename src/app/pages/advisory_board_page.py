@@ -10,10 +10,26 @@ import io
 import time
 import re
 
-# Diccionario de tarifas según el tier
 
+st.markdown("""
+    <style>
+    .stMultiSelect [data-baseweb="tag"] {
+        background-color: #28a745 !important;  /* Verde */
+        color: white !important;
+        border-radius: 10px !important;
+    }
+
+    .stMultiSelect [data-baseweb="tag"] span {
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
+
+# Diccionario de tarifas según el tier
 tarifas = {
-    "0": 300, 
+    "0": 0, 
     "1": 250,
     "2": 200,
     "3": 150,
@@ -634,6 +650,7 @@ with col1:
                     value= st.session_state["form_data_advisory_board"]["num_participantes_ab"] if "num_participantes_ab" in st.session_state["form_data_advisory_board"] else "",
                     on_change=lambda: save_to_session_state("num_participantes_ab", st.session_state["num_participantes_ab"]))
 with col2:
+
     st.multiselect(
         "Criterios de selección *",
         [
