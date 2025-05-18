@@ -486,7 +486,7 @@ def generacion_errores(tipo):
         errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
 
         if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
-            if tipo == "Merck Program":
+            if tipo == "Merck Program (MARCO)":
                 doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
             else:
                 doc, st.session_state.path_doc_ss = cd.crear_documento_speaking_reducido(st.session_state["form_data_speaking_services"])
@@ -609,7 +609,7 @@ def button_form_reducido(tipo):
             
 
 def download_document(disabled, tipo):
-    if tipo == "Merck Program":
+    if tipo == "Merck Program (MARCO)":
         nombre = f"Speaking_Service_Merck_Program - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
     else:
         nombre = f"Speaking_Service_Paragüas - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
@@ -710,9 +710,9 @@ if "form_data_speaking_services" not in st.session_state:
 
 af.show_main_title(title="Speaking Services", logo_size=200)
 
-meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"])
+meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"])
 
-if meeting_type == "Merck Program":
+if meeting_type == "Merck Program (MARCO)":
 
     # Lista de parámetros obligatorios
     mandatory_fields = [
