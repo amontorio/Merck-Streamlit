@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 from streamlit_searchbox import st_searchbox
-from datetime import date
+from datetime import date, timedelta
 import uuid
 import auxiliar.aux_functions as af
 import auxiliar.create_docx as cd
@@ -33,7 +33,8 @@ tarifas = {
     "1": 250,
     "2": 200,
     "3": 150,
-    "4": 150
+    "4": 150,
+    "KOL Global": 300
 }
 
 # Lista de parámetros obligatorios
@@ -139,7 +140,9 @@ def add_participant():
 def validacion_completa_dni(id_user):
     dni = st.session_state.get(f"dni_{id_user}", "")
     st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = True
-
+    if dni == "":
+        st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"dni_correcto_{id_user}"] = True
+        return  # Salimos de la función porque no hay más que validar
     try:
         numero = int(dni[:-1])
         letra = dni[-1].upper()
@@ -157,6 +160,9 @@ def validacion_completa_dni(id_user):
 def validacion_completa_email(id_user):    
         mail = st.session_state.get(f"email_{id_user}", "")
         st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = True
+        if mail == "":
+            st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = True
+            return  # Salimos de la función porque no hay más que validar
         try:
             tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
             tlds_pattern = '|'.join(tlds_validos)
@@ -169,7 +175,8 @@ def validacion_completa_email(id_user):
         except:
             if mail != "":
                 st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = False
-
+            else:
+                st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"email_correcto_{id_user}"] = True
 
 def on_change_nombre(id_user):
     if st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"][f"nombre_{id_user}"] != None:
@@ -291,8 +298,8 @@ def single_participante(id_user, info_user, index):
                         with col2:
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
-                                ["0", "1", "2", "3", "4"], 
-                                index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
+                                ["0", "1", "2", "3", "4","KOL Global"],  
+                                index= ["0", "1", "2", "3", "4","KOL Global"].index(st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_advisory_board"]["participantes_ab"][id_user] else 0,
                                 key=f"tier_{id_user}"
                             )
                             st.session_state["form_data_advisory_board"]["participantes_ab"][id_user][f"tier_{id_user}"] = tier
@@ -517,6 +524,14 @@ st.text_input("Nombre del evento*",
 
 col1, col2 = st.columns(2)
 
+def dias_habiles_entre(fecha_inicio, fecha_fin):
+    dias_habiles = 0
+    fecha_actual = fecha_inicio
+    while fecha_actual < fecha_fin:
+        if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+            dias_habiles += 1
+        fecha_actual += timedelta(days=1)
+    return dias_habiles
 
 def valor_fecha(start_ab):
     if start_ab != None:
@@ -551,6 +566,14 @@ with col2:
 
     if st.session_state["form_data_advisory_board"]["end_date_ab"] == date.today():
         st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
+
+start_date = st.session_state["form_data_advisory_board"]["start_date_ab"]
+hoy = date.today()
+dias_habiles = dias_habiles_entre(hoy, start_date)
+
+#if (st.session_state["form_data_advisory_board"]["start_date_ab"] - date.today()).days < 10:
+if dias_habiles < 10:
+    st.warning(f"Recuerda que esta actividad deberá ser aprobada en IHUB por el director de la Unidad al no cumplir el plazo de registro de al menos 10 días hábiles de antelación al evento.")
 
 # col1, col2 = st.columns(2)
 # with col1:
@@ -655,12 +678,16 @@ with col2:
         "Criterios de selección *",
         [
             "Experiencia como ponente", "Experiencia como Participante de Advisory",
-            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
+            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar", "Especialidad Médica relacionada con el área terapéutica en la que se basa la actividad"
         ],
         key="criterios_seleccion_ab",
         default=st.session_state["form_data_advisory_board"]["criterios_seleccion_ab"] if "criterios_seleccion_ab" in st.session_state["form_data_advisory_board"] else [],
         on_change=lambda: save_to_session_state("criterios_seleccion_ab", st.session_state["criterios_seleccion_ab"])
     )
+
+if int(st.session_state.num_participantes_ab) > 9:
+    st.warning("Recueda comunicar a Farmaindustria antes de 10 días hábiles del evento los proyectos que compartan objetivo, método y enfoque, con la participación remunerada de al menos 10 profesionales sanitarios en el marco temporal de un año.")
+
 st.text_area("Justificación de número de participantes *",
              max_chars=4000,
              key="justificacion_participantes_ab",
@@ -734,6 +761,7 @@ def generacion_errores():
             doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
             st.session_state.download_enabled_ab = True
     except Exception as e:
+        errores_ia = ""
         traceback.print_exc()
         st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 from streamlit_searchbox import st_searchbox
-from datetime import date
+from datetime import date, timedelta
 import unicodedata
 import uuid
 import auxiliar.aux_functions as af
@@ -19,15 +19,15 @@ tarifas = {
     "1": 250,
     "2": 200,
     "3": 150,
-    "4": 150
+    "4": 150,
+    "KOL Global": 300
 }
-
 
 st.markdown("""
     <style>
     .stMultiSelect [data-baseweb="tag"] {
-        background-color: #007BFF !important;  /* Azul */
-        color: white !important;              /* Texto blanco */
+        background-color: #28a745 !important;  /* Verde */
+        color: white !important;
         border-radius: 10px !important;
     }
 
@@ -81,6 +81,14 @@ def handle_fecha_inicio():
     if st.session_state["start_date_cs"] >= st.session_state["end_date_cs"]:
         save_to_session_state("end_date_cs", st.session_state["start_date_cs"]) 
 
+def dias_habiles_entre(fecha_inicio, fecha_fin):
+    dias_habiles = 0
+    fecha_actual = fecha_inicio
+    while fecha_actual < fecha_fin:
+        if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+            dias_habiles += 1
+        fecha_actual += timedelta(days=1)
+    return dias_habiles
 
 def add_participant():
     # Añadir un nuevo participante con campos inicializados
@@ -132,7 +140,9 @@ if "errores_participantes_cs" not in st.session_state:
 def validacion_completa_dni(id_user):
     dni = st.session_state.get(f"dni_{id_user}", "")
     st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_correcto_{id_user}"] = True
-
+    if dni == "":
+        st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"dni_correcto_{id_user}"] = True
+        return
     try:
         numero = int(dni[:-1])
         letra = dni[-1].upper()
@@ -148,6 +158,9 @@ def validacion_completa_dni(id_user):
 def validacion_completa_email(id_user):    
         mail = st.session_state.get(f"email_{id_user}", "")
         st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] = True
+        if mail == "":
+            st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] = True
+            return  # Salimos de la función porque no hay más que validar
         try:
             tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
             tlds_pattern = '|'.join(tlds_validos)
@@ -160,6 +173,9 @@ def validacion_completa_email(id_user):
         except:
             if mail != "":
                 st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] = False
+            else:
+                st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"email_correcto_{id_user}"] = True
+
         
             
 def on_change_nombre(id_user):
@@ -246,8 +262,8 @@ def single_consultant(id_user, info_user, index):
                         with col2:
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
-                                ["0", "1", "2", "3", "4"], 
-                                index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
+                                ["0", "1", "2", "3", "4","KOL Global"], 
+                                index= ["0", "1", "2", "3", "4","KOL Global"].index(st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_consulting_services"]["participantes_cs"][id_user] else 0,
                                 key=f"tier_{id_user}"
                             )
                             st.session_state["form_data_consulting_services"]["participantes_cs"][id_user][f"tier_{id_user}"] = tier
@@ -506,13 +522,13 @@ with col1:
     if st.session_state["form_data_consulting_services"]["start_date_cs"] == date.today():
         st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
 
-    
-    st.text_input("Producto asociado",
-                  max_chars=255,
-                  key="producto_asociado_cs",
-                  value= st.session_state["form_data_consulting_services"]["producto_asociado_cs"] if "producto_asociado_cs" in st.session_state["form_data_consulting_services"] else "",
-                  on_change=lambda: save_to_session_state("producto_asociado_cs", st.session_state["producto_asociado_cs"]))
-        
+hoy = date.today()
+start_date = st.session_state["form_data_consulting_services"]["start_date_cs"]
+dias_habiles = dias_habiles_entre(hoy, start_date)    
+#if (st.session_state["form_data_consulting_services"]["start_date_cs"] - date.today()).days < 10:
+if dias_habiles < 10:
+    st.warning(f"Recuerda que esta actividad deberá ser aprobada en IHUB por el director de la Unidad al no cumplir el plazo de registro de al menos 10 días hábiles de antelación al evento.")
+
 with col2:
     st.date_input("Fecha de fin *",
                   value= date_cs if st.session_state["form_data_consulting_services"]["end_date_cs"] < date_cs else st.session_state["form_data_consulting_services"]["end_date_cs"],
@@ -524,12 +540,20 @@ with col2:
     if st.session_state["form_data_consulting_services"]["end_date_cs"] == date.today():
         st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
     
+
+col1, col2 = st.columns(2)
+with col1:
+    st.text_input("Producto asociado",
+                  max_chars=255,
+                  key="producto_asociado_cs",
+                  value= st.session_state["form_data_consulting_services"]["producto_asociado_cs"] if "producto_asociado_cs" in st.session_state["form_data_consulting_services"] else "",
+                  on_change=lambda: save_to_session_state("producto_asociado_cs", st.session_state["producto_asociado_cs"]))
+with col2:
     st.selectbox("Estado de la aprobación del producto",
                  ["", "N/A", "Aprobado", "No Aprobado"],
                  key="estado_aprobacion_cs",
                  index= ["", "N/A", "Aprobado", "No Aprobado"].index(st.session_state["form_data_consulting_services"]["estado_aprobacion_cs"]) if "estado_aprobacion_cs" in st.session_state["form_data_consulting_services"] else 0,
                  on_change=lambda: save_to_session_state("estado_aprobacion_cs", st.session_state["estado_aprobacion_cs"]))
-
 
 
 necesidad= st.text_area("Necesidad de la reunión y resultados esperados *",
@@ -563,18 +587,20 @@ with col3:
                      save_to_session_state("justificacion_numero_participantes_cs", ""),
                  ) if st.session_state["numero_consultores_cs"] <= 1 else 
                      save_to_session_state("numero_consultores_cs", st.session_state["numero_consultores_cs"])
-                     )
-    
+                     )    
 with col4:
     st.multiselect(
         "Criterios de selección *",
         [
             "Experiencia como ponente", "Experiencia como consultor",
-            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
+            "Experiencia como profesor", "Experiencia clínica en tema a tratar", "Especialista en tema a tratar", "Especialidad Médica relacionada con el área terapéutica en la que se basa la actividad"
         ],
         key="criterios_seleccion_cs",
         default=st.session_state["form_data_consulting_services"]["criterios_seleccion_cs"] if "criterios_seleccion_cs" in st.session_state["form_data_consulting_services"] else [],
         on_change=lambda: save_to_session_state("criterios_seleccion_cs", st.session_state["criterios_seleccion_cs"]))
+
+if int(st.session_state.numero_consultores_cs) > 9:
+    st.warning("Recueda comunicar a Farmaindustria antes de 10 días hábiles del evento los proyectos que compartan objetivo, método y enfoque, con la participación remunerada de al menos 10 profesionales sanitarios en el marco temporal de un año.")
 
 st.text_area("Justificación de número de participantes *", 
              max_chars=4000, 

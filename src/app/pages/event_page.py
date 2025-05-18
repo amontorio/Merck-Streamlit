@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import time
 import traceback
 import io
@@ -130,7 +130,6 @@ mandatory_fields = [
     "exclusive_sponsorship",
     "recurrent_sponsorship",
     "organization_name",
-    "organization_cif",
     "signer_first_name",
     "signer_position",
     "signer_email",
@@ -339,6 +338,14 @@ def crear_nombre_y_tipo():
                         save_to_session_state("event_type", st.session_state["event_type"]))
         
         
+def dias_habiles_entre(fecha_inicio, fecha_fin):
+    dias_habiles = 0
+    fecha_actual = fecha_inicio
+    while fecha_actual < fecha_fin:
+        if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+            dias_habiles += 1
+        fecha_actual += timedelta(days=1)
+    return dias_habiles
 
 def crear_fechas():
     col3, col4 = st.columns(2)
@@ -359,6 +366,14 @@ def crear_fechas():
                       format = "DD/MM/YYYY")
         if st.session_state["form_data_event"]["end_date"] == date.today():
             st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
+    
+    start_date = st.session_state["form_data_event"]["start_date"]
+    hoy = date.today()
+    dias_habiles = dias_habiles_entre(hoy, start_date)
+
+    #if (st.session_state["form_data_event"]["start_date"] - date.today()).days < 10:
+    if dias_habiles < 10:
+        st.warning(f"Recuerda que esta actividad deberá ser aprobada en IHUB por el director de la Unidad al no cumplir el plazo de registro de al menos 10 días hábiles de antelación al evento.")
 
 def crear_owner_delegate():
     col1, col2 = st.columns(2)
@@ -464,12 +479,12 @@ with st.container(border=True):
 def crear_detalles_firmante():
     st.header("2. Detalles del Organizador", divider=True)
     with st.container(border=True):
-        col13, col14 = st.columns(2)
-        with col13:
-            st.text_input("Nombre de la organización *", value=st.session_state["form_data_event"]["organization_name"], key="organization_name", on_change=lambda: save_to_session_state("organization_name", st.session_state["organization_name"]))
-        with col14:
-            st.text_input("CIF *", value=st.session_state["form_data_event"]["organization_cif"], key="organization_cif", on_change=lambda: save_to_session_state("organization_cif", st.session_state["organization_cif"]))
-        
+        #col13, col14 = st.columns(2)
+        #with col13:
+        st.text_input("Nombre de la organización *", value=st.session_state["form_data_event"]["organization_name"], key="organization_name", on_change=lambda: save_to_session_state("organization_name", st.session_state["organization_name"]))
+        #with col14:
+        st.text_input("CIF", value=st.session_state["form_data_event"]["organization_cif"], key="organization_cif", on_change=lambda: save_to_session_state("organization_cif", st.session_state["organization_cif"]))
+        st.warning("Cumplimentar en el caso de que el HCO no esté dado de alta.")
         st.text_input("Nombre y apellidos del firmante *", value=st.session_state["form_data_event"]["signer_first_name"], key="signer_first_name", on_change=lambda: save_to_session_state("signer_first_name", st.session_state["signer_first_name"]))
 
         col13_2, col14_2 = st.columns(2)

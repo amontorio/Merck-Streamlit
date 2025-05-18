@@ -146,7 +146,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 @st.cache_data
 def load_data():
-    path = BASE_DIR / "database" / "Accounts with HCP tiering_ES_2025_01_29.xlsx"
+    path = BASE_DIR / "database" / "Base de datos HCPs_2025-04-25.xlsx"
     return pd.read_excel(path)
 dataset = load_data()
 
@@ -296,7 +296,7 @@ def validar_participantes(participantes):
                     #errores_participantes[id_participante].append(f"El campo 'nombre_sociedad_{id_participante}' del participante con id '{id_participante}' es obligatorio cuando cobra_sociedad_{id_participante} es 'Sí'.\n")
                     errores_participantes[id_participante].append(f"El campo Nombre de la Sociedad del participante *{cnt}* es obligatorio cuando cobra a través de sociedad.\n")
             # Para los demás campos (excepto nombre_sociedad cuando cobra_sociedad no es "Sí" y dni_), verificar que no estén vacíos
-            elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")) and not campo.startswith("email_copy_"):
+            elif not campo.startswith("nombre_sociedad_") and not campo.startswith("dni_") and (valor is None or (isinstance(valor, str) and valor.strip() == "")) and not campo.startswith("email_"):#campo.startswith("email_copy_"):
                 if remove_after_last_underscore(campo).startswith("name_ponente"):
                     errores_participantes[id_participante].append(
                     f"El campo *{FIELD_MAPPINGS.get(campo)}* es obligatorio y no tiene valor.\n"
@@ -311,7 +311,7 @@ def validar_participantes(participantes):
 
 
 def get_model():
-    azure_endpoint = "https://merck-test.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview"
+    azure_endpoint = "https://ai-foundry-dia.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2025-01-01-preview"
     api_key = ""
 
     llm = AzureChatOpenAI(
@@ -624,7 +624,7 @@ def search_function(search_text, datos = dataset):
     df['Tier'] = df['Tier'].fillna(0)
 
     # Asegurarse de que la columna 'Tier' sea numérica
-    df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
+    #df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
 
     # Extraer las columnas necesarias y convertirlas a una lista de tuplas
     lista = list(df[['Nombre de la cuenta', 'Especialidad', 'Tier']].itertuples(index=False, name=None))
@@ -652,14 +652,19 @@ def handle_tier_from_name(name, datos = dataset):
     df['Tier'] = df['Tier'].fillna(0)
 
     # Asegurarse de que la columna 'Tier' sea numérica
-    df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
+    #df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
     
     raw_name = name["result"].split("-")[0].strip()
 
     tier = df.loc[df["Nombre de la cuenta"] == raw_name, "Tier"]
+
         
     if not tier.empty:
-        return str(int(tier.values[0]))  # Devuelve el Tier encontrado
+        if tier.values[0] == "GLOBAL KOL":
+            result = "KOL Global"
+        else: 
+            result = str(int(tier.values[0]))  # Devuelve el Tier encontrado
+        return result
     return "0"  # Devuelve 0 si el nombre no está en los datos
 
 

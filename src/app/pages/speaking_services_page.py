@@ -3,7 +3,7 @@ from streamlit_searchbox import st_searchbox
 from datetime import date
 import unicodedata
 import uuid
-from datetime import time
+from datetime import time, timedelta
 import auxiliar.create_docx as cd
 import traceback
 import auxiliar.aux_functions as af
@@ -12,12 +12,14 @@ import time
 import re
 
 
+
 tarifas = {
     "0": 0, 
     "1": 250,
     "2": 200,
     "3": 150,
-    "4": 150
+    "4": 150,
+    "KOL Global": 300
 }
 
 st.markdown("""
@@ -84,6 +86,7 @@ def handle_email(id_user):
         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_{id_user}"] = st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_copy_{id_user}"]
 
     return None
+
 def normalize_text(text):
     # Convertir a string y minúsculas
     text = str(text).lower()
@@ -92,6 +95,15 @@ def normalize_text(text):
     # Eliminar espacios adicionales
     text = text.strip()
     return text
+
+def dias_habiles_entre(fecha_inicio, fecha_fin):
+    dias_habiles = 0
+    fecha_actual = fecha_inicio
+    while fecha_actual < fecha_fin:
+        if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+            dias_habiles += 1
+        fecha_actual += timedelta(days=1)
+    return dias_habiles
 
 def add_ponente():
     id_user = str(uuid.uuid4())
@@ -141,7 +153,9 @@ def remove_last_participant():
 def validacion_completa_dni(id_user):
     dni = st.session_state.get(f"dni_{id_user}", "")
     st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
-
+    if dni == "":
+        st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
+        return
     try:
         numero = int(dni[:-1])
         letra = dni[-1].upper()
@@ -154,11 +168,15 @@ def validacion_completa_dni(id_user):
     except:
         if dni != "":
             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = False
-        
+        else:
+            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"dni_correcto_{id_user}"] = True
 
 def validacion_completa_email(id_user):    
         mail = st.session_state.get(f"email_{id_user}", "")
         st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = True
+        if mail == "":
+            st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = True
+            return  # Salimos de la función porque no hay más que validar
         try:
             tlds_validos = ['com', 'org', 'net', 'es', 'edu', 'gov', 'info', 'biz']
             tlds_pattern = '|'.join(tlds_validos)
@@ -171,21 +189,25 @@ def validacion_completa_email(id_user):
         except:
             if mail != "":
                 st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = False
+            else:
+                st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"] = True
 
 
 def validacion_num_noches():
     save_to_session_state("num_noches_copy_ss", st.session_state["num_noches_ss"])
     st.session_state.num_noches_correcto_ss = True
-    if st.session_state.num_noches_ss.isdigit():
-        duracion = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days
-        if int(st.session_state.num_noches_ss) > duracion + 1: 
+    try:
+        if st.session_state.num_noches_ss.isdigit():
+            duracion = (st.session_state["end_date_ss"] - st.session_state["start_date_ss"]).days
+            if int(st.session_state.num_noches_ss) > duracion + 1: 
+                st.session_state.num_noches_correcto_ss = False
+            save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) 
+                        
+        else:
+            st.session_state["form_data_speaking_services"]["num_noches_ss"] = ""
             st.session_state.num_noches_correcto_ss = False
-        save_to_session_state("num_noches_ss", st.session_state["num_noches_ss"]) 
-                    
-    else:
-        st.session_state["form_data_speaking_services"]["num_noches_ss"] = ""
-        st.session_state.num_noches_correcto_ss = False
-    
+    except: 
+        st.session_state.num_noches_correcto_ss = True
 
 def on_change_nombre(id_user):
     if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] != None:
@@ -286,10 +308,11 @@ def single_ponente(id_user, info_user, index):
                         with col2:
                             tier = st.selectbox(
                                 f"Tier del participante {index + 1} *", 
-                                ["0", "1", "2", "3", "4"], 
-                                index= ["0", "1", "2", "3", "4"].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
+                                ["0", "1", "2", "3", "4", "KOL Global"], 
+                                index= ["0", "1", "2", "3", "4", "KOL Global"].index(st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"]) if f"tier_{id_user}" in st.session_state["form_data_speaking_services"]["participantes_ss"][id_user] else 0,
                                 key=f"tier_{id_user}"
                             )
+
                             st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"tier_{id_user}"] = tier
                             
                         col1, col2 = st.columns(2)
@@ -304,12 +327,12 @@ def single_ponente(id_user, info_user, index):
                         
                         with col2:       
                             email = st.text_input(
-                                f"Email del participante {index + 1} *", 
+                                f"Email del participante {index + 1}", 
                                 value = info_user.get(f"email_copy_{id_user}", ""),
                                 key=f"email_{id_user}",
                                 on_change= lambda: handle_email(id_user)
                             )
-                            
+                        
                         if not st.session_state["form_data_speaking_services"]["participantes_ss"][id_user][f"email_correcto_{id_user}"]:
                             st.warning("El email introducido no es correcto.", icon="❌")
 
@@ -463,12 +486,13 @@ def generacion_errores(tipo):
         errores_ia = af.validar_campos_ia(st.session_state["form_data_speaking_services"], validar_ia)
 
         if not errores_general and all(not lista for lista in errores_participantes.values()) and not errores_ia:
-            if tipo == "Reunión Merck Program":
+            if tipo == "Merck Program":
                 doc, st.session_state.path_doc_ss = cd.crear_documento_speaking(st.session_state["form_data_speaking_services"])
             else:
                 doc, st.session_state.path_doc_ss = cd.crear_documento_speaking_reducido(st.session_state["form_data_speaking_services"])
             st.session_state.download_enabled_ss = True
     except Exception as e:
+        errores_ia = ""
         traceback.print_exc()
         st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
@@ -585,7 +609,7 @@ def button_form_reducido(tipo):
             
 
 def download_document(disabled, tipo):
-    if tipo == "Reunión Merck Program":
+    if tipo == "Merck Program":
         nombre = f"Speaking_Service_Merck_Program - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
     else:
         nombre = f"Speaking_Service_Paragüas - {st.session_state['form_data_speaking_services']['nombre_evento_ss']}.zip"
@@ -686,9 +710,9 @@ if "form_data_speaking_services" not in st.session_state:
 
 af.show_main_title(title="Speaking Services", logo_size=200)
 
-meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Reunión Merck Program", "Paragüas iniciado"])
+meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"])
 
-if meeting_type == "Reunión Merck Program":
+if meeting_type == "Merck Program":
 
     # Lista de parámetros obligatorios
     mandatory_fields = [
@@ -766,6 +790,9 @@ if meeting_type == "Reunión Merck Program":
                     format = "DD/MM/YYYY")
         if st.session_state["form_data_speaking_services"]["start_date_ss"] == date.today():
             st.warning(f"Revisa que la fecha de inicio del evento introducida sea correcta.")
+
+        
+
     with col2:
         end_date_ss = st.date_input("Fecha de fin del evento *", 
                     value= start_date_ss if st.session_state["form_data_speaking_services"]["end_date_ss"] < start_date_ss else  st.session_state["form_data_speaking_services"]["end_date_ss"],
@@ -776,6 +803,13 @@ if meeting_type == "Reunión Merck Program":
         if st.session_state["form_data_speaking_services"]["end_date_ss"] == date.today():
             st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
 
+    hoy = date.today()
+    start_date = st.session_state["form_data_speaking_services"]["start_date_ss"]
+    dias_habiles = dias_habiles_entre(hoy, start_date)
+
+    #if (st.session_state["form_data_speaking_services"]["start_date_ss"] - date.today()).days < 10:
+    if dias_habiles < 10:
+            st.warning(f"Recuerda que esta actividad deberá ser aprobada en IHUB por el director de la Unidad al no cumplir el plazo de registro de al menos 10 días hábiles de antelación al evento.")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -797,7 +831,7 @@ if meeting_type == "Reunión Merck Program":
                         on_change=lambda: save_to_session_state("num_asistentes_totales_ss", st.session_state["num_asistentes_totales_ss"]))
         
     if st.session_state["num_asistentes_totales_ss"] >= 20:
-        st.warning("Cuando el número de asistentes es mayor o igual a 20, y si alguno pernocta, se debería haber comunicado y rellenado el **Formulario Farma Industria** con antelación.")
+        st.warning("Recuerda comunicar a Farmaindustria antes de 10 días hábiles del evento si se patrocina la participación de al menos 20 profesionales sanitarios y alguno pernocta (incluido ponentes).")
 
         
     col1, col2 = st.columns(2)
@@ -878,15 +912,19 @@ if meeting_type == "Reunión Merck Program":
 
     if st.session_state.num_ponentes_correcto_ss == False:
         st.warning("Se debe introducir un valor numérico.", icon="❌")
-    
+    else:
+        if st.session_state.num_ponentes_ss != "" and st.session_state.num_ponentes_ss is not None:
+            if int(st.session_state.num_ponentes_ss) > 9:
+                st.warning("Recueda comunicar a Farmaindustria antes de 10 días hábiles del evento los proyectos que compartan objetivo, método y enfoque, con la participación remunerada de al menos 10 profesionales sanitarios en el marco temporal de un año.")
         
+
         
     with col2:
         st.multiselect(
             "Criterios de selección *",
             [
                 "Experiencia como ponente", "Experiencia como profesor",
-                "Experiencia clínica en tema a tratar", "Especialista en tema a tratar"
+                "Experiencia clínica en tema a tratar", "Especialista en tema a tratar", "Especialidad Médica relacionada con el área terapéutica en la que se basa la actividad"
             ],
             key="criterios_seleccion_ss",
             default=st.session_state["form_data_speaking_services"]["criterios_seleccion_ss"] if "criterios_seleccion_ss" in st.session_state["form_data_speaking_services"] else [],
