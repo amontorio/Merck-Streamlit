@@ -132,7 +132,6 @@ mandatory_fields = [
     "organization_name",
     "signer_first_name",
     "signer_position",
-    "signer_email",
     "event_objetive",
     "documentosubido_1_event",
     "documentosubido_2_event"
@@ -491,7 +490,7 @@ def crear_detalles_firmante():
         with col13_2:
             st.text_input("Cargo del firmante *", value=st.session_state["form_data_event"]["signer_position"], key="signer_position", on_change=lambda: save_to_session_state("signer_position", st.session_state["signer_position"]))
         with col14_2:
-            email = st.text_input("Email del firmante *", 
+            email = st.text_input("Email del firmante", 
                         value=st.session_state["form_data_event"]["signer_email_copy"], # if st.session_state["email_correcto"] == True else "",
                         key="signer_email", 
                         on_change= lambda: validacion_completa_email())
@@ -621,6 +620,7 @@ def generacion_errores():
         errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
         avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
 
+
         if not errores_general and not errores_ia:
             df = save_form_data_event()
             doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)
@@ -634,8 +634,9 @@ def generacion_errores():
 def mostrar_errores(errores_general, errores_ia, avisos):
     try:
         errores_general, err = af.validar_campos(st.session_state["form_data_event"], mandatory_fields, dependendent_fields)
-        # errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
-        # avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
+        errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
+        avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
+
     except Exception as e:
         traceback.print_exc()
 

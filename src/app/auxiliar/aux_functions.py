@@ -621,13 +621,14 @@ def search_function(search_text, datos = dataset):
     df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
 
     # Reemplazar NaN en 'Tier' con 0
-    df['Tier'] = df['Tier'].fillna(0)
-
+    #df['Tier'] = df['Tier'].fillna(0)
+    df['TIER'] = df['TIER'].fillna(0)
     # Asegurarse de que la columna 'Tier' sea numérica
     #df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
 
     # Extraer las columnas necesarias y convertirlas a una lista de tuplas
-    lista = list(df[['Nombre de la cuenta', 'Especialidad', 'Tier']].itertuples(index=False, name=None))
+    #lista = list(df[['Nombre de la cuenta', 'Especialidad', 'Tier']].itertuples(index=False, name=None))
+    lista = list(df[['Nombre de la cuenta', 'Especialidad', 'TIER']].itertuples(index=False, name=None))
     
     # Normalizar el texto de búsqueda
     texto_normalizado = normalize_text(search_text)
@@ -649,14 +650,18 @@ def handle_tier_from_name(name, datos = dataset):
     df['Especialidad'] = df['Especialidad'].fillna('Ninguna')
 
     # Reemplazar NaN en 'Tier' con 0
-    df['Tier'] = df['Tier'].fillna(0)
+    #df['Tier'] = df['Tier'].fillna(0)
+    df['TIER'] = df['TIER'].fillna(0) 
 
     # Asegurarse de que la columna 'Tier' sea numérica
     #df['Tier'] = pd.to_numeric(df['Tier'], errors='coerce').fillna(0)
     
     raw_name = name["result"].split("-")[0].strip()
 
-    tier = df.loc[df["Nombre de la cuenta"] == raw_name, "Tier"]
+    #tier = df.loc[df["Nombre de la cuenta"] == raw_name, "Tier"]
+    tier = df.loc[df["Nombre de la cuenta"] == raw_name, "TIER"]
+
+    print("TIER", tier)
 
         
     if not tier.empty:
