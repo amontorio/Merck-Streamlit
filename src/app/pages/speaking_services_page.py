@@ -492,7 +492,6 @@ def generacion_errores(tipo):
                 doc, st.session_state.path_doc_ss = cd.crear_documento_speaking_reducido(st.session_state["form_data_speaking_services"])
             st.session_state.download_enabled_ss = True
     except Exception as e:
-        errores_ia = ""
         traceback.print_exc()
         st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 

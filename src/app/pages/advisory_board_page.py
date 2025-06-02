@@ -761,7 +761,6 @@ def generacion_errores():
             doc, st.session_state.path_doc_ab = cd.crear_documento_advisory(st.session_state["form_data_advisory_board"])
             st.session_state.download_enabled_ab = True
     except Exception as e:
-        errores_ia = ""
         traceback.print_exc()
         st.toast(f"Ha ocurrido un problema al generar el formulario -> {e}", icon="❌")
 
