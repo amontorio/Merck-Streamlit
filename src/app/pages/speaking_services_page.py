@@ -740,6 +740,7 @@ if "form_data_speaking_services" not in st.session_state:
     }
 
     st.session_state["form_data_speaking_services"] = {}
+    st.session_state["form_data_speaking_services"]["formulario_tipo"]= ""
     st.session_state["id_participantes_ss"] = []
     st.session_state["download_enabled_ss"] = False
     st.session_state["path_doc_ss"] = None
@@ -769,14 +770,17 @@ af.show_main_title(title="Speaking Services", logo_size=200)
 
      
 
-
+#dario: 
 if "formulario_tipo" in st.session_state["form_data_speaking_services"].keys():
     if st.session_state["form_data_speaking_services"]["formulario_tipo"] =="speaking_services_merck":
-        meeting_type ="Merck Program (MARCO)"
+        st.session_state["form_data_speaking_services"]["formulario_tipo"] ="Merck Program (MARCO)"
     elif st.session_state["form_data_speaking_services"]["formulario_tipo"] =="speaking_services_paraguas":
-        meeting_type= "Reunión dentro de un marco (paragüas) ya registrado en IHUB"
+        st.session_state["form_data_speaking_services"]["formulario_tipo"]= "Reunión dentro de un marco (paragüas) ya registrado en IHUB"
         
-meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"])
+meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"],
+                                index= ["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"].index(st.session_state["form_data_speaking_services"]["formulario_tipo"])if st.session_state["form_data_speaking_services"]["formulario_tipo"] != "" else 0)
+
+st.session_state["form_data_speaking_services"]["formulario_tipo"]= meeting_type
 
 if meeting_type == "Merck Program (MARCO)":
 
