@@ -12,6 +12,10 @@ import io
 from streamlit.components.v1 import html
 import time
 import re
+import json
+from datetime import datetime
+import os
+import copy
 
 # Diccionario de tarifas según el tier
 tarifas = {
@@ -75,7 +79,21 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_consulting_services"][key][key_participante][field_participante] = value
-        
+
+def serialize_dates(obj):
+    """Convierte objetos datetime.date a cadenas para la serialización JSON."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if isinstance(value, (datetime, date)):  # Verificar si es `datetime` o `date`
+                obj[key] = value.isoformat()
+            elif isinstance(value, dict):
+                obj[key] = serialize_dates(value)
+            elif isinstance(value, list):
+                obj[key] = [serialize_dates(item) for item in value]
+    elif isinstance(obj, list):
+        obj = [serialize_dates(item) for item in obj]
+    return obj
+
 def handle_fecha_inicio():
     save_to_session_state("start_date_cs", st.session_state["start_date_cs"])
     if st.session_state["start_date_cs"] >= st.session_state["end_date_cs"]:
@@ -693,6 +711,20 @@ def button_form():
                 status.update(
                     label="Validación completada!", state="complete", expanded=False
                 )
+                formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
+                user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+                fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+                st.write(user_id)
+
+                datos = copy.deepcopy(st.session_state["form_data_consulting_services"]) # Cambia según el tipo de formulario
+                datos_ser = serialize_dates(datos)
+                datos_ser["user_id"] = user_id
+                datos_ser["formulario_tipo"] = formulario_tipo
+                datos_ser["documentosubido_1_cs"] = ""
+                datos_ser["documentosubido_2_cs"] = ""
+                ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+                with open(ruta, "w") as f:
+                    json.dump(datos_ser, f)
                 st.session_state.errores = False
             else:
                 status.update(
@@ -741,5 +773,23 @@ disabled = not st.session_state.download_enabled_cs
 if disabled == False:
     download_document(disabled)
 
-#st.write(st.session_state["form_data_consulting_services"])
+
+if st.sidebar.button("Guardar borrador de formulario"):
+    formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
+    user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+    fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+    st.write(user_id)
+
+    datos = copy.deepcopy(st.session_state["form_data_consulting_services"]) # Cambia según el tipo de formulario
+    datos_ser = serialize_dates(datos)
+    datos_ser["user_id"] = user_id
+    datos_ser["formulario_tipo"] = formulario_tipo
+    datos_ser["documentosubido_1_cs"] = ""
+    datos_ser["documentosubido_2_cs"] = ""
+    ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+    with open(ruta, "w") as f:
+        json.dump(datos_ser, f)
+    st.toast("Formulario guardado exitosamente!", icon="✔️")
+
+st.write(st.session_state["form_data_consulting_services"])
 #st.write(st.session_state)

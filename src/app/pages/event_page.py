@@ -6,7 +6,10 @@ import traceback
 import io
 import re
 import time
-
+import json
+from datetime import datetime
+import os
+import copy
 import auxiliar.create_docx as cd
 import model.llm_sponsorship_event as llm_se
 import auxiliar.aux_functions as af
@@ -35,6 +38,20 @@ def handle_invoke_chain_event_description():
     st.session_state.res_generate_event_description = res  
     save_to_session_state("short_description", st.session_state.res_generate_event_description)
 
+
+def serialize_dates(obj):
+    """Convierte objetos datetime.date a cadenas para la serialización JSON."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if isinstance(value, (datetime, date)):  # Verificar si es `datetime` o `date`
+                obj[key] = value.isoformat()
+            elif isinstance(value, dict):
+                obj[key] = serialize_dates(value)
+            elif isinstance(value, list):
+                obj[key] = [serialize_dates(item) for item in value]
+    elif isinstance(obj, list):
+        obj = [serialize_dates(item) for item in obj]
+    return obj
 
 def validacion_completa_email():
         save_to_session_state("signer_email_copy", st.session_state["signer_email"])
@@ -682,6 +699,23 @@ def button_form():
             status.update(
                 label="Validación completada!", state="complete", expanded=False
             )
+            formulario_tipo = "event"  # Cambia según el tipo de formulario
+            user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+            fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+            st.write(user_id)   
+
+            datos = copy.deepcopy(st.session_state["form_data_event"]) # Cambia según el tipo de formulario
+            datos_ser = serialize_dates(datos)
+            datos_ser["user_id"] = user_id
+            datos_ser["formulario_tipo"] = formulario_tipo
+            datos_ser["documentosubido_1_event"] = ""
+            datos_ser["documentosubido_2_event"] = ""
+            datos_ser["documentosubido_3_event"] = ""
+            datos_ser["documentosubido_4_event"] = ""
+            datos_ser["documentosubido_5_event"] = ""
+            ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+            with open(ruta, "w") as f:
+                json.dump(datos_ser, f)
             st.session_state.errores_event = False
         else:
             status.update(
@@ -727,4 +761,24 @@ disabled =  not st.session_state.download_enabled
 if disabled == False:
     download_document()
 
-#st.write(st.session_state["form_data_event"])
+st.write(st.session_state["form_data_event"])
+
+if st.sidebar.button("Guardar borrador de formulario"):
+    formulario_tipo = "event"  # Cambia según el tipo de formulario
+    user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+    fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+    st.write(user_id)
+
+    datos = copy.deepcopy(st.session_state["form_data_event"]) # Cambia según el tipo de formulario
+    datos_ser = serialize_dates(datos)
+    datos_ser["user_id"] = user_id
+    datos_ser["formulario_tipo"] = formulario_tipo
+    datos_ser["documentosubido_1_event"] = ""
+    datos_ser["documentosubido_2_event"] = ""
+    datos_ser["documentosubido_3_event"] = ""
+    datos_ser["documentosubido_4_event"] = ""
+    datos_ser["documentosubido_5_event"] = ""
+    ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+    with open(ruta, "w") as f:
+        json.dump(datos_ser, f)
+    st.toast("Formulario guardado exitosamente!", icon="✔️")

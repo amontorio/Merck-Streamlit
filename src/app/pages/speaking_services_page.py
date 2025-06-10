@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_searchbox import st_searchbox
-from datetime import date
+from datetime import datetime, date
 import unicodedata
 import uuid
 from datetime import time, timedelta
@@ -10,7 +10,10 @@ import auxiliar.aux_functions as af
 import io
 import time
 import re
-
+import json
+from datetime import datetime
+import os
+import copy
 
 
 tarifas = {
@@ -59,6 +62,19 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
         st.session_state[field_participante] = value
         st.session_state["form_data_speaking_services"][key][key_participante][field_participante] = value
 
+def serialize_dates(obj):
+    """Convierte objetos datetime.date a cadenas para la serialización JSON."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if isinstance(value, (datetime, date)):  # Verificar si es `datetime` o `date`
+                obj[key] = value.isoformat()
+            elif isinstance(value, dict):
+                obj[key] = serialize_dates(value)
+            elif isinstance(value, list):
+                obj[key] = [serialize_dates(item) for item in value]
+    elif isinstance(obj, list):
+        obj = [serialize_dates(item) for item in obj]
+    return obj
 
 def handle_fecha_inicio():
     save_to_session_state("start_date_ss", st.session_state["start_date_ss"])
@@ -450,7 +466,9 @@ def ponentes_section():
         index = 0
         # Renderizar los participantes
         for info_user in st.session_state["participantes_ss"]:
+            
             id_user = info_user["id"]
+            
             col_participant, col_remove_participant_individual = st.columns([10,1])
             with col_participant:
 
@@ -556,6 +574,26 @@ def button_form(tipo):
                 status.update(
                     label="Validación completada!", state="complete", expanded=False
                 )
+                if meeting_type == "Merck Program (MARCO)":
+                    formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
+                else: #"Reunión dentro de un marco (paragüas) ya registrado en IHUB"
+                    formulario_tipo = "speaking_services_paraguas"
+
+
+                user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+                fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+                st.write(user_id)
+
+                datos = copy.deepcopy(st.session_state["form_data_speaking_services"]) # Cambia según el tipo de formulario
+                datos_ser = serialize_dates(datos)
+                datos_ser["user_id"] = user_id
+                datos_ser["formulario_tipo"] = formulario_tipo
+                datos_ser["documentosubido_1_ss"] = ""
+                datos_ser["documentosubido_2_ss"] = ""
+                datos_ser["documentosubido_3_ss"] = ""
+                ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+                with open(ruta, "w") as f:
+                    json.dump(datos_ser, f)
                 st.session_state.errores_ss = False
             else:
                 status.update(
@@ -592,6 +630,26 @@ def button_form_reducido(tipo):
                 status.update(
                     label="Validación completada!", state="complete", expanded=False
                 )
+                if meeting_type == "Merck Program (MARCO)":
+                    formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
+                else: #"Reunión dentro de un marco (paragüas) ya registrado en IHUB"
+                    formulario_tipo = "speaking_services_paraguas"
+
+
+                user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+                fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+                st.write(user_id)
+
+                datos = copy.deepcopy(st.session_state["form_data_speaking_services"]) # Cambia según el tipo de formulario
+                datos_ser = serialize_dates(datos)
+                datos_ser["user_id"] = user_id
+                datos_ser["formulario_tipo"] = formulario_tipo
+                datos_ser["documentosubido_1_ss"] = ""
+                datos_ser["documentosubido_2_ss"] = ""
+                datos_ser["documentosubido_3_ss"] = ""
+                ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+                with open(ruta, "w") as f:
+                    json.dump(datos_ser, f)
                 st.session_state.errores_ss = False
             else:
                 status.update(
@@ -695,7 +753,7 @@ if "form_data_speaking_services" not in st.session_state:
 
     if "participantes_ss" not in st.session_state:
         st.session_state.participantes_ss = [] 
-    
+
     add_ponente()
 
 
@@ -709,6 +767,15 @@ if "form_data_speaking_services" not in st.session_state:
 
 af.show_main_title(title="Speaking Services", logo_size=200)
 
+     
+
+
+if "formulario_tipo" in st.session_state["form_data_speaking_services"].keys():
+    if st.session_state["form_data_speaking_services"]["formulario_tipo"] =="speaking_services_merck":
+        meeting_type ="Merck Program (MARCO)"
+    elif st.session_state["form_data_speaking_services"]["formulario_tipo"] =="speaking_services_paraguas":
+        meeting_type= "Reunión dentro de un marco (paragüas) ya registrado en IHUB"
+        
 meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"])
 
 if meeting_type == "Merck Program (MARCO)":
@@ -1112,6 +1179,30 @@ else:
     if disabled == False:
         download_document(disabled, meeting_type)
 
+    
+if st.sidebar.button("Guardar borrador de formulario"):
+    if meeting_type == "Merck Program (MARCO)":
+        formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
+    else: #"Reunión dentro de un marco (paragüas) ya registrado en IHUB"
+        formulario_tipo = "speaking_services_paraguas"
 
-#st.write(st.session_state["form_data_speaking_services"])
+
+    user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+    fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+    st.write(user_id)
+
+    datos = copy.deepcopy(st.session_state["form_data_speaking_services"]) # Cambia según el tipo de formulario
+    datos_ser = serialize_dates(datos)
+    datos_ser["user_id"] = user_id
+    datos_ser["formulario_tipo"] = formulario_tipo
+    datos_ser["documentosubido_1_ss"] = ""
+    datos_ser["documentosubido_2_ss"] = ""
+    datos_ser["documentosubido_3_ss"] = ""
+    ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+    with open(ruta, "w") as f:
+        json.dump(datos_ser, f)
+    st.toast("Formulario guardado exitosamente!", icon="✔️")
+
+
+st.write(st.session_state["form_data_speaking_services"])
 #st.write(st.session_state)

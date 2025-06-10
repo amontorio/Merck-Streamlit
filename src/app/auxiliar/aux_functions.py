@@ -311,7 +311,7 @@ def validar_participantes(participantes):
 
 
 def get_model():
-    azure_endpoint = "https://ai-foundry-dia.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2025-01-01-preview"
+    azure_endpoint = "https://merck-openai-drafts.openai.azure.com/openai/deployments/gpt-4.1-mini/chat/completions?api-version=2025-01-01-preview"
     api_key = ""
 
     llm = AzureChatOpenAI(

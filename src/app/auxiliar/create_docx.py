@@ -106,14 +106,14 @@ def crear_documento_sponsorship_of_event(dataframe):
         doc4 = datos.get("documentosubido_4_event", None)
         doc5 = datos.get("documentosubido_5_event", None)
 
-        if doc1 is not None:
+        if doc1 is not None and doc1 != "":
             file_type = str(doc1.name).split(".")[-1]
             doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
 
-        if doc2 is not None:
+        if doc2 is not None and doc2 != "":
             file_type = str(doc2.name).split(".")[-1]
             doc2_path = os.path.join(output_dir, f"SolicitudPatrocinio.{file_type}")  
             with open(doc2_path, "wb") as f:
@@ -127,7 +127,7 @@ def crear_documento_sponsorship_of_event(dataframe):
                 f.write(doc3.getbuffer()) 
             zipf.write(doc3_path, os.path.basename(doc3_path))  
         
-        if doc4 is not None:
+        if doc4 is not None and doc4 != "":
             contador = 1
             for uploaded_file in doc4:
                 file_type = str(uploaded_file.name).split(".")[-1]
@@ -145,13 +145,13 @@ def crear_documento_sponsorship_of_event(dataframe):
             zipf.write(doc5_path, os.path.basename(doc5_path)) 
 
     os.remove(archivo_docx)
-    if doc1 is not None:
+    if doc1 is not None and doc1 != "":
         os.remove(doc1_path)
-    if doc2 is not None:
+    if doc2 is not None and doc2 != "":
         os.remove(doc2_path)
     if doc3 is not None and doc3 != "":
         os.remove(doc3_path)
-    if doc4 is not None:
+    if doc4 is not None and doc4 != "":
         os.remove(doc4_path)
     if doc5 is not None and doc5 != "":
         os.remove(doc5_path)
@@ -280,13 +280,13 @@ def crear_documento_advisory(data):
         doc1 = data.get("documentosubido_1", None)
         doc2 = data.get("documentosubido_2", None)
 
-        if doc1 is not None:
+        if doc1 is not None and doc1 != "":
             file_type = str(doc1.name).split(".")[-1]
             doc1_path = os.path.join(output_dir, f"ProgramaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
-        if doc2 is not None:
+        if doc2 is not None and doc2 != "":
             contador = 1
             for uploaded_file in doc2:
                 file_type = str(uploaded_file.name).split(".")[-1]
@@ -297,9 +297,9 @@ def crear_documento_advisory(data):
                 contador += 1
 
     os.remove(archivo_docx)
-    if doc1 is not None:
+    if doc1 is not None and doc1 != "":
         os.remove(doc1_path)
-    if doc2 is not None:
+    if doc2 is not None and doc2 != "":
         os.remove(doc2_path)
     
     
@@ -410,14 +410,14 @@ def crear_documento_consulting_services(data):
         doc1 = data.get("documentosubido_1_cs", None)
         doc2 = data.get("documentosubido_2_cs", None)
 
-        if doc1 is not None:
+        if doc1 is not None and doc1 != "":
             file_type = str(doc1.name).split(".")[-1]
             doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer())  
             zipf.write(doc1_path, os.path.basename(doc1_path)) 
         
-        if doc2 is not None:
+        if doc2 is not None and doc2 != "":
             contador = 1
             for uploaded_file in doc2:
                 file_type = str(uploaded_file.name).split(".")[-1]
@@ -430,9 +430,9 @@ def crear_documento_consulting_services(data):
 
 
     os.remove(archivo_docx)
-    if doc1 is not None:
+    if doc1 is not None and doc1 != "":
         os.remove(doc1_path)
-    if doc2 is not None:
+    if doc2 is not None and doc2 != "":
         os.remove(doc2_path)
 
     print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
@@ -562,21 +562,21 @@ def crear_documento_speaking(data):
         doc2 = data.get("documentosubido_2_ss", None)
         doc3 = data.get("documentosubido_3_ss", None)
 
-        if doc1 is not None:
+        if doc1 is not None and doc1 != "":
             file_type = str(doc1.name).split(".")[-1]
             doc1_path = os.path.join(output_dir, f"AgendaEvento.{file_type}")  
             with open(doc1_path, "wb") as f:
                 f.write(doc1.getbuffer()) 
             zipf.write(doc1_path, os.path.basename(doc1_path))  
 
-        if doc2 is not None:
+        if doc2 is not None and doc2 != "":
             file_type = str(doc2.name).split(".")[-1]
             doc2_path = os.path.join(output_dir, f"Contratos.{file_type}")  
             with open(doc2_path, "wb") as f:
                 f.write(doc2.getbuffer()) 
             zipf.write(doc2_path, os.path.basename(doc2_path))  
 
-        if doc3 is not None:
+        if doc3 is not None and doc3 != "":
             contador = 1
             for uploaded_file in doc3:
                 file_type = str(uploaded_file.name).split(".")[-1]
@@ -588,11 +588,11 @@ def crear_documento_speaking(data):
 
 
     os.remove(archivo_docx)
-    if doc1 is not None:
+    if doc1 is not None and doc1 != "":
         os.remove(doc1_path)
-    if doc2 is not None:
+    if doc2 is not None and doc2 != "":
         os.remove(doc2_path)
-    if doc3 is not None:
+    if doc3 is not None and doc2 != "":
         os.remove(doc3_path)
 
     print(f'Documento y archivos añadidos al ZIP: {nombre_zip}')
