@@ -209,7 +209,7 @@ def on_change_nombre(id_user):
 
 def asignacion_nombre(id_user):
     if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""]:
-        nombre_ponente = st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"].get("result", "").rsplit('-', 1)[0] 
+        nombre_ponente = st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"]
         st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"]["name_ponente_cs"] = nombre_ponente
     else:
         st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"]["name_ponente_cs"] = ""
@@ -253,7 +253,8 @@ def single_consultant(id_user, info_user, index):
                                 placeholder="Busca un HCO / HCP *",
                                 key=f"nombre_{id_user}",
                                 edit_after_submit="disabled",
-                                default_searchterm= st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"].get("result", "").rsplit('-', 1)[0] if st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""] else "",
+                                default_searchterm= st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"] if st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""] else "",
+                                default= st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"],
                                 reset_function = on_change_nombre(id_user), 
                                 submit_function= lambda x: (
                                     save_to_session_state("participantes_cs", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"),
@@ -262,6 +263,7 @@ def single_consultant(id_user, info_user, index):
                                 rerun_on_update=True,
                                 rerun_scope="fragment"
                         )     
+                        st.session_state["form_data_consulting_services"]["participantes_cs"][f"{id_user}"][f"nombre_{id_user}"] = nombre
 
                         col1, col2 = st.columns(2)
                         

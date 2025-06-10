@@ -239,7 +239,8 @@ def on_change_nombre(id_user):
 
 def asignacion_nombre(id_user):
     if f'nombre_{id_user}' in st.session_state and st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""]:
-        nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"].get("result", "").rsplit('-', 1)[0] 
+        #nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"].get("result", "").rsplit('-', 1)[0] 
+        nombre_ponente = st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"].rsplit('-', 1)[0] 
         st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = nombre_ponente
     else:
         st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = ""
@@ -299,7 +300,9 @@ def single_ponente(id_user, info_user, index):
                                 placeholder="Busca un HCO / HCP *",
                                 key=f"nombre_{id_user}",
                                 edit_after_submit="disabled",
-                                default_searchterm= st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"].get("result", "").rsplit('-', 1)[0] if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""] else "",
+                                #default_searchterm= st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"].get("result", "").rsplit('-', 1)[0] if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""] else "",
+                                default_searchterm= st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] if st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] not in [None, ""] else "",
+                                default= st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"],
                                 reset_function = on_change_nombre(id_user), 
                                 submit_function= lambda x: (
                                     save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"),
@@ -309,7 +312,8 @@ def single_ponente(id_user, info_user, index):
                                 rerun_scope="fragment",
                                 debounce=300
                         )     
-
+                        st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"][f"nombre_{id_user}"] = nombre
+                        
                         col1, col2 = st.columns(2)
                         with col1:
                             dni = st.text_input(
@@ -461,6 +465,7 @@ def single_ponente(id_user, info_user, index):
 
         
 def ponentes_section():
+        print("LLAMO A PONENTES SECTION")
         if st.button("Agregar ponente", use_container_width=True, icon="➕", key="add_ponente_button"):
             add_ponente()
 
@@ -469,12 +474,15 @@ def ponentes_section():
         for info_user in st.session_state["participantes_ss"]:
             
             id_user = info_user["id"]
-            
+            print(id_user)
             col_participant, col_remove_participant_individual = st.columns([10,1])
             with col_participant:
 
                 asignacion_nombre(id_user)
-                nombre_expander_ss = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']['name_ponente_ss']
+                st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f"nombre_{id_user}"]
+                #nombre_expander_ss = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']['name_ponente_ss']
+                nombre_expander_ss = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f"nombre_{id_user}"]
+                #print(st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'])
                 if nombre_expander_ss != "":
                     aux = ": "
                 else:

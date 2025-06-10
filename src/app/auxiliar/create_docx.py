@@ -249,7 +249,7 @@ def crear_documento_advisory(data):
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
             #row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "")
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
@@ -376,7 +376,7 @@ def crear_documento_consulting_services(data):
         row_cells = tabla.add_row().cells
         
         # Fill in basic fields
-        row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
+        row_cells[0].text = participante.get(f"nombre_{id_participante}", "")
         row_cells[1].text = participante.get(f"dni_{id_participante}", "")
         row_cells[2].text = participante.get(f"tier_{id_participante}", "")
         row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")
@@ -529,7 +529,7 @@ def crear_documento_speaking(data):
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
             # row_cells[0].text = participante.get(f"nombre_{id_participante}", "").split('-')[0]
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").rsplit('-', 1)[0] 
             #row_cells[0].text = "-".join(participante.get(f"nombre_{id_participante}", "").split('-')[:-1])
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
@@ -663,7 +663,7 @@ def crear_documento_speaking_reducido(data):
         for participante in participantes.values():
             id_participante = participante["id"]
             row_cells = tabla.add_row().cells
-            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").get("result", "").rsplit('-', 1)[0] 
+            row_cells[0].text = participante.get(f"nombre_{id_participante}", "").rsplit('-', 1)[0] 
             row_cells[1].text = participante.get(f"dni_{id_participante}", "")
             row_cells[2].text = participante.get(f"tier_{id_participante}", "")
             row_cells[3].text = participante.get(f"centro_trabajo_{id_participante}", "")

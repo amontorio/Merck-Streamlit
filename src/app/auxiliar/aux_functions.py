@@ -637,6 +637,10 @@ def search_function(search_text, datos = dataset):
         f"{elemento[0]} - {elemento[1]}" for elemento in lista
         if texto_normalizado in normalize_text(elemento[0])
     ]
+
+    # Limitar la lista a 40 elementos
+    lista = lista[:40]
+
     if search_text not in lista and len(lista) == 0: lista.append(search_text)
               # noqa: E701
     return lista

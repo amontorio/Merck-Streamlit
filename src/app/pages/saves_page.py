@@ -4,31 +4,19 @@ import glob
 import pandas as pd
 import json
 from datetime import datetime, date
-#dario: Página completamente nueva, aqui enseño los formularios guardados y el historial, los guardados se pueden guardar y ver y se guardan en la carpeta formularios_guardados, 
-# el historial se guarda en la carpeta historial y solo se puede ver. Los archivos se guardan como nombre_usuario_tipo_formulario_fecha en su respectiva carpeta
 
-user_id = st.session_state.get("user_id", "default_user") #esto se tiene que cambiar en cliente para permitir diferentes usuarios
-directorio_formularios = "formularios_guardados"
+user_id = st.session_state.get("user_id", "default_user")
 
-patron_archivo = os.path.join(directorio_formularios, f"{user_id}_*.json")
-archivos_guardados = glob.glob(patron_archivo)
-
-directorio_historial = "historial"
-
-patron_historial = os.path.join(directorio_historial, f"{user_id}_*.json")
-historiales_guardados = glob.glob(patron_historial)
-
-historiales_data=[]
-
-formularios_data = []
-tipos_validos = [
+CARPETA_BORRADORES = "formularios_guardados"
+CARPETA_HISTORIAL = "historial"
+TIPOS_VALIDOS = [
     "speaking_services_paraguas",
     "speaking_services_merck",
     "consulting_services",
     "event",
     "advisory_board"
 ]
-mapeo_paginas = {
+MAPEO_PAGINAS = {
     "speaking services paraguas": "./pages/speaking_services_page.py",
     "speaking services merck": "./pages/speaking_services_page.py",
     "consulting services": "./pages/consulting_services_page.py",
@@ -36,166 +24,82 @@ mapeo_paginas = {
     "advisory board": "./pages/advisory_board_page.py"
 }
 
-def deserialize_dates(obj): #funcion para deserializar las fechas
-    """Convierte cadenas de fecha y hora en objetos `datetime.date` o `datetime.datetime`."""
+def deserialize_dates(obj):
     if isinstance(obj, dict):
-        for key, value in obj.items():
-            if isinstance(value, str):
-                    try:
-                        obj[key] = date.fromisoformat(value)
-                    except ValueError:
-                        pass  # Si falla, no cambia la cadena ya que no es una fecha
-            elif isinstance(value, dict):
-                obj[key] = deserialize_dates(value)
-            elif isinstance(value, list):
-                obj[key] = [deserialize_dates(item) for item in value]
+        for k, v in obj.items():
+            if isinstance(v, str):
+                try:
+                    obj[k] = date.fromisoformat(v)
+                except ValueError:
+                    pass
+            elif isinstance(v, (dict, list)):
+                obj[k] = deserialize_dates(v)
     elif isinstance(obj, list):
-        obj = [deserialize_dates(item) for item in obj]
+        obj = [deserialize_dates(i) for i in obj]
     return obj
 
-for archivo_path in archivos_guardados:
-    tipo_formulario = "Desconocido"
-    nombre_formulario = os.path.basename(archivo_path)
-    for tipo in tipos_validos:
-        if tipo in nombre_formulario:
-            tipo_formulario = tipo.replace('_', ' ')
-            break
-    fecha_guardado = datetime.fromtimestamp(os.path.getmtime(archivo_path)).strftime('%Y-%m-%d %H:%M:%S')
-    
-    formularios_data.append({
-        "Tipo de formulario": tipo_formulario,
-        "Fecha de guardado": fecha_guardado,
-        "Archivo Path": archivo_path
-    })
+def cargar_archivos(directorio, tipo):
+    patron = os.path.join(directorio, f"{user_id}_*.json")
+    archivos = glob.glob(patron)
+    data = []
+    for path in archivos:
+        nombre = os.path.basename(path)
+        tipo_form = next((t.replace("_", " ") for t in TIPOS_VALIDOS if t in nombre), "Desconocido")
+        fecha = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
+        data.append({
+            "Tipo de formulario": tipo_form,
+            "Fecha de guardado": fecha,
+            "Acciones": path
+        })
+    return pd.DataFrame(data)
 
-formularios_df = pd.DataFrame(formularios_data)
+def manejar_accion(accion, path, tipo_formulario):
+    with open(path, 'r') as f:
+        form_data = json.load(f)
+    form_data = deserialize_dates(form_data)
 
-st.markdown(f"""
-<h6 style="margin-top: 0; margin-bottom: 0px;">
-<h3 style="margin-bottom: 0;">Borradores guardados ({user_id})</h3>
-<hr style="margin-top: 0; margin-bottom: 50px;">
-""", unsafe_allow_html=True)
+    if tipo_formulario in MAPEO_PAGINAS:
+        clave = f"form_data_{tipo_formulario.replace(' ', '_')}"
+        if "speaking services" in tipo_formulario:
+            st.session_state["form_data_speaking_services"] = form_data
+            st.session_state["participantes_ss"] = list(form_data.get("participantes_ss", {}).values())
+        elif tipo_formulario == "advisory board":
+            st.session_state[clave] = form_data
+            st.session_state["participantes_ab"] = list(form_data.get("participantes_ab", {}).values())
+        elif tipo_formulario == "consulting services":
+            st.session_state[clave] = form_data
+            st.session_state["participantes_cs"] = list(form_data.get("participantes_cs", {}).values())
+        elif tipo_formulario == "event":
+            st.session_state[clave] = form_data
+            st.session_state["email_correcto"] = True
+        else:
+            st.session_state[clave] = form_data
+        st.switch_page(MAPEO_PAGINAS[tipo_formulario])
 
-st.markdown("##### 📄Lista de borradores") #borradores
+# 📄 Borradores guardados
+st.markdown(f"<h3>Borradores guardados ({user_id})</h3><hr>", unsafe_allow_html=True)
+df_borradores = cargar_archivos(CARPETA_BORRADORES, "borradores")
 
-# Recorriendo cada formulario para añadir botones
-for index, row in formularios_df.iterrows():
-    cols = st.columns([3, 1, 1])
+for i, row in df_borradores.iterrows():
+    cols = st.columns([4, 1, 1])
     with cols[0]:
-        st.write(f"{row['Tipo de formulario']} - {row['Fecha de guardado']}")
+        st.markdown(f"**{row['Tipo de formulario']}** — *{row['Fecha de guardado']}*")
     with cols[1]:
-        if st.button("✏️", key=f"edit_form_{index}", use_container_width=True):
-            
-            archivo_path = row['Archivo Path']
-            
-            with open(archivo_path, 'r') as f:
-                form_data = json.load(f)
-
-            form_data = deserialize_dates(form_data)
-            
-            tipo_formulario = row['Tipo de formulario']
-            # Redirigir basado en tipo de formulario usando mapeo
-            if tipo_formulario in mapeo_paginas:
-                
-                pagina=mapeo_paginas[tipo_formulario] 
-            
-                if tipo_formulario == "speaking services paraguas" or tipo_formulario == "speaking services merck":
-                    st.session_state["form_data_speaking_services"]= form_data
-                    
-                else:
-                    clave_session = f"form_data_{tipo_formulario.replace(' ', '_')}"
-                    st.session_state[clave_session] = form_data
-
-                if tipo_formulario == "speaking services paraguas":
-                    lista_de_valores = list(form_data["participantes_ss"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_ss"] = lista_de_valores
-                if tipo_formulario == "speaking services merck":
-                    lista_de_valores = list(form_data["participantes_ss"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_ss"] = lista_de_valores
-                if tipo_formulario == "advisory board":
-                    lista_de_valores = list(form_data["participantes_ab"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_ab"] = lista_de_valores
-                    #print(lista_de_valores)
-                if tipo_formulario == "consulting services":
-                    lista_de_valores = list(form_data["participantes_cs"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_cs"] = lista_de_valores
-                if tipo_formulario == "event":
-                    st.session_state["email_correcto"] = True
-
-                    #print(lista_de_valores)
-                #print(clave_session)
-                #st.write(pagina)
-                st.switch_page(pagina)
-                st.rerun()
-            
-
+        if st.button("✏️", key=f"edit_{i}"):
+            manejar_accion("editar", row["Acciones"], row["Tipo de formulario"])
     with cols[2]:
-        if st.button("🗑️", key=f"remove_form_{index}", use_container_width=True):
-            # Elimina el archivo del formulario
-            os.remove(row['Archivo Path'])
+        if st.button("🗑️", key=f"delete_{i}"):
+            os.remove(row["Acciones"])
             st.rerun()
 
-for archivo_path in historiales_guardados:
-    tipo_formulario = "Desconocido"
-    nombre_formulario = os.path.basename(archivo_path)
-    for tipo in tipos_validos:
-        if tipo in nombre_formulario:
-            tipo_formulario = tipo.replace('_', ' ')
-            break
-    fecha_guardado = datetime.fromtimestamp(os.path.getmtime(archivo_path)).strftime('%Y-%m-%d %H:%M:%S')
-    
-    historiales_data.append({
-        "Tipo de formulario": tipo_formulario,
-        "Fecha de guardado": fecha_guardado,
-        "Archivo Path": archivo_path
-       })
-    
-historiales_df = pd.DataFrame(historiales_data)
+# ✔️ Historial
+st.markdown("<h3>Historial de formularios completos</h3><hr>", unsafe_allow_html=True)
+df_historial = cargar_archivos(CARPETA_HISTORIAL, "historial")
 
-st.markdown("##### ✔️ Historial de formularios completos")  #se hace lo mismo para el historial
-
-for index, row in historiales_df.iterrows():
-    cols = st.columns([2, 1])
+for i, row in df_historial.iterrows():
+    cols = st.columns([5, 1])
     with cols[0]:
-        st.write(f"{row['Tipo de formulario']} - {row['Fecha de guardado']}")
+        st.markdown(f"**{row['Tipo de formulario']}** — *{row['Fecha de guardado']}*")
     with cols[1]:
-        unique_key = f"edit_form_{index}_{row['Archivo Path']}"
-        if st.button("👁️", key=unique_key, use_container_width=True):
-            archivo_path = row['Archivo Path']
-            with open(archivo_path, 'r') as f:
-                form_data = json.load(f)
-
-            form_data = deserialize_dates(form_data)
-            
-            tipo_formulario = row['Tipo de formulario']
-            # Redirigir basado en tipo de formulario usando mapeo
-            if tipo_formulario in mapeo_paginas:
-                pagina=mapeo_paginas[tipo_formulario]              
-                if tipo_formulario == "speaking services paraguas" or tipo_formulario == "speaking services merck":
-                    st.session_state["form_data_speaking_services"]= form_data
-                else:
-                    clave_session = f"form_data_{tipo_formulario.replace(' ', '_')}"
-                    st.session_state[clave_session] = form_data
-
-                if tipo_formulario == "speaking services paraguas":
-                    lista_de_valores = list(form_data["participantes_ss"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_ss"] = lista_de_valores
-                if tipo_formulario == "speaking services merck":
-                    
-                    lista_de_valores = list(form_data["participantes_ss"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_ss"] = lista_de_valores
-                if tipo_formulario == "advisory board":
-                    lista_de_valores = list(form_data["participantes_ab"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_ab"] = lista_de_valores
-                    #print(lista_de_valores)
-                if tipo_formulario == "consulting services":
-                    lista_de_valores = list(form_data["participantes_cs"].values())   ##### hay que adaptarlo a cada form
-                    st.session_state["participantes_cs"] = lista_de_valores
-
-                if tipo_formulario == "event":
-                    
-                    st.session_state["email_correcto"] = True
-                    
-                #print(clave_session)
-                #st.write(pagina)
-                st.switch_page(pagina)
+        if st.button("👁️", key=f"view_{i}"):
+            manejar_accion("ver", row["Acciones"], row["Tipo de formulario"])
