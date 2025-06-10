@@ -146,7 +146,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 @st.cache_data
 def load_data():
-    path = BASE_DIR / "database" / "Base de datos HCPs_2025-04-25.xlsx"
+    path = BASE_DIR / "database" / "Base de datos HCPs_2025-04-25 LIGHT.xlsb"
     return pd.read_excel(path)
 dataset = load_data()
 

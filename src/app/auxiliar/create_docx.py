@@ -6,7 +6,7 @@ from docx.oxml.ns import nsdecls
 import os
 from datetime import datetime
 import zipfile
-
+#dario: En esta pagina he añadido and doc2 != "": a todoso los None, ya que en json no se puede guardar None, entonces he puesto que los documentos vacios estén como ""
 def crear_documento_sponsorship_of_event(dataframe):
     # Crear un nuevo documento
     documento = Document()
