@@ -4,8 +4,10 @@ import glob
 import pandas as pd
 import json
 from datetime import datetime, date
+#dario: Página completamente nueva, aqui enseño los formularios guardados y el historial, los guardados se pueden guardar y ver y se guardan en la carpeta formularios_guardados, 
+# el historial se guarda en la carpeta historial y solo se puede ver. Los archivos se guardan como nombre_usuario_tipo_formulario_fecha en su respectiva carpeta
 
-user_id = st.session_state.get("user_id", "default_user")
+user_id = st.session_state.get("user_id", "default_user") #esto se tiene que cambiar en cliente para permitir diferentes usuarios
 directorio_formularios = "formularios_guardados"
 
 patron_archivo = os.path.join(directorio_formularios, f"{user_id}_*.json")
@@ -34,7 +36,7 @@ mapeo_paginas = {
     "advisory board": "./pages/advisory_board_page.py"
 }
 
-def deserialize_dates(obj):
+def deserialize_dates(obj): #funcion para deserializar las fechas
     """Convierte cadenas de fecha y hora en objetos `datetime.date` o `datetime.datetime`."""
     if isinstance(obj, dict):
         for key, value in obj.items():
@@ -74,7 +76,7 @@ st.markdown(f"""
 <hr style="margin-top: 0; margin-bottom: 50px;">
 """, unsafe_allow_html=True)
 
-st.markdown("##### 📄Lista de borradores")
+st.markdown("##### 📄Lista de borradores") #borradores
 
 # Recorriendo cada formulario para añadir botones
 for index, row in formularios_df.iterrows():
@@ -150,7 +152,7 @@ for archivo_path in historiales_guardados:
     
 historiales_df = pd.DataFrame(historiales_data)
 
-st.markdown("##### ✔️ Historial de formularios completos") 
+st.markdown("##### ✔️ Historial de formularios completos")  #se hace lo mismo para el historial
 
 for index, row in historiales_df.iterrows():
     cols = st.columns([2, 1])

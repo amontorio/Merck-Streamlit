@@ -79,7 +79,7 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_consulting_services"][key][key_participante][field_participante] = value
-
+#dario: nueva funcion para serializar para guardar en json
 def serialize_dates(obj):
     """Convierte objetos datetime.date a cadenas para la serialización JSON."""
     if isinstance(obj, dict):
@@ -711,6 +711,7 @@ def button_form():
                 status.update(
                     label="Validación completada!", state="complete", expanded=False
                 )
+                #dario: guardar el formulario si se ha verificado (en el historial)
                 formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
                 user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
                 fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -774,6 +775,7 @@ if disabled == False:
     download_document(disabled)
 
 
+#dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador de formulario"):
     formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
@@ -784,7 +786,7 @@ if st.sidebar.button("Guardar borrador de formulario"):
     datos_ser = serialize_dates(datos)
     datos_ser["user_id"] = user_id
     datos_ser["formulario_tipo"] = formulario_tipo
-    datos_ser["documentosubido_1_cs"] = ""
+    datos_ser["documentosubido_1_cs"] = "" #esto se hace para que no se guarden los documentos
     datos_ser["documentosubido_2_cs"] = ""
     ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
     with open(ruta, "w") as f:

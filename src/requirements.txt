@@ -24,3 +24,4 @@ streamlit-custom-notification-box
 streamlit-option-menu
 streamlit-searchbox
 unicodedata2
+pyxlsb

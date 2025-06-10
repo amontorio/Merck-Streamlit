@@ -61,7 +61,7 @@ def save_to_session_state(key, value, key_participante=None, field_participante=
     else:
         st.session_state[field_participante] = value
         st.session_state["form_data_speaking_services"][key][key_participante][field_participante] = value
-
+#dario: nueva funcion para serializar para guardar en json
 def serialize_dates(obj):
     """Convierte objetos datetime.date a cadenas para la serialización JSON."""
     if isinstance(obj, dict):
@@ -306,7 +306,8 @@ def single_ponente(id_user, info_user, index):
                                     save_to_session_state("participantes_ss", st.session_state[f"nombre_{id_user}"], id_user, f"nombre_{id_user}")
                                 ),
                                 rerun_on_update=True,
-                                rerun_scope="fragment"
+                                rerun_scope="fragment",
+                                debounce=300
                         )     
 
                         col1, col2 = st.columns(2)
@@ -574,6 +575,7 @@ def button_form(tipo):
                 status.update(
                     label="Validación completada!", state="complete", expanded=False
                 )
+                #dario: guardar el formulario si se ha verificado (en el historial) en este caso para merck program
                 if meeting_type == "Merck Program (MARCO)":
                     formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
                 else: #"Reunión dentro de un marco (paragüas) ya registrado en IHUB"
@@ -630,6 +632,7 @@ def button_form_reducido(tipo):
                 status.update(
                     label="Validación completada!", state="complete", expanded=False
                 )
+                #dario: guardar el formulario si se ha verificado (en el historial) en este caso para paraguas
                 if meeting_type == "Merck Program (MARCO)":
                     formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
                 else: #"Reunión dentro de un marco (paragüas) ya registrado en IHUB"
@@ -770,7 +773,7 @@ af.show_main_title(title="Speaking Services", logo_size=200)
 
      
 
-#dario: 
+#dario: cambios para poder modificar el meeting type 
 if "formulario_tipo" in st.session_state["form_data_speaking_services"].keys():
     if st.session_state["form_data_speaking_services"]["formulario_tipo"] =="speaking_services_merck":
         st.session_state["form_data_speaking_services"]["formulario_tipo"] ="Merck Program (MARCO)"
@@ -1183,7 +1186,7 @@ else:
     if disabled == False:
         download_document(disabled, meeting_type)
 
-    
+#dario: Botón y funcionalidades para guardar el formulario    
 if st.sidebar.button("Guardar borrador de formulario"):
     if meeting_type == "Merck Program (MARCO)":
         formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
@@ -1199,7 +1202,7 @@ if st.sidebar.button("Guardar borrador de formulario"):
     datos_ser = serialize_dates(datos)
     datos_ser["user_id"] = user_id
     datos_ser["formulario_tipo"] = formulario_tipo
-    datos_ser["documentosubido_1_ss"] = ""
+    datos_ser["documentosubido_1_ss"] = "" #esto se hace para que no se guarden los documentos
     datos_ser["documentosubido_2_ss"] = ""
     datos_ser["documentosubido_3_ss"] = ""
     ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )

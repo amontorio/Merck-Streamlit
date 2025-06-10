@@ -38,7 +38,7 @@ def handle_invoke_chain_event_description():
     st.session_state.res_generate_event_description = res  
     save_to_session_state("short_description", st.session_state.res_generate_event_description)
 
-
+#dario: nueva funcion para serializar para guardar en json
 def serialize_dates(obj):
     """Convierte objetos datetime.date a cadenas para la serialización JSON."""
     if isinstance(obj, dict):
@@ -696,6 +696,7 @@ def button_form():
         st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event = errores_general, errores_ia, avisos
         # Actualizo el estado
         if st.session_state.download_enabled == True:
+            #dario: guardar el formulario si se ha verificado (en el historial)
             status.update(
                 label="Validación completada!", state="complete", expanded=False
             )
@@ -763,6 +764,7 @@ if disabled == False:
 
 st.write(st.session_state["form_data_event"])
 
+#dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador de formulario"):
     formulario_tipo = "event"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
@@ -773,7 +775,7 @@ if st.sidebar.button("Guardar borrador de formulario"):
     datos_ser = serialize_dates(datos)
     datos_ser["user_id"] = user_id
     datos_ser["formulario_tipo"] = formulario_tipo
-    datos_ser["documentosubido_1_event"] = ""
+    datos_ser["documentosubido_1_event"] = "" #esto se hace para que no se guarden los documentos
     datos_ser["documentosubido_2_event"] = ""
     datos_ser["documentosubido_3_event"] = ""
     datos_ser["documentosubido_4_event"] = ""
