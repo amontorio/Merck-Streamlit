@@ -692,41 +692,45 @@ def button_form():
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
 
-        errores_general, errores_ia, avisos = generacion_errores()
-        st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event = errores_general, errores_ia, avisos
-        # Actualizo el estado
-        if st.session_state.download_enabled == True:
-            #dario: guardar el formulario si se ha verificado (en el historial)
-            status.update(
-                label="Validación completada!", state="complete", expanded=False
-            )
-            formulario_tipo = "event"  # Cambia según el tipo de formulario
-            user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
-            fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
-            st.write(user_id)   
+            errores_general, errores_ia, avisos = generacion_errores()
+            st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event = errores_general, errores_ia, avisos
 
-            datos = copy.deepcopy(st.session_state["form_data_event"]) # Cambia según el tipo de formulario
-            datos_ser = serialize_dates(datos)
-            datos_ser["user_id"] = user_id
-            datos_ser["formulario_tipo"] = formulario_tipo
-            datos_ser["documentosubido_1_event"] = ""
-            datos_ser["documentosubido_2_event"] = ""
-            datos_ser["documentosubido_3_event"] = ""
-            datos_ser["documentosubido_4_event"] = ""
-            datos_ser["documentosubido_5_event"] = ""
-            ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
-            with open(ruta, "w") as f:
-                json.dump(datos_ser, f)
-            st.session_state.errores_event = False
-        else:
-            status.update(
-                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
-            )
-            st.session_state.errores_event = True
-            st.toast("Se deben corregir los errores", icon="❌")
-        
-        if st.session_state.download_enabled == True:
-            st.toast("Formulario generado correctamente", icon="✔️")
+            st.write("Guardando formulario en el historial...")
+            time.sleep(1.5)
+            
+            # Actualizo el estado
+            if st.session_state.download_enabled == True:
+                #dario: guardar el formulario si se ha verificado (en el historial)
+                status.update(
+                    label="Validación completada!", state="complete", expanded=False
+                )
+                formulario_tipo = "event"  # Cambia según el tipo de formulario
+                user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+                fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+                #st.write(user_id)   
+
+                datos = copy.deepcopy(st.session_state["form_data_event"]) # Cambia según el tipo de formulario
+                datos_ser = serialize_dates(datos)
+                datos_ser["user_id"] = user_id
+                datos_ser["formulario_tipo"] = formulario_tipo
+                datos_ser["documentosubido_1_event"] = ""
+                datos_ser["documentosubido_2_event"] = ""
+                datos_ser["documentosubido_3_event"] = ""
+                datos_ser["documentosubido_4_event"] = ""
+                datos_ser["documentosubido_5_event"] = ""
+                ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+                with open(ruta, "w") as f:
+                    json.dump(datos_ser, f)
+                st.session_state.errores_event = False
+            else:
+                status.update(
+                    label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+                )
+                st.session_state.errores_event = True
+                st.toast("Se deben corregir los errores", icon="❌")
+            
+            if st.session_state.download_enabled == True:
+                st.toast("Formulario generado correctamente", icon="✔️")
 
     if st.session_state.errores_event == True:
         mostrar_errores(st.session_state.errores_general_event, st.session_state.errores_ia_event, st.session_state.avisos_ia_event)     
@@ -765,7 +769,7 @@ if disabled == False:
 st.write(st.session_state["form_data_event"])
 
 #dario: Botón y funcionalidades para guardar el formulario   
-if st.sidebar.button("Guardar borrador de formulario"):
+if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     formulario_tipo = "event"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
     fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")

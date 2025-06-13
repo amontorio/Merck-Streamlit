@@ -41,6 +41,8 @@ with col4:
     if st.button("Consulting Services", use_container_width=True, icon="💡"):
         st.switch_page("pages/consulting_services_page.py")
 
+if st.button("Gestión de formularios", use_container_width=True, icon="⚙️"):
+        st.switch_page("pages/saves_page.py")
 
 
 # Contenedor con información sobre la app

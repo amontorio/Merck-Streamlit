@@ -21,7 +21,8 @@ def clean_query(query):
 def get_llm():
     azure_endpoint = str(os.getenv("APP_SERVICE_NLP_API_URL", "")).rstrip("/")
     api_key = os.getenv("APP_SERVICE_NLP_API_KEY", "")
-
+    azure_endpoint = "https://merck-openai-drafts.openai.azure.com/openai/deployments/gpt-4.1-mini/chat/completions?api-version=2025-01-01-preview"
+    api_key = ""
     return AzureChatOpenAI(
     azure_endpoint=azure_endpoint,
     api_key=api_key,

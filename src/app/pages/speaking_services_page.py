@@ -144,7 +144,7 @@ def add_ponente():
     }
     
     st.session_state["participantes_ss"].append(new_participant)
-    #st.session_state["id_participantes_ss"].append(id_user)
+    st.session_state["id_participantes_ss"].append(id_user)
 
     # Inicializar participantes_ss en form_data_speaking_services si no existe
     if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
@@ -470,16 +470,17 @@ def ponentes_section():
             add_ponente()
 
         index = 0
+        #st.write(st.session_state)
         # Renderizar los participantes
         for info_user in st.session_state["participantes_ss"]:
-            
             id_user = info_user["id"]
             print(id_user)
+            print("LOOOOOOOOOOOOOOOOOOOOOOL")
+            print(st.session_state['form_data_speaking_services']['participantes_ss'])
             col_participant, col_remove_participant_individual = st.columns([10,1])
             with col_participant:
 
-                asignacion_nombre(id_user)
-                st.session_state["form_data_speaking_services"]["participantes_ss"][f"{id_user}"]["name_ponente_ss"] = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f"nombre_{id_user}"]
+                #asignacion_nombre(id_user)
                 #nombre_expander_ss = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}']['name_ponente_ss']
                 nombre_expander_ss = st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'][f"nombre_{id_user}"]
                 #print(st.session_state['form_data_speaking_services']['participantes_ss'][f'{id_user}'])
@@ -549,7 +550,7 @@ def mostrar_errores(errores_general, errores_participantes, errores_ia):
                     keys_list = list(participantes.keys())  # Convertir las claves en una lista
                     posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                     if posicion != None:
-                        name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}']['name_ponente_ss'].strip()
+                        name_ponente = st.session_state['form_data_speaking_services']['participantes_ss'][f'{keys_list[posicion-1]}'][f'nombre_{id_user}'].strip()
                         msg_participantes = f"\n**Errores del Ponente {posicion}:{name_ponente}**\n"
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
@@ -575,8 +576,10 @@ def button_form(tipo):
             time.sleep(1.5)
 
             errores_general_ss, errores_participantes_ss, errores_ia_ss = generacion_errores(tipo)
-
             st.session_state.errores_general_ss, st.session_state.errores_participantes_ss, st.session_state.errores_ia_ss = errores_general_ss, errores_participantes_ss, errores_ia_ss
+
+            st.write("Guardando formulario en el historial...")
+            time.sleep(1.5)
 
             # Actualizo el estado
             if st.session_state.download_enabled_ss == True:
@@ -1195,7 +1198,7 @@ else:
         download_document(disabled, meeting_type)
 
 #dario: Botón y funcionalidades para guardar el formulario    
-if st.sidebar.button("Guardar borrador de formulario"):
+if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     if meeting_type == "Merck Program (MARCO)":
         formulario_tipo = "speaking_services_merck"  # Cambia según el tipo de formulario
     else: #"Reunión dentro de un marco (paragüas) ya registrado en IHUB"

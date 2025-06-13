@@ -71,9 +71,9 @@ FIELD_MAPPINGS = {
     "preparacion_minutos_": "Preparación Minutos",
     "ponencia_horas_": "Ponencia Horas",
     "ponencia_minutos_": "Ponencia Minutos",
-    "name_ponente_ss": "Nombre del Ponente",
-    "name_ponente_ab": "Nombre del Participante",
-    "name_ponente_cs": "Nombre del Consultor",
+    #"name_ponente_ss": "Nombre del Ponente",
+    #"name_ponente_ab": "Nombre del Participante",
+    #"name_ponente_cs": "Nombre del Consultor",
 
     # Advisory Board
     "documentosubido_1": "Programa del Evento",

@@ -429,8 +429,8 @@ def participantes_section():
 
         col_participant, col_remove_participant_individual = st.columns([10,1])
         with col_participant:
-            asignacion_nombre(id_user)
-            nombre_expander_cs = st.session_state['form_data_consulting_services']['participantes_cs'][f'{id_user}']['name_ponente_cs']
+            #asignacion_nombre(id_user)
+            nombre_expander_cs = st.session_state['form_data_consulting_services']['participantes_cs'][f'{id_user}'][f'nombre_{id_user}']
             if nombre_expander_cs != "":
                 aux = ": "
             else:
@@ -682,7 +682,7 @@ def mostrar_errores(errores_general, errores_participantes):
                     keys_list = list(participantes.keys())  # Convertir las claves en una lista
                     posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                     if posicion != None:
-                        name_ponente = st.session_state['form_data_consulting_services']['participantes_cs'][f'{keys_list[posicion-1]}']['name_ponente_cs'].strip()
+                        name_ponente = st.session_state['form_data_consulting_services']['participantes_cs'][f'{keys_list[posicion-1]}'][f'nombre_{id_user}'].strip()
                         msg_participantes = f"\n**Errores del Consultor {posicion}:{name_ponente}**\n"
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
@@ -708,6 +708,9 @@ def button_form():
 
             st.session_state.errores_general_cs, st.session_state.errores_participantes_cs = errores_general_cs, errores_participantes_cs
 
+            st.write("Guardando formulario en el historial...")
+            time.sleep(1.5)
+
             # Actualizo el estado
             if st.session_state.download_enabled_cs == True:
                 status.update(
@@ -717,7 +720,6 @@ def button_form():
                 formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
                 user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
                 fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
-                st.write(user_id)
 
                 datos = copy.deepcopy(st.session_state["form_data_consulting_services"]) # Cambia según el tipo de formulario
                 datos_ser = serialize_dates(datos)
@@ -778,7 +780,7 @@ if disabled == False:
 
 
 #dario: Botón y funcionalidades para guardar el formulario   
-if st.sidebar.button("Guardar borrador de formulario"):
+if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
     fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")

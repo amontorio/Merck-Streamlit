@@ -295,14 +295,14 @@ def single_participante(id_user, info_user, index):
                                 reset_function = on_change_nombre(id_user), 
                                 submit_function= lambda x: (
                                     save_to_session_state("participantes_ab", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"),
-                                    save_to_session_state("participantes_ab", st.session_state[f"nombre_{id_user}"], id_user, f"nombre_{id_user}")
+                                    save_to_session_state("participantes_ab", st.session_state[f"nombre_{id_user}"], id_user, f"nombre_{id_user}"),
                                 ),
                                 rerun_on_update=True,
                                 rerun_scope="fragment"
                         )     
 
                         st.session_state["form_data_advisory_board"]["participantes_ab"][f"{id_user}"][f"nombre_{id_user}"] = nombre
-
+                        
                         col1, col2 = st.columns(2)
                         with col1:
                             
@@ -457,7 +457,7 @@ def participantes_section():
 
         col_participant, col_remove_participant_individual = st.columns([10,1])
         with col_participant:
-            asignacion_nombre(id_user)
+            #asignacion_nombre(id_user)
             nombre_expander_ab = st.session_state['form_data_advisory_board']['participantes_ab'][f'{id_user}'][f"nombre_{id_user}"]
             if nombre_expander_ab != "":
                 aux = ": "
@@ -809,7 +809,7 @@ def mostrar_errores(errores_general, errores_participantes, errores_ia):
                     keys_list = list(participantes.keys())  # Convertir las claves en una lista
                     posicion = keys_list.index(id_user) + 1 if id_user in keys_list else None
                     if posicion != None:
-                        name_ponente = st.session_state['form_data_advisory_board']['participantes_ab'][f'{keys_list[posicion-1]}']['name_ponente_ab'].strip()
+                        name_ponente = st.session_state['form_data_advisory_board']['participantes_ab'][f'{keys_list[posicion-1]}'][f'nombre_{id_user}'].strip()
                         msg_participantes = f"\n**Errores del Participante {posicion}:{name_ponente}**\n"
                         for msg in list_errors:
                             msg_participantes += f"\n* {msg}\n"
@@ -836,40 +836,43 @@ def button_form():
             st.write("Validando contenido de campos con IA...")
             time.sleep(1.5)
         
-        errores_general_ab, errores_participantes_ab, errores_ia_ab = generacion_errores()
-        st.session_state.errores_general_ab, st.session_state.errores_participantes_ab, st.session_state.errores_ia_ab = errores_general_ab, errores_participantes_ab, errores_ia_ab
+            errores_general_ab, errores_participantes_ab, errores_ia_ab = generacion_errores()
+            st.session_state.errores_general_ab, st.session_state.errores_participantes_ab, st.session_state.errores_ia_ab = errores_general_ab, errores_participantes_ab, errores_ia_ab
 
-        # Actualizo el estado
-        if st.session_state.download_enabled_ab == True:
-            status.update(
-                label="Validación completada!", state="complete", expanded=False
-            )
-            #dario: guardar el formulario si se ha verificado (en el historial)
-            formulario_tipo = "advisory_board"  # Cambia según el tipo de formulario
-            user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
-            fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
-            st.write(user_id)
+            st.write("Guardando formulario en el historial...")
+            time.sleep(1.5)
 
-            datos = copy.deepcopy(st.session_state["form_data_advisory_board"]) # Cambia según el tipo de formulario
-            datos_ser = serialize_dates(datos)
-            datos_ser["user_id"] = user_id
-            datos_ser["formulario_tipo"] = formulario_tipo
-            datos_ser["documentosubido_1"] = ""
-            datos_ser["documentosubido_2"] = ""
-            ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
-            with open(ruta, "w") as f:
-                json.dump(datos_ser, f)
-            st.session_state.errores_event = False
-            st.session_state.errores_ab = False
-        else:
-            status.update(
-                label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
-            )
-            st.session_state.errores_ab = True
-            st.toast("Se deben corregir los errores.", icon="❌")
+            # Actualizo el estado
+            if st.session_state.download_enabled_ab == True:
+                status.update(
+                    label="Validación completada!", state="complete", expanded=False
+                )
+                #dario: guardar el formulario si se ha verificado (en el historial)
+                formulario_tipo = "advisory_board"  # Cambia según el tipo de formulario
+                user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
+                fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+                st.write(user_id)
 
-        if st.session_state.download_enabled_ab == True:
-            st.toast("Formulario generado correctamente", icon="✔️")
+                datos = copy.deepcopy(st.session_state["form_data_advisory_board"]) # Cambia según el tipo de formulario
+                datos_ser = serialize_dates(datos)
+                datos_ser["user_id"] = user_id
+                datos_ser["formulario_tipo"] = formulario_tipo
+                datos_ser["documentosubido_1"] = ""
+                datos_ser["documentosubido_2"] = ""
+                ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+                with open(ruta, "w") as f:
+                    json.dump(datos_ser, f)
+                st.session_state.errores_event = False
+                st.session_state.errores_ab = False
+            else:
+                status.update(
+                    label="Validación no completada. Se deben revisar los campos obligatorios faltantes.", state="error", expanded=False
+                )
+                st.session_state.errores_ab = True
+                st.toast("Se deben corregir los errores.", icon="❌")
+
+            if st.session_state.download_enabled_ab == True:
+                st.toast("Formulario generado correctamente", icon="✔️")
 
     if st.session_state.errores_ab == True:
         mostrar_errores(st.session_state.errores_general_ab, st.session_state.errores_participantes_ab, st.session_state.errores_ia_ab)     
@@ -908,7 +911,7 @@ if disabled == False:
 st.write(st.session_state["form_data_advisory_board"])
 
 #dario: Botón y funcionalidades para guardar el formulario   
-if st.sidebar.button("Guardar borrador de formulario"):
+if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     formulario_tipo = "advisory_board"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
     fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
