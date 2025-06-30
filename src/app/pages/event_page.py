@@ -766,7 +766,7 @@ disabled =  not st.session_state.download_enabled
 if disabled == False:
     download_document()
 
-st.write(st.session_state["form_data_event"])
+#st.write(st.session_state["form_data_event"])
 
 #dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):

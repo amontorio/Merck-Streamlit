@@ -750,7 +750,8 @@ if "form_data_speaking_services" not in st.session_state:
         "num_ponentes_ss": "",
         "num_asistentes_totales_ss":0,
         "owner_ss": "",
-        "delegate_ss": ""
+        "delegate_ss": "",
+        "activity_id_ss": "",
     }
 
     st.session_state["form_data_speaking_services"] = {}
@@ -791,7 +792,7 @@ if "formulario_tipo" in st.session_state["form_data_speaking_services"].keys():
     elif st.session_state["form_data_speaking_services"]["formulario_tipo"] =="speaking_services_paraguas":
         st.session_state["form_data_speaking_services"]["formulario_tipo"]= "Reunión dentro de un marco (paragüas) ya registrado en IHUB"
         
-meeting_type = st.sidebar.selectbox("**Tipo de reunión**",["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"],
+meeting_type = st.selectbox("**Tipo de reunión**",["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"],
                                 index= ["Merck Program (MARCO)", "Reunión dentro de un marco (paragüas) ya registrado en IHUB"].index(st.session_state["form_data_speaking_services"]["formulario_tipo"])if st.session_state["form_data_speaking_services"]["formulario_tipo"] != "" else 0)
 
 st.session_state["form_data_speaking_services"]["formulario_tipo"]= meeting_type
@@ -1090,8 +1091,6 @@ if meeting_type == "Merck Program (MARCO)":
     if disabled == False:
         download_document(disabled, meeting_type)
 
-
-
 else:
     mandatory_fields = [
         "start_date_ss",
@@ -1116,7 +1115,16 @@ else:
         "validar_sede_venue": {"sede": "sede_ss"}
     }
     #st.header("Caso Paragüas", divider=True)
+
     st.header("1. Detalles del Evento", divider=True)
+
+    st.text_input(
+            "Activity ID",
+            value=st.session_state["form_data_speaking_services"]["activity_id_ss"],
+            key="activity_id_ss",
+            on_change=lambda: save_to_session_state("activity_id_ss", st.session_state["activity_id_ss"])
+        )
+
     col1, col2 = st.columns(2)
     with col1:
         st.text_input(
@@ -1222,5 +1230,5 @@ if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     st.toast("Formulario guardado exitosamente!", icon="✔️")
 
 
-st.write(st.session_state["form_data_speaking_services"])
+#st.write(st.session_state["form_data_speaking_services"])
 #st.write(st.session_state)

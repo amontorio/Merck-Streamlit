@@ -630,6 +630,7 @@ def crear_documento_speaking_reducido(data):
 
     # Agregar secciones
     agregar_encabezado("Detalles del Evento")
+    agregar_bullet_point("Acivity ID", data.get("activity_id_ss", ""))
     agregar_bullet_point("Nombre", data.get("nombre_evento_ss", ""))
     agregar_bullet_point("Owner", data.get('owner_ss', ''))
     if data.get("delegate_ss", "") != "":

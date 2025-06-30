@@ -299,7 +299,7 @@ def single_consultant(id_user, info_user, index):
                             )
                         with col2:
                             email = st.text_input(
-                                f"Email del participante {index + 1} *", 
+                                f"Email del participante {index + 1}", 
                                 value = info_user.get(f"email_copy_{id_user}", ""),
                                 key=f"email_{id_user}",
                                 on_change= lambda: handle_email(id_user))
@@ -797,5 +797,5 @@ if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
         json.dump(datos_ser, f)
     st.toast("Formulario guardado exitosamente!", icon="✔️")
 
-st.write(st.session_state["form_data_consulting_services"])
+#st.write(st.session_state["form_data_consulting_services"])
 #st.write(st.session_state)
