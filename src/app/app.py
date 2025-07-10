@@ -11,7 +11,11 @@ from utils import (
     app_is_running_on_app_service,
 )
 import os
-from foundry_dev_tools import FoundryContext
+
+try: 
+    from foundry_dev_tools import FoundryContext 
+except: 
+    pass
 
 headers = None
 
@@ -19,9 +23,9 @@ if "headers" not in st.session_state:
 
     headers = get_streamlit_request_headers()
 
-    st.session_state.first_name = headers.get("X-Appservice-Firstname", "FirstName (running-locally)")
-    st.session_state.last_name = headers.get("X-Appservice-Lastname", "LastName (running-locally)")
-    st.session_state.user_id = headers.get("X-Appservice-Muid", "M999999 (running-locally)")
+    st.session_state.first_name = headers.get("X-Appservice-Firstname", "FirstName")
+    st.session_state.last_name = headers.get("X-Appservice-Lastname", "LastName")
+    st.session_state.user_id = headers.get("X-Appservice-Muid", "M999999-default-user")
     st.session_state.email = headers.get(
         "X-Appservice-Email", "firstName.LastName@merckgroup.com (running-locally)"
     )

@@ -676,6 +676,55 @@ def handle_tier_from_name(name, datos = dataset):
         return result
     return "0"  # Devuelve 0 si el nombre no está en los datos
 
+def handle_dni_from_name(name, datos = dataset):
+    """
+    Obtiene el DNI del participante basado en el nombre seleccionado
+    """
+    df = datos.copy()
+    # Eliminar filas donde 'Nombre de la cuenta' sea NaN
+    df = df.dropna(subset=['Nombre de la cuenta'])
+    
+    # Verificar si name es un diccionario con la estructura esperada
+    if isinstance(name, dict) and "result" in name:
+        raw_name = name["result"].split("-")[0].strip()
+    else:
+        raw_name = str(name).split("-")[0].strip() if name else ""
+    
+    # Buscar el DNI en la columna correspondiente
+    # La columna del DNI se llama 'NIF / DNI Numero identificacion fiscal'
+    dni_result = df.loc[df["Nombre de la cuenta"] == raw_name, "NIF / DNI Numero identificacion fiscal"]
+    
+    if not dni_result.empty and pd.notna(dni_result.values[0]):
+        dni_value = str(dni_result.values[0]).strip()
+        # Verificar que no sea una cadena vacía
+        if dni_value and dni_value != "nan":
+            return dni_value  # Devuelve el DNI encontrado
+    return ""  # Devuelve vacío si no encuentra coincidencia
+
+def handle_centro_from_name(name, datos = dataset):
+    """
+    Obtiene el centro de trabajo del participante basado en el nombre seleccionado
+    """
+    df = datos.copy()
+    # Eliminar filas donde 'Nombre de la cuenta' sea NaN
+    df = df.dropna(subset=['Nombre de la cuenta'])
+    
+    # Verificar si name es un diccionario con la estructura esperada
+    if isinstance(name, dict) and "result" in name:
+        raw_name = name["result"].split("-")[0].strip()
+    else:
+        raw_name = str(name).split("-")[0].strip() if name else ""
+    
+    # Buscar el centro de trabajo en la columna correspondiente
+    # La columna del centro se llama 'Centro/Institución'
+    centro_result = df.loc[df["Nombre de la cuenta"] == raw_name, "Centro/Institución"]
+    
+    if not centro_result.empty and pd.notna(centro_result.values[0]):
+        centro_value = str(centro_result.values[0]).strip()
+        # Verificar que no sea una cadena vacía
+        if centro_value and centro_value != "nan":
+            return centro_value  # Devuelve el centro encontrado
+    return ""  # Devuelve vacío si no encuentra coincidencia
 
 MERCK_ROOT_CA = """-----BEGIN CERTIFICATE-----
 MIIGOzCCBCOgAwIBAgIQHt22MoeoebZLg1n5IiALWTANBgkqhkiG9w0BAQsFADBT

@@ -14,6 +14,10 @@ import json
 from datetime import datetime
 import os
 import copy
+import importlib
+
+# Recargar el módulo aux_functions para asegurar que se carguen las funciones más recientes
+importlib.reload(af)
 
 
 tarifas = {
@@ -306,6 +310,8 @@ def single_ponente(id_user, info_user, index):
                                 reset_function = on_change_nombre(id_user), 
                                 submit_function= lambda x: (
                                     save_to_session_state("participantes_ss", af.handle_tier_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"tier_{id_user}"),
+                                    save_to_session_state("participantes_ss", af.handle_dni_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"dni_{id_user}"),
+                                    save_to_session_state("participantes_ss", af.handle_centro_from_name(st.session_state[f"nombre_{id_user}"]), id_user, f"centro_trabajo_{id_user}"),
                                     save_to_session_state("participantes_ss", st.session_state[f"nombre_{id_user}"], id_user, f"nombre_{id_user}")
                                 ),
                                 rerun_on_update=True,
@@ -318,7 +324,7 @@ def single_ponente(id_user, info_user, index):
                         with col1:
                             dni = st.text_input(
                                 f"DNI del participante {index + 1}", 
-                                value = info_user.get(f"dni_copy_{id_user}", ""),
+                                value = info_user.get(f"dni_{id_user}", ""),
                                 key=f"dni_{id_user}",
                                 on_change = lambda: handle_dni(id_user)
                             )

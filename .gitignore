@@ -173,5 +173,85 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Project specific files for Merck Streamlit App
+# Streamlit configuration
+.streamlit/
 
+# Generated ZIP files
 .zip
+*.zip
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific temporary files
+# Form data saved by users (may contain sensitive information)
+formularios_guardados/*.json
+historial/*.json
+
+# Exclude default templates but keep the directory structure
+!formularios_guardados/default.json
+!historial/default.json
+
+# Generated documents and files
+src/app/docs/*.zip
+src/app/docs/*.docx
+src/app/docs/*.pdf
+
+# Database files (Excel files with sensitive data)
+src/app/database/*.xlsx
+src/app/database/*.xlsb
+!src/app/database/*LIGHT*.xlsb
+!src/app/database/*_template.xlsx
+
+# Configuration files with sensitive data
+config/secrets.json
+config/credentials.json
+*.key
+*.pem
+
+# Log files
+*.log
+logs/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Excel temporary files
+~$*.xlsx
+~$*.xlsb
+~$*.xls
+
+# Validation and testing notebooks
+pruebas_validacion.ipynb
+validacion_campos.py
+
+# Uploaded files and temporary directories
+uploads/
+temp/
+tmp/
+
+# Python cache directories specific to project structure
+src/app/__pycache__/
+src/app/*/__pycache__/
+src/app/*/*/__pycache__/
+
+# Temporary test files
+test_*.py
+*_test.py
+src/app/testing/
