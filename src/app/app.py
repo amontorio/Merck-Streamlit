@@ -4,7 +4,27 @@ from pathlib import Path
 import os
 import glob
 import auxiliar.aux_functions as af 
+from utils import (
+    get_streamlit_request_headers,
+    show_code,
+    APP_SERVICE_FOUNDRY_ACCESS_TOKEN_HEADER,
+    app_is_running_on_app_service,
+)
+import os
+from foundry_dev_tools import FoundryContext
 
+headers = None
+
+if "headers" not in st.session_state:
+
+    headers = get_streamlit_request_headers()
+
+    st.session_state.first_name = headers.get("X-Appservice-Firstname", "FirstName (running-locally)")
+    st.session_state.last_name = headers.get("X-Appservice-Lastname", "LastName (running-locally)")
+    st.session_state.user_id = headers.get("X-Appservice-Muid", "M999999 (running-locally)")
+    st.session_state.email = headers.get(
+        "X-Appservice-Email", "firstName.LastName@merckgroup.com (running-locally)"
+    )
 
 user_id = st.session_state.get("user_id", "default_user") ##### CAMBIAR PARA CLIENTE
 intro_page = st.Page("./pages/intro_page.py", title="Panel principal", icon="🏠")

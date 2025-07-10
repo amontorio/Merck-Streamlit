@@ -189,7 +189,7 @@ def main():
     )
 
     st.title("📋 Gestión de Formularios")
-    st.markdown(f"Usuario: **{user_id}**")
+    st.markdown(f"Usuario: {st.session_state.first_name} {st.session_state.last_name} (**{user_id}**)")
 
     st.sidebar.header("Filtros")
 
@@ -232,7 +232,7 @@ def main():
         "Borradores guardados", filtered_borr, "page_borr",
         lambda: setattr(st.session_state, 'page_borr', max(st.session_state.page_borr - 1, 0)),
         lambda: setattr(st.session_state, 'page_borr', min(st.session_state.page_borr + 1, math.ceil(len(filtered_borr) / PAGE_SIZE) - 1)),
-        {"✏️ Editar": manejar_accion, "🗑️ Eliminar": lambda p, t: (os.remove(p), st.experimental_rerun())}
+        {"✏️ Editar": manejar_accion, "🗑️ Eliminar": lambda p, t: (os.remove(p), st.rerun())}
     )
     display_section(
         "Historial de formularios", filtered_hist, "page_hist",
