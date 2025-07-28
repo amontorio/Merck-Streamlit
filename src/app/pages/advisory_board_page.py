@@ -105,8 +105,7 @@ mandatory_fields = [
 "desplazamiento_ab",
 "alojamiento_ab",
 "tipo_evento_ab",
-"participantes_ab",
-#"descripcion_servicio_ab",
+"descripcion_servicio_ab",
 "necesidad_reunion_ab",
 "num_participantes_ab",
 "criterios_seleccion_ab",
@@ -556,6 +555,9 @@ if "form_data_advisory_board" not in st.session_state:
         "start_date_ab": date.today(),
         "end_date_ab": date.today(),
         "estado_aprobacion_ab": "",
+        "producto_asociado_ab": "",
+        "descripcion_servicio_ab": "",
+        "necesidad_reunion_ab": "",
         "otra_actividad_departamento_ab": "", #
         "otra_actividad_otro_departamento_ab": "", #
         "desplazamiento_ab": "", #
@@ -577,7 +579,12 @@ if "form_data_advisory_board" not in st.session_state:
 
     if "participantes_ab" not in st.session_state:
         st.session_state.participantes_ab = []
-    add_participant()
+    
+    # Initialize participantes_ab in form_data even if empty
+    if "participantes_ab" not in st.session_state["form_data_advisory_board"]:
+        st.session_state["form_data_advisory_board"]["participantes_ab"] = {}
+    
+    # Don't automatically add a participant - let users add them manually if needed
         
 
 af.show_main_title(title="Advisory Board", logo_size=200)
@@ -711,8 +718,9 @@ with col2:
 servicio = st.text_area("Descripción del servicio *", 
                  max_chars=4000, 
                  key="descripcion_servicio_ab", 
-                 value= f"Advisory Board Participation - {st.session_state['form_data_advisory_board']['nombre_evento_ab']}")
-st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] = servicio
+                 help="Describe detalladamente el trabajo previo a realizar y el tipo de entregable/encargo",
+                 value=st.session_state["form_data_advisory_board"]["descripcion_servicio_ab"] if "descripcion_servicio_ab" in st.session_state["form_data_advisory_board"] else "",
+                 on_change=lambda: save_to_session_state("descripcion_servicio_ab", st.session_state["descripcion_servicio_ab"]))
 
 necesidad = st.text_area("Necesidad de la reunión y resultados esperados *",
                  max_chars=4000,

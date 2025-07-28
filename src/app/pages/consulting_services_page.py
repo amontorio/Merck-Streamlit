@@ -102,6 +102,7 @@ mandatory_fields = [
         "end_date_cs",
         "presupuesto_estimado_cs",
         "necesidad_reunion_cs",
+        "descripcion_servicio_cs",
         "owner_cs",
         "numero_consultores_cs",
         "criterios_seleccion_cs",
@@ -546,11 +547,14 @@ if "form_data_consulting_services" not in st.session_state:
     if "participantes_cs" not in st.session_state:
         st.session_state.participantes_cs = [] 
 
+    # Initialize participantes_cs in form_data even if empty
+    if "participantes_cs" not in st.session_state["form_data_consulting_services"]:
+        st.session_state["form_data_consulting_services"]["participantes_cs"] = {}
+
     if "name_ponente_cs" not in st.session_state:
             st.session_state["name_ponente_cs"] = ""
     
-
-    add_participant()
+    # Don't automatically add a participant - let users add them manually if needed
 
 
 af.show_main_title(title="Consulting Services", logo_size=200)
@@ -647,8 +651,9 @@ for word in black_list:
 servicio = st.text_area("Descripción del servicio *",
                 max_chars=4000,
                 key="descripcion_servicio_cs",
-                value= f"Consulting Services - {st.session_state['form_data_consulting_services']['nombre_necesidades_cs']}")
-st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] = servicio
+                help="Describe detalladamente el trabajo previo a realizar y el tipo de entregable/encargo",
+                value=st.session_state["form_data_consulting_services"]["descripcion_servicio_cs"] if "descripcion_servicio_cs" in st.session_state["form_data_consulting_services"] else "",
+                on_change=lambda: save_to_session_state("descripcion_servicio_cs", st.session_state["descripcion_servicio_cs"]))
 
 st.header("2. Detalle nº consultores", divider=True)
 col3, col4 = st.columns(2)

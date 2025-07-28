@@ -851,8 +851,12 @@ if "form_data_speaking_services" not in st.session_state:
 
     if "participantes_ss" not in st.session_state:
         st.session_state.participantes_ss = [] 
-
-    add_ponente()
+    
+    # Initialize participantes_ss in form_data even if empty
+    if "participantes_ss" not in st.session_state["form_data_speaking_services"]:
+        st.session_state["form_data_speaking_services"]["participantes_ss"] = {}
+    
+    # Don't automatically add a participant - let users add them manually if needed
 
 
     # Inicializar participantes en form_data_speaking_services si no existe
