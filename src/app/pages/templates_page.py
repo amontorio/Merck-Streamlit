@@ -45,18 +45,25 @@ def cargar_template(template_path, tipo_formulario):
             # Inicializar participantes si existen
             if 'participantes_ss' in form_data:
                 st.session_state['participantes_ss'] = list(form_data.get('participantes_ss', {}).values())
+            # Inicializar lista de IDs de participantes
+            if 'id_participantes_ss' not in st.session_state:
+                st.session_state['id_participantes_ss'] = []
                 
         elif "advisory_board" in tipo_formulario:
             st.session_state[clave] = form_data
             # Inicializar participantes si existen
             if 'participantes_ab' in form_data:
                 st.session_state['participantes_ab'] = list(form_data.get('participantes_ab', {}).values())
+            # Inicializar lista de IDs de participantes
+            if 'id_participantes' not in st.session_state:
+                st.session_state['id_participantes'] = []
                 
         elif "consulting_services" in tipo_formulario:
             st.session_state[clave] = form_data
             # Inicializar participantes si existen
             if 'participantes_cs' in form_data:
                 st.session_state['participantes_cs'] = list(form_data.get('participantes_cs', {}).values())
+            # Nota: consulting_services no usa una lista separada de IDs de participantes
                 
         elif "sponsorship_event" in tipo_formulario or tipo_formulario == "event":
             st.session_state[clave] = form_data
