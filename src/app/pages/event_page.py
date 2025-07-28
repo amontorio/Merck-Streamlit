@@ -637,7 +637,6 @@ def generacion_errores():
         errores_ia = af.validar_campos_ia(st.session_state["form_data_event"], validar_ia)
         avisos = af.avisos_campos_ia(st.session_state["form_data_event"], campos_avisos_ia)
 
-
         if not errores_general and not errores_ia:
             df = save_form_data_event()
             doc, st.session_state.path_doc = cd.crear_documento_sponsorship_of_event(df)

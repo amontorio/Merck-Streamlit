@@ -40,15 +40,31 @@ def extraer_nombre_evento(contenido, tipo_form):
     else:
         return "—"
 
-def extraer_owner(contenido, tipo_form):
+def extraer_fecha_evento(contenido, tipo_form):
     if "speaking services" in tipo_form:
-        return contenido.get("owner_ss", "—")
+        start_date = contenido.get("start_date_ss", "")
+        end_date = contenido.get("end_date_ss", "")
     elif tipo_form == "advisory board":
-        return contenido.get("owner_ab", "—")
+        start_date = contenido.get("start_date_ab", "")
+        end_date = contenido.get("end_date_ab", "")
     elif tipo_form == "consulting services":
-        return contenido.get("owner_cs", "—")
+        start_date = contenido.get("start_date_cs", "")
+        end_date = contenido.get("end_date_cs", "")
     elif tipo_form == "event":
-        return contenido.get("owner", "—")
+        start_date = contenido.get("start_date", "")
+        end_date = contenido.get("end_date", "")
+    else:
+        return "—"
+    
+    if start_date and end_date:
+        if start_date == end_date:
+            return start_date
+        else:
+            return f"{start_date} - {end_date}"
+    elif start_date:
+        return start_date
+    elif end_date:
+        return end_date
     else:
         return "—"
 
@@ -64,18 +80,18 @@ def cargar_archivos(directorio, user_id, tipos_validos):
             with open(path, 'r') as f:
                 contenido = json.load(f)
                 event_name = extraer_nombre_evento(contenido, tipo_form)
-                owner = extraer_owner(contenido, tipo_form)
+                fecha_evento = extraer_fecha_evento(contenido, tipo_form)
         except Exception:
             event_name = "—"
-            owner = "—"
+            fecha_evento = "—"
         data.append({
             "Tipo de formulario": tipo_form,
             "Fecha de guardado": pd.to_datetime(fecha_mod),
             "Nombre del evento": event_name,
-            "Owner": owner,
+            "Fecha del evento": fecha_evento,
             "Acciones": path
         })
-    df = pd.DataFrame(data, columns=["Tipo de formulario", "Fecha de guardado", "Nombre del evento", "Owner", "Acciones"])
+    df = pd.DataFrame(data, columns=["Tipo de formulario", "Fecha de guardado", "Nombre del evento", "Fecha del evento", "Acciones"])
     if not df.empty:
         df = df.sort_values("Fecha de guardado", ascending=False)
     return df
@@ -125,9 +141,10 @@ def display_section(title, df, page_key, prev_cb, next_cb, action_btns):
         for idx, row in page_df.iterrows():
             cols = st.columns([4] + [1]*len(action_btns))
             cols[0].markdown(
-                f"<span style='font-size:20px; font-weight:bold;'>{row['Tipo de formulario'].title()}</span> — "
-                f"<span style='font-size:16px; font-style:italic;'>{row['Fecha de guardado'].strftime('%Y-%m-%d %H:%M:%S')}</span><br>"
-                f"📌 <strong>Evento:</strong> {row['Nombre del evento']}<br>👤 <strong>Owner:</strong> {row['Owner']}",
+                f"<span style='font-size:20px; font-weight:bold;'>{row['Tipo de formulario'].title()}</span><br>"
+                f"💾 <span style='font-size:14px; color: #666;'><strong>Guardado:</strong> {row['Fecha de guardado'].strftime('%Y-%m-%d %H:%M:%S')}</span><br>"
+                f"📌 <strong>Evento:</strong> {row['Nombre del evento']}<br>"
+                f"📅 <strong>Fecha del evento:</strong> {row['Fecha del evento']}",
                 unsafe_allow_html=True
             )
             for i, (label, cb) in enumerate(action_btns.items(), start=1):
@@ -142,7 +159,33 @@ def display_section(title, df, page_key, prev_cb, next_cb, action_btns):
         with ncol:
             st.button("→", key=f"next_{page_key}", disabled=page>=total-1, on_click=next_cb)
 
-def aplicar_filtros(df, tipos, fecha_inicio, fecha_fin, nombre_evento, owner):
+def fecha_evento_en_rango(fecha_evento_str, fecha_inicio_filtro, fecha_fin_filtro):
+    """
+    Verifica si las fechas del evento se superponen con el rango de filtro.
+    fecha_evento_str puede ser una fecha simple o un rango "fecha1 - fecha2"
+    """
+    if fecha_evento_str == "—" or not fecha_evento_str:
+        return False
+    
+    try:
+        if " - " in fecha_evento_str:
+            # Es un rango de fechas
+            start_str, end_str = fecha_evento_str.split(" - ")
+            evento_inicio = date.fromisoformat(start_str.strip())
+            evento_fin = date.fromisoformat(end_str.strip())
+        else:
+            # Es una sola fecha
+            evento_inicio = date.fromisoformat(fecha_evento_str.strip())
+            evento_fin = evento_inicio
+        
+        # Verificar si hay superposición entre los rangos
+        # Hay superposición si: evento_inicio <= fecha_fin_filtro AND evento_fin >= fecha_inicio_filtro
+        return evento_inicio <= fecha_fin_filtro and evento_fin >= fecha_inicio_filtro
+    
+    except (ValueError, AttributeError):
+        return False
+
+def aplicar_filtros(df, tipos, fecha_inicio, fecha_fin, nombre_evento, fecha_evento_rango):
     if df.empty:
         return df
     df = df[df['Tipo de formulario'].isin(tipos)]
@@ -150,14 +193,37 @@ def aplicar_filtros(df, tipos, fecha_inicio, fecha_fin, nombre_evento, owner):
             (df['Fecha de guardado'].dt.date <= fecha_fin)]
     if nombre_evento:
         df = df[df['Nombre del evento'].str.contains(nombre_evento, case=False, na=False)]
-    if owner:
-        df = df[df['Owner'].str.contains(owner, case=False, na=False)]
+    
+    # Filtrar por rango de fechas del evento
+    if fecha_evento_rango and isinstance(fecha_evento_rango, (list, tuple)) and len(fecha_evento_rango) == 2:
+        fecha_inicio_evento, fecha_fin_evento = fecha_evento_rango
+        # Aplicar el filtro usando la nueva función
+        df = df[df['Fecha del evento'].apply(
+            lambda x: fecha_evento_en_rango(x, fecha_inicio_evento, fecha_fin_evento)
+        )]
+    
     return df
 
 def reset_filtros():
-    for k in ["filtro_tipos", "fecha_rango", "filtro_evento", "filtro_owner", "page_borr", "page_hist"]:
-        if k in st.session_state:
-            del st.session_state[k]
+    # Valores por defecto para los filtros
+    hoy = date.today()
+    TIPOS_VALIDOS = [
+        "speaking_services_paraguas",
+        "speaking_services_merck",
+        "consulting_services",
+        "event",
+        "advisory_board"
+    ]
+    
+    # Restablecer cada filtro a su valor por defecto
+    st.session_state['filtro_tipos'] = [t.replace('_', ' ') for t in TIPOS_VALIDOS]
+    st.session_state['fecha_rango'] = [hoy.replace(month=1, day=1), hoy]
+    st.session_state['filtro_evento'] = ""
+    st.session_state['filtro_fecha_evento'] = [hoy.replace(month=1, day=1), hoy]
+    
+    # Reiniciar paginación
+    st.session_state['page_borr'] = 0
+    st.session_state['page_hist'] = 0
 
 def main():
     user_id = st.session_state.get("user_id", "default_user")
@@ -200,14 +266,16 @@ def main():
         default=[t.replace('_', ' ') for t in TIPOS_VALIDOS]
     )
 
+    st.sidebar.subheader("🗓️ Filtros por fecha de guardado")
     hoy = date.today()
     valor_fecha_default = [hoy.replace(month=1, day=1), hoy]
 
     fecha_rango = st.sidebar.date_input(
-        "Rango de fechas",
+        "Rango de fechas de guardado",
         key='fecha_rango',
         value=valor_fecha_default,
-        format="DD/MM/YYYY"
+        format="DD/MM/YYYY",
+        help="Filtra los formularios por la fecha en que fueron guardados"
     )
 
     if not (isinstance(fecha_rango, (list, tuple)) and len(fecha_rango) == 2):
@@ -215,18 +283,35 @@ def main():
         st.info("Por favor selecciona un rango de dos fechas para mostrar resultados.")
         return
 
+    st.sidebar.subheader("🔍 Filtros por contenido")
     filtro_evento = st.sidebar.text_input("📌 Filtrar por nombre de evento", key='filtro_evento')
-    filtro_owner = st.sidebar.text_input("👤 Filtrar por owner", key='filtro_owner')
+    
+    # Filtro de rango de fechas del evento
+    hoy_evento = date.today()
+    valor_fecha_evento_default = [hoy_evento.replace(month=1, day=1), hoy_evento]
+    
+    filtro_fecha_evento = st.sidebar.date_input(
+        "📅 Rango de fechas del evento",
+        key='filtro_fecha_evento',
+        value=valor_fecha_evento_default,
+        format="DD/MM/YYYY",
+        help="Filtra eventos que tengan al menos un día dentro del rango seleccionado"
+    )
 
     st.sidebar.button("Limpiar filtros", on_click=reset_filtros, icon="🧹", use_container_width=True, type="secondary")
 
     fecha_inicio, fecha_fin = fecha_rango
 
+    # Validar que el filtro de fecha del evento tenga el formato correcto
+    if not (isinstance(filtro_fecha_evento, (list, tuple)) and len(filtro_fecha_evento) == 2):
+        # Si no hay un rango válido, pasar None para que no filtre por fecha de evento
+        filtro_fecha_evento = None
+
     df_borr = cargar_archivos("formularios_guardados", user_id, TIPOS_VALIDOS)
     df_hist = cargar_archivos("historial", user_id, TIPOS_VALIDOS)
 
-    filtered_borr = aplicar_filtros(df_borr, filtro_tipos, fecha_inicio, fecha_fin, filtro_evento, filtro_owner)
-    filtered_hist = aplicar_filtros(df_hist, filtro_tipos, fecha_inicio, fecha_fin, filtro_evento, filtro_owner)
+    filtered_borr = aplicar_filtros(df_borr, filtro_tipos, fecha_inicio, fecha_fin, filtro_evento, filtro_fecha_evento)
+    filtered_hist = aplicar_filtros(df_hist, filtro_tipos, fecha_inicio, fecha_fin, filtro_evento, filtro_fecha_evento)
 
     display_section(
         "Borradores guardados", filtered_borr, "page_borr",
@@ -238,7 +323,7 @@ def main():
         "Historial de formularios", filtered_hist, "page_hist",
         lambda: setattr(st.session_state, 'page_hist', max(st.session_state.page_hist - 1, 0)),
         lambda: setattr(st.session_state, 'page_hist', min(st.session_state.page_hist + 1, math.ceil(len(filtered_hist) / PAGE_SIZE) - 1)),
-        {"👁️ Ver": manejar_accion}
+        {"👁️ Ver": manejar_accion, "🗑️ Eliminar": lambda p, t: (os.remove(p), st.rerun())}
     )
 
 if __name__ == '__main__':
