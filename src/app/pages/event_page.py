@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 import os
 import copy
+import glob
 import auxiliar.create_docx as cd
 import model.llm_sponsorship_event as llm_se
 import auxiliar.aux_functions as af
@@ -19,6 +20,55 @@ load_dotenv()
 
 LARGE_MAX_CHARS = 4000
 MEDIUM_MAX_CHARS = 255
+
+#dario: función para encontrar formulario existente por nombre y fechas (para eventos)
+def encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+    """
+    Busca un formulario existente basado en nombre del evento y fechas de inicio/fin
+    """
+    directorio = "formularios_guardados"
+    if not os.path.exists(directorio):
+        return None
+        
+    # Convertir fechas a string para comparación
+    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
+    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
+    
+    # Buscar archivos del usuario y tipo de formulario
+    patron = f"{user_id}_{formulario_tipo}_*.json"
+    archivos = glob.glob(os.path.join(directorio, patron))
+    
+    for archivo in archivos:
+        try:
+            with open(archivo, "r") as f:
+                datos = json.load(f)
+                
+            # Comparar nombre del evento y fechas
+            if (datos.get("event_name", "") == nombre_evento and
+                datos.get("start_date", "") == start_date_str and
+                datos.get("end_date", "") == end_date_str):
+                return archivo
+        except:
+            continue
+    
+    return None
+
+#dario: función para eliminar borradores duplicados cuando se genera el historial (para eventos)
+def eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+    """
+    Elimina un borrador con el mismo nombre y fechas cuando se genera exitosamente un formulario
+    """
+    archivo_borrador = encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date)
+    
+    if archivo_borrador:
+        try:
+            os.remove(archivo_borrador)
+            return True
+        except Exception as e:
+            print(f"Error al eliminar borrador: {e}")
+            return False
+    
+    return False
 
 def save_to_session_state(key, value):
     if key not in ["documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event", "documentosubido_4_event", "documentosubido_5_event"]:
@@ -80,7 +130,15 @@ def validacion_completa_email():
 def handle_fecha_inicio():
     save_to_session_state("start_date", st.session_state["start_date"])
     if st.session_state["start_date"] >= st.session_state["end_date"]:
-        save_to_session_state("end_date", st.session_state["start_date"]) 
+        save_to_session_state("end_date", st.session_state["start_date"])
+
+def handle_event_type_change():
+    """Maneja el cambio de tipo de evento"""
+    save_to_session_state("event_type", st.session_state["event_type"])
+    # Si el evento es virtual, limpiar sede y ciudad
+    if st.session_state["event_type"] == "Virtual":
+        save_to_session_state("venue", "")
+        save_to_session_state("city", "") 
 
 # Inicializar estado del formulario en session_state
 if "form_data_event" not in st.session_state:
@@ -336,7 +394,7 @@ def crear_nombre_y_tipo():
             on_change=lambda: save_to_session_state("event_name", st.session_state["event_name"])
         )
     with col2:
-        event = st.selectbox(
+        st.selectbox(
             "Tipo de evento *",
             placeholder = "Elegir una opción",
             options=["","Virtual", "Presencial", "Híbrido"],
@@ -345,13 +403,8 @@ def crear_nombre_y_tipo():
                 \n- **Presencial**: Evento llevado a cabo físicamente en una ubicación específica.
                 \n- **Híbrido**: Combina elementos de eventos virtuales y presenciales.""",
             key="event_type",
-            index = ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_event"]["event_type"]) if "event_type" in st.session_state["form_data_event"] else 0,
-            on_change=lambda: (
-                        save_to_session_state("event_type", st.session_state["event_type"]),
-                        save_to_session_state("venue", ""),
-                        save_to_session_state("city", "")
-                    ) if st.session_state["event_type"] == "Virtual" else 
-                        save_to_session_state("event_type", st.session_state["event_type"]))
+            index = ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_event"]["event_type"]) if st.session_state["form_data_event"]["event_type"] in ["", "Virtual", "Presencial", "Híbrido"] else 0,
+            on_change=handle_event_type_change)
         
         
 def dias_habiles_entre(fecha_inicio, fecha_fin):
@@ -720,6 +773,15 @@ def button_form():
                 ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
                 with open(ruta, "w") as f:
                     json.dump(datos_ser, f)
+                
+                # Auto-limpieza: eliminar borrador duplicado después de guardar en historial
+                nombre_evento = st.session_state["form_data_event"].get("event_name", "")
+                start_date = st.session_state["form_data_event"].get("start_date")
+                end_date = st.session_state["form_data_event"].get("end_date")
+                
+                if eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+                    print(f"Borrador duplicado eliminado automáticamente para evento: {nombre_evento}")
+                
                 st.session_state.errores_event = False
             else:
                 status.update(

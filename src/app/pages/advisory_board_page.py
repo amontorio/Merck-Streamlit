@@ -19,6 +19,55 @@ import glob
 # Recargar el módulo aux_functions para asegurar que se carguen las funciones más recientes
 importlib.reload(af)
 
+#dario: función para encontrar formulario existente por nombre y fechas
+def encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+    """
+    Busca un formulario existente basado en nombre del evento y fechas de inicio/fin
+    """
+    directorio = "formularios_guardados"
+    if not os.path.exists(directorio):
+        return None
+        
+    # Convertir fechas a string para comparación
+    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
+    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
+    
+    # Buscar archivos del usuario y tipo de formulario
+    patron = f"{user_id}_{formulario_tipo}_*.json"
+    archivos = glob.glob(os.path.join(directorio, patron))
+    
+    for archivo in archivos:
+        try:
+            with open(archivo, "r") as f:
+                datos = json.load(f)
+                
+            # Comparar nombre del evento y fechas
+            if (datos.get("nombre_evento_ab", "") == nombre_evento and
+                datos.get("start_date_ab", "") == start_date_str and
+                datos.get("end_date_ab", "") == end_date_str):
+                return archivo
+        except:
+            continue
+    
+    return None
+
+#dario: función para eliminar borradores duplicados cuando se genera el historial
+def eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+    """
+    Elimina un borrador con el mismo nombre y fechas cuando se genera exitosamente un formulario
+    """
+    archivo_borrador = encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date)
+    
+    if archivo_borrador:
+        try:
+            os.remove(archivo_borrador)
+            return True
+        except Exception as e:
+            print(f"Error al eliminar borrador: {e}")
+            return False
+    
+    return False
+
 st.markdown("""
     <style>
     .stMultiSelect [data-baseweb="tag"] {
@@ -121,6 +170,14 @@ def serialize_dates(obj):
     elif isinstance(obj, list):
         obj = [serialize_dates(item) for item in obj]
     return obj
+
+def handle_advisory_board_event_type_change():
+    """Maneja el cambio de tipo de evento en Advisory Board"""
+    save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"])
+    # Si el evento es virtual, limpiar sede y ciudad
+    if st.session_state["tipo_evento_ab"] == "Virtual":
+        save_to_session_state("sede_ab", "")
+        save_to_session_state("ciudad_ab", "")
 
 def add_participant():
     # Añadir un nuevo participante con campos inicializados
@@ -607,13 +664,8 @@ if dias_habiles < 10:
 st.selectbox("Tipo de evento *",
                 ["", "Virtual", "Presencial", "Híbrido"],
                 key="tipo_evento_ab",
-                index= ["Virtual", "Presencial", "Híbrido", ""].index(st.session_state["form_data_advisory_board"]["tipo_evento_ab"]) if "tipo_evento_ab" in st.session_state["form_data_advisory_board"] else 0,
-                on_change=lambda: (
-                    save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]),
-                    save_to_session_state("sede_ab", ""),
-                    save_to_session_state("ciudad_ab", "")
-                ) if st.session_state["tipo_evento_ab"] == "Virtual" else 
-                    save_to_session_state("tipo_evento_ab", st.session_state["tipo_evento_ab"]))
+                index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_advisory_board"]["tipo_evento_ab"]) if st.session_state["form_data_advisory_board"]["tipo_evento_ab"] in ["", "Virtual", "Presencial", "Híbrido"] else 0,
+                on_change=handle_advisory_board_event_type_change)
 
 col1, col2 = st.columns(2)
 with col1:
@@ -870,6 +922,15 @@ def button_form():
                 ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
                 with open(ruta, "w") as f:
                     json.dump(datos_ser, f)
+                
+                # Auto-limpieza: eliminar borrador duplicado después de guardar en historial
+                nombre_evento = st.session_state["form_data_advisory_board"].get("nombre_evento_ab", "")
+                start_date = st.session_state["form_data_advisory_board"].get("start_date_ab")
+                end_date = st.session_state["form_data_advisory_board"].get("end_date_ab")
+                
+                if eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+                    print(f"Borrador duplicado eliminado automáticamente para evento: {nombre_evento}")
+                
                 st.session_state.errores_event = False
                 st.session_state.errores_ab = False
             else:
@@ -917,38 +978,6 @@ if disabled == False:
 
 #st.header("Datos guardados")
 #st.write(st.session_state["form_data_advisory_board"])
-
-#dario: función para encontrar formulario existente por nombre y fechas
-def encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date):
-    """
-    Busca un formulario existente basado en nombre del evento y fechas de inicio/fin
-    """
-    directorio = "formularios_guardados"
-    if not os.path.exists(directorio):
-        return None
-        
-    # Convertir fechas a string para comparación
-    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
-    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
-    
-    # Buscar archivos del usuario y tipo de formulario
-    patron = f"{user_id}_{formulario_tipo}_*.json"
-    archivos = glob.glob(os.path.join(directorio, patron))
-    
-    for archivo in archivos:
-        try:
-            with open(archivo, "r") as f:
-                datos = json.load(f)
-                
-            # Comparar nombre del evento y fechas
-            if (datos.get("nombre_evento_ab", "") == nombre_evento and
-                datos.get("start_date_ab", "") == start_date_str and
-                datos.get("end_date_ab", "") == end_date_str):
-                return archivo
-        except:
-            continue
-    
-    return None
 
 #dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):

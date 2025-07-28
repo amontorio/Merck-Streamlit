@@ -22,6 +22,55 @@ import glob
 # Recargar el módulo aux_functions para asegurar que se carguen las funciones más recientes
 importlib.reload(af)
 
+#dario: función para encontrar formulario existente por nombre y fechas (para consulting services)
+def encontrar_formulario_existente(user_id, formulario_tipo, nombre_necesidades, start_date, end_date):
+    """
+    Busca un formulario existente basado en nombre de necesidades y fechas de inicio/fin
+    """
+    directorio = "formularios_guardados"
+    if not os.path.exists(directorio):
+        return None
+        
+    # Convertir fechas a string para comparación
+    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
+    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
+    
+    # Buscar archivos del usuario y tipo de formulario
+    patron = f"{user_id}_{formulario_tipo}_*.json"
+    archivos = glob.glob(os.path.join(directorio, patron))
+    
+    for archivo in archivos:
+        try:
+            with open(archivo, "r") as f:
+                datos = json.load(f)
+                
+            # Comparar nombre de necesidades y fechas
+            if (datos.get("nombre_necesidades_cs", "") == nombre_necesidades and
+                datos.get("start_date_cs", "") == start_date_str and
+                datos.get("end_date_cs", "") == end_date_str):
+                return archivo
+        except:
+            continue
+    
+    return None
+
+#dario: función para eliminar borradores duplicados cuando se genera el historial (para consulting services)
+def eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_necesidades, start_date, end_date):
+    """
+    Elimina un borrador con el mismo nombre y fechas cuando se genera exitosamente un formulario
+    """
+    archivo_borrador = encontrar_formulario_existente(user_id, formulario_tipo, nombre_necesidades, start_date, end_date)
+    
+    if archivo_borrador:
+        try:
+            os.remove(archivo_borrador)
+            return True
+        except Exception as e:
+            print(f"Error al eliminar borrador: {e}")
+            return False
+    
+    return False
+
 # Diccionario de tarifas según el tier
 tarifas = {
     "0": 0,  
@@ -738,6 +787,15 @@ def button_form():
                 ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
                 with open(ruta, "w") as f:
                     json.dump(datos_ser, f)
+                
+                # Auto-limpieza: eliminar borrador duplicado después de guardar en historial
+                nombre_necesidades = st.session_state["form_data_consulting_services"].get("nombre_necesidades_cs", "")
+                start_date = st.session_state["form_data_consulting_services"].get("start_date_cs")
+                end_date = st.session_state["form_data_consulting_services"].get("end_date_cs")
+                
+                if eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_necesidades, start_date, end_date):
+                    print(f"Borrador duplicado eliminado automáticamente para consultoría: {nombre_necesidades}")
+                
                 st.session_state.errores = False
             else:
                 status.update(
@@ -786,38 +844,6 @@ disabled = not st.session_state.download_enabled_cs
 if disabled == False:
     download_document(disabled)
 
-
-#dario: función para encontrar formulario existente por nombre y fechas
-def encontrar_formulario_existente(user_id, formulario_tipo, nombre_necesidades, start_date, end_date):
-    """
-    Busca un formulario existente basado en nombre de necesidades y fechas de inicio/fin
-    """
-    directorio = "formularios_guardados"
-    if not os.path.exists(directorio):
-        return None
-        
-    # Convertir fechas a string para comparación
-    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
-    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
-    
-    # Buscar archivos del usuario y tipo de formulario
-    patron = f"{user_id}_{formulario_tipo}_*.json"
-    archivos = glob.glob(os.path.join(directorio, patron))
-    
-    for archivo in archivos:
-        try:
-            with open(archivo, "r") as f:
-                datos = json.load(f)
-                
-            # Comparar nombre de necesidades y fechas
-            if (datos.get("nombre_necesidades_cs", "") == nombre_necesidades and
-                datos.get("start_date_cs", "") == start_date_str and
-                datos.get("end_date_cs", "") == end_date_str):
-                return archivo
-        except:
-            continue
-    
-    return None
 
 #dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):

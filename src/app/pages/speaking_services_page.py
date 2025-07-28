@@ -46,6 +46,55 @@ st.markdown("""
 
 black_list = ["captar", "otorgar", "premio", "regalo", "ventaja", "beneficio", "precio", "Fidelizar", "excluir", "influir", "defensor", "relación", "intercambio", "pago", "retorno de la inversión", "contra ataque", "prescriptor principal", "agradecer", "generoso", "favor", "entretenimiento", "espectáculo", "reemplazar", "expulsar", "forzar", "agresivo", "ilegal", "descuento", "contratar", "Abuso", "Mal uso", "Demandar", "Investigación", "Monopolio", "Antitrust", "Anticompetitivo", "Cartel", "Manipular", "Libre mercado", "Colusión", "Ilegal", "Privilegio", "Concesión", "Agresivo"]  
 
+#dario: función para encontrar formulario existente por nombre y fechas
+def encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+    """
+    Busca un formulario existente basado en nombre del evento y fechas de inicio/fin
+    """
+    directorio = "formularios_guardados"
+    if not os.path.exists(directorio):
+        return None
+        
+    # Convertir fechas a string para comparación
+    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
+    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
+    
+    # Buscar archivos del usuario y tipo de formulario
+    patron = f"{user_id}_{formulario_tipo}_*.json"
+    archivos = glob.glob(os.path.join(directorio, patron))
+    
+    for archivo in archivos:
+        try:
+            with open(archivo, "r") as f:
+                datos = json.load(f)
+                
+            # Comparar nombre del evento y fechas
+            if (datos.get("nombre_evento_ss", "") == nombre_evento and
+                datos.get("start_date_ss", "") == start_date_str and
+                datos.get("end_date_ss", "") == end_date_str):
+                return archivo
+        except:
+            continue
+    
+    return None
+
+#dario: función para eliminar borradores duplicados cuando se genera el historial
+def eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+    """
+    Elimina un borrador con el mismo nombre y fechas cuando se genera exitosamente un formulario
+    """
+    archivo_borrador = encontrar_formulario_existente(user_id, formulario_tipo, nombre_evento, start_date, end_date)
+    
+    if archivo_borrador:
+        try:
+            os.remove(archivo_borrador)
+            return True
+        except Exception as e:
+            print(f"Error al eliminar borrador: {e}")
+            return False
+    
+    return False
+
 def save_to_session_state(key, value, key_participante=None, field_participante=None):
     """
     Saves a value to the Streamlit session state.
@@ -85,6 +134,14 @@ def handle_fecha_inicio():
     save_to_session_state("start_date_ss", st.session_state["start_date_ss"])
     if st.session_state["start_date_ss"] >= st.session_state["end_date_ss"]:
         save_to_session_state("end_date_ss", st.session_state["start_date_ss"]) 
+
+def handle_speaking_services_event_type_change():
+    """Maneja el cambio de tipo de evento en Speaking Services"""
+    save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"])
+    # Si el evento es virtual, limpiar sede y ciudad
+    if st.session_state["tipo_evento_ss"] == "Virtual":
+        save_to_session_state("sede_ss", "")
+        save_to_session_state("ciudad_ss", "")
 
 def handle_dni(id_user):
     save_to_session_state("participantes_ss", st.session_state[f"dni_{id_user}"], id_user, f"dni_copy_{id_user}")
@@ -614,6 +671,15 @@ def button_form(tipo):
                 ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
                 with open(ruta, "w") as f:
                     json.dump(datos_ser, f)
+                
+                # Auto-limpieza: eliminar borrador duplicado después de guardar en historial
+                nombre_evento = st.session_state["form_data_speaking_services"].get("nombre_evento_ss", "")
+                start_date = st.session_state["form_data_speaking_services"].get("start_date_ss")
+                end_date = st.session_state["form_data_speaking_services"].get("end_date_ss")
+                
+                if eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+                    print(f"Borrador duplicado eliminado automáticamente para evento: {nombre_evento}")
+                
                 st.session_state.errores_ss = False
             else:
                 status.update(
@@ -671,6 +737,15 @@ def button_form_reducido(tipo):
                 ruta= os.path.join("historial",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
                 with open(ruta, "w") as f:
                     json.dump(datos_ser, f)
+                
+                # Auto-limpieza: eliminar borrador duplicado después de guardar en historial
+                nombre_evento = st.session_state["form_data_speaking_services"].get("nombre_evento_ss", "")
+                start_date = st.session_state["form_data_speaking_services"].get("start_date_ss")
+                end_date = st.session_state["form_data_speaking_services"].get("end_date_ss")
+                
+                if eliminar_borrador_duplicado(user_id, formulario_tipo, nombre_evento, start_date, end_date):
+                    print(f"Borrador duplicado eliminado automáticamente para evento: {nombre_evento}")
+                
                 st.session_state.errores_ss = False
             else:
                 status.update(
@@ -906,13 +981,8 @@ if meeting_type == "Merck Program (MARCO)":
     col1, col2 = st.columns(2)
     with col1:
         st.selectbox("Tipo de evento *", ["", "Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
-                    index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
-                    on_change=lambda: (
-                        save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
-                        save_to_session_state("sede_ss", ""),
-                        save_to_session_state("ciudad_ss", "")
-                    ) if st.session_state["tipo_evento_ss"] == "Virtual" else 
-                        save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]))
+                    index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if st.session_state["form_data_speaking_services"]["tipo_evento_ss"] in ["", "Virtual", "Presencial", "Híbrido"] else 0,
+                    on_change=handle_speaking_services_event_type_change)
     with col2:
         st.number_input("Nº de asistentes totales *",
                         min_value=0,
@@ -1174,13 +1244,8 @@ else:
             st.warning(f"Revisa que la fecha de fin del evento introducida sea correcta.")
         
     st.selectbox("Tipo de evento *", ["", "Virtual", "Presencial", "Híbrido"], key="tipo_evento_ss", 
-                    index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if "tipo_evento_ss" in st.session_state["form_data_speaking_services"] else 0,
-                    on_change=lambda: (
-                        save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]),
-                        save_to_session_state("sede_ss", ""),
-                        save_to_session_state("ciudad_ss", "")
-                    ) if st.session_state["tipo_evento_ss"] == "Virtual" else 
-                        save_to_session_state("tipo_evento_ss", st.session_state["tipo_evento_ss"]))
+                    index= ["", "Virtual", "Presencial", "Híbrido"].index(st.session_state["form_data_speaking_services"]["tipo_evento_ss"]) if st.session_state["form_data_speaking_services"]["tipo_evento_ss"] in ["", "Virtual", "Presencial", "Híbrido"] else 0,
+                    on_change=handle_speaking_services_event_type_change)
 
         
     col1, col2 = st.columns(2)
@@ -1285,7 +1350,3 @@ if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     with open(ruta, "w") as f:
         json.dump(datos_ser, f)
     st.toast(mensaje, icon=icono)
-
-
-#st.write(st.session_state["form_data_speaking_services"])
-#st.write(st.session_state)
