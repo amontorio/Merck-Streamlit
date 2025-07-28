@@ -791,7 +791,7 @@ if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
     fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
-
+    
 
     datos = copy.deepcopy(st.session_state["form_data_consulting_services"]) # Cambia según el tipo de formulario
     datos_ser = serialize_dates(datos)
