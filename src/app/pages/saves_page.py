@@ -225,6 +225,160 @@ def reset_filtros():
     st.session_state['page_borr'] = 0
     st.session_state['page_hist'] = 0
 
+def generar_id_borrador(contenido, tipo_form):
+    """
+    Genera un identificador único para el borrador basado en:
+    - Nombre del evento
+    - Fecha de inicio 
+    - Fecha de fin
+    """
+    nombre_evento = extraer_nombre_evento(contenido, tipo_form)
+    
+    # Extraer fechas según el tipo de formulario
+    if "speaking services" in tipo_form:
+        start_date = contenido.get("start_date_ss", "")
+        end_date = contenido.get("end_date_ss", "")
+    elif tipo_form == "advisory board":
+        start_date = contenido.get("start_date_ab", "")
+        end_date = contenido.get("end_date_ab", "")
+    elif tipo_form == "consulting services":
+        start_date = contenido.get("start_date_cs", "")
+        end_date = contenido.get("end_date_cs", "")
+    elif tipo_form == "event":
+        start_date = contenido.get("start_date", "")
+        end_date = contenido.get("end_date", "")
+    else:
+        start_date = ""
+        end_date = ""
+    
+    # Normalizar el nombre del evento para usarlo como ID
+    nombre_normalizado = ""
+    if nombre_evento and nombre_evento != "—":
+        import re
+        # Eliminar caracteres especiales y espacios, convertir a minúsculas
+        nombre_normalizado = re.sub(r'[^a-zA-Z0-9]', '_', nombre_evento.lower())
+        # Limitar la longitud para evitar nombres de archivo muy largos
+        nombre_normalizado = nombre_normalizado[:50]
+    
+    # Crear ID único combinando nombre y fechas
+    id_unico = f"{nombre_normalizado}_{start_date}_{end_date}".replace("-", "").replace(":", "")
+    
+    return id_unico
+
+def encontrar_borrador_existente(user_id, tipo_form, contenido):
+    """
+    Busca si ya existe un borrador con el mismo identificador único
+    """
+    id_borrador = generar_id_borrador(contenido, tipo_form)
+    # Buscar archivos que contengan el tipo de formulario y el ID único
+    patron = os.path.join("formularios_guardados", f"{user_id}_{tipo_form.replace(' ', '_')}_*{id_borrador}*.json")
+    archivos_existentes = glob.glob(patron)
+    
+    return archivos_existentes[0] if archivos_existentes else None
+
+def guardar_borrador_inteligente(datos_formulario, tipo_formulario, user_id):
+    """
+    Guarda o actualiza un borrador de manera inteligente:
+    - Si ya existe un borrador con el mismo nombre y fechas, lo sobrescribe
+    - Si no existe, crea uno nuevo
+    
+    Retorna: (ruta_archivo, es_actualizacion)
+    """
+    import copy
+    from datetime import datetime
+    
+    # Crear una copia de los datos para no modificar el original
+    datos = copy.deepcopy(datos_formulario)
+    
+    # Buscar si ya existe un borrador con el mismo identificador
+    archivo_existente = encontrar_borrador_existente(user_id, tipo_formulario, datos)
+    
+    if archivo_existente:
+        # Actualizar el borrador existente
+        ruta_archivo = archivo_existente
+        es_actualizacion = True
+    else:
+        # Crear un nuevo borrador
+        fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+        id_borrador = generar_id_borrador(datos, tipo_formulario)
+        nombre_archivo = f"{user_id}_{tipo_formulario.replace(' ', '_')}_{id_borrador}_{fecha_actual}.json"
+        ruta_archivo = os.path.join("formularios_guardados", nombre_archivo)
+        es_actualizacion = False
+    
+    # Preparar los datos para guardar
+    def serialize_dates(obj):
+        """Convierte objetos datetime.date a cadenas para la serialización JSON."""
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if isinstance(value, (datetime, date)):
+                    obj[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    obj[key] = serialize_dates(value)
+                elif isinstance(value, list):
+                    obj[key] = [serialize_dates(item) for item in value]
+        elif isinstance(obj, list):
+            obj = [serialize_dates(item) for item in obj]
+        return obj
+    
+    datos_ser = serialize_dates(datos)
+    datos_ser["user_id"] = user_id
+    datos_ser["formulario_tipo"] = tipo_formulario
+    
+    # Limpiar documentos para no guardarlos en el borrador
+    campos_documentos = [
+        "documentosubido_1_event", "documentosubido_2_event", "documentosubido_3_event", 
+        "documentosubido_4_event", "documentosubido_5_event",
+        "documentosubido_1_ab", "documentosubido_2_ab", "documentosubido_3_ab", "documentosubido_4_ab",
+        "documentosubido_1_cs", "documentosubido_2_cs", "documentosubido_3_cs", "documentosubido_4_cs",
+        "documentosubido_1_ss", "documentosubido_2_ss", "documentosubido_3_ss", "documentosubido_4_ss"
+    ]
+    
+    for campo in campos_documentos:
+        if campo in datos_ser:
+            datos_ser[campo] = ""
+    
+    # Guardar el archivo
+    with open(ruta_archivo, "w") as f:
+        json.dump(datos_ser, f, indent=2)
+    
+    return ruta_archivo, es_actualizacion
+
+# Función para ser importada desde otros archivos
+def guardar_borrador_desde_formulario(datos_formulario, tipo_formulario, user_id="default_user"):
+    """
+    Función para ser llamada desde otros archivos de formularios.
+    Guarda o actualiza un borrador de manera inteligente.
+    
+    Args:
+        datos_formulario: Los datos del formulario a guardar
+        tipo_formulario: El tipo de formulario (event, advisory_board, etc.)
+        user_id: ID del usuario
+        
+    Returns:
+        tuple: (mensaje_exito, es_actualizacion)
+    """
+    try:
+        print(f"[DEBUG] Guardando borrador: tipo={tipo_formulario}, user_id={user_id}")
+        print(f"[DEBUG] Datos del formulario: {list(datos_formulario.keys())}")
+        
+        ruta_archivo, es_actualizacion = guardar_borrador_inteligente(datos_formulario, tipo_formulario, user_id)
+        
+        print(f"[DEBUG] Archivo guardado en: {ruta_archivo}")
+        print(f"[DEBUG] Es actualización: {es_actualizacion}")
+        
+        if es_actualizacion:
+            mensaje = "Borrador actualizado exitosamente!"
+        else:
+            mensaje = "Borrador guardado exitosamente!"
+            
+        return mensaje, es_actualizacion
+        
+    except Exception as e:
+        print(f"[ERROR] Error al guardar el borrador: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return f"Error al guardar el borrador: {str(e)}", False
+
 def main():
     user_id = st.session_state.get("user_id", "default_user")
     init_pagination_state()

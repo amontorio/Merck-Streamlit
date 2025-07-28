@@ -17,6 +17,7 @@ from datetime import datetime
 import os
 import copy
 import importlib
+import glob
 
 # Recargar el módulo aux_functions para asegurar que se carguen las funciones más recientes
 importlib.reload(af)
@@ -786,23 +787,74 @@ if disabled == False:
     download_document(disabled)
 
 
+#dario: función para encontrar formulario existente por nombre y fechas
+def encontrar_formulario_existente(user_id, formulario_tipo, nombre_necesidades, start_date, end_date):
+    """
+    Busca un formulario existente basado en nombre de necesidades y fechas de inicio/fin
+    """
+    directorio = "formularios_guardados"
+    if not os.path.exists(directorio):
+        return None
+        
+    # Convertir fechas a string para comparación
+    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
+    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else str(end_date)
+    
+    # Buscar archivos del usuario y tipo de formulario
+    patron = f"{user_id}_{formulario_tipo}_*.json"
+    archivos = glob.glob(os.path.join(directorio, patron))
+    
+    for archivo in archivos:
+        try:
+            with open(archivo, "r") as f:
+                datos = json.load(f)
+                
+            # Comparar nombre de necesidades y fechas
+            if (datos.get("nombre_necesidades_cs", "") == nombre_necesidades and
+                datos.get("start_date_cs", "") == start_date_str and
+                datos.get("end_date_cs", "") == end_date_str):
+                return archivo
+        except:
+            continue
+    
+    return None
+
 #dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
     formulario_tipo = "consulting_services"  # Cambia según el tipo de formulario
     user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
-    fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-
     datos = copy.deepcopy(st.session_state["form_data_consulting_services"]) # Cambia según el tipo de formulario
     datos_ser = serialize_dates(datos)
     datos_ser["user_id"] = user_id
     datos_ser["formulario_tipo"] = formulario_tipo
     datos_ser["documentosubido_1_cs"] = "" #esto se hace para que no se guarden los documentos
     datos_ser["documentosubido_2_cs"] = ""
-    ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
+    
+    # Buscar si ya existe un formulario con el mismo nombre y fechas
+    archivo_existente = encontrar_formulario_existente(
+        user_id, 
+        formulario_tipo, 
+        datos_ser.get("nombre_necesidades_cs", ""),
+        datos_ser.get("start_date_cs", ""),
+        datos_ser.get("end_date_cs", "")
+    )
+    
+    if archivo_existente:
+        # Actualizar el archivo existente
+        ruta = archivo_existente
+        mensaje = "Borrador actualizado exitosamente!"
+        icono = "🔄"
+    else:
+        # Crear nuevo archivo
+        fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ruta = os.path.join("formularios_guardados", f"{user_id}_{formulario_tipo}_{fecha_actual}.json")
+        mensaje = "Borrador guardado exitosamente!"
+        icono = "✔️"
+    
     with open(ruta, "w") as f:
         json.dump(datos_ser, f)
-    st.toast("Formulario guardado exitosamente!", icon="✔️")
+    st.toast(mensaje, icon=icono)
 
 #st.write(st.session_state["form_data_consulting_services"])
 #st.write(st.session_state)

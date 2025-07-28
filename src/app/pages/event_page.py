@@ -769,21 +769,32 @@ if disabled == False:
 
 #dario: Botón y funcionalidades para guardar el formulario   
 if st.sidebar.button("Guardar borrador", use_container_width=True, icon="💾"):
-    formulario_tipo = "event"  # Cambia según el tipo de formulario
-    user_id = st.session_state.get("user_id", "default_user") #### CAMBIAR CUANDO SE INTEGRE EN CLIENTE
-    fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-
-    datos = copy.deepcopy(st.session_state["form_data_event"]) # Cambia según el tipo de formulario
-    datos_ser = serialize_dates(datos)
-    datos_ser["user_id"] = user_id
-    datos_ser["formulario_tipo"] = formulario_tipo
-    datos_ser["documentosubido_1_event"] = "" #esto se hace para que no se guarden los documentos
-    datos_ser["documentosubido_2_event"] = ""
-    datos_ser["documentosubido_3_event"] = ""
-    datos_ser["documentosubido_4_event"] = ""
-    datos_ser["documentosubido_5_event"] = ""
-    ruta= os.path.join("formularios_guardados",f"{user_id}_{formulario_tipo}_{fecha_actual}.json" )
-    with open(ruta, "w") as f:
-        json.dump(datos_ser, f)
-    st.toast("Formulario guardado exitosamente!", icon="✔️")
+    try:
+        # Importar la función de guardado inteligente
+        import sys
+        import os
+        sys.path.append(os.path.dirname(__file__))
+        from saves_page import guardar_borrador_desde_formulario
+        
+        formulario_tipo = "event"
+        user_id = st.session_state.get("user_id", "default_user")
+        datos = st.session_state["form_data_event"]
+        
+        print(f"[DEBUG] Intentando guardar borrador...")
+        
+        # Usar la nueva función de guardado inteligente
+        mensaje, es_actualizacion = guardar_borrador_desde_formulario(datos, formulario_tipo, user_id)
+        
+        print(f"[DEBUG] Resultado: {mensaje}, actualización: {es_actualizacion}")
+        
+        # Mostrar mensaje apropiado
+        if es_actualizacion:
+            st.toast(mensaje, icon="🔄")
+        else:
+            st.toast(mensaje, icon="✔️")
+            
+    except Exception as e:
+        print(f"[ERROR] Error en botón guardar: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        st.toast(f"Error al guardar: {str(e)}", icon="❌")
