@@ -165,10 +165,8 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Obtener la ruta de templates
-    current_dir = Path(__file__).resolve().parent.parent.parent.parent
-    templates_dir = current_dir / "file_templates"
-    
+    templates_dir = Path(__file__).resolve().parent.parent / "file_templates"
+
     if not templates_dir.exists():
         st.error(f"No se encontró el directorio de templates: {templates_dir}")
         return
